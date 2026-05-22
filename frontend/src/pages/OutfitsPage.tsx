@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button, Modal, Select, message } from "antd";
+import { Button, Modal, Select, message, Input } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import type { ClothingItem, OutfitItem } from "../types";
 import { CATEGORY_LABELS } from "../types";
@@ -19,6 +19,7 @@ const POSITION_OPTIONS = [
 export default function OutfitsPage() {
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
+  const [outfitName, setOutfitName] = useState("");
   const [selected, setSelected] = useState<OutfitItem[]>([]);
 
   const { data: items = [] } = useQuery({ queryKey: ["items"], queryFn: () => fetchItems() });
@@ -30,6 +31,7 @@ export default function OutfitsPage() {
       queryClient.invalidateQueries({ queryKey: ["outfits"] });
       message.success("搭配已创建");
       setCreateOpen(false);
+      setOutfitName("");
       setSelected([]);
     },
   });
@@ -92,15 +94,24 @@ export default function OutfitsPage() {
       <Modal
         title="创建搭配"
         open={createOpen}
-        onCancel={() => { setCreateOpen(false); setSelected([]); }}
+        onCancel={() => { setCreateOpen(false); setOutfitName(""); setSelected([]); }}
         onOk={() => {
+          if (!outfitName.trim()) { message.warning("请输入搭配名称"); return; }
           if (selected.length === 0) { message.warning("请至少选择一件衣物"); return; }
-          createMutation.mutate({ name: "", items: selected, tags: [] });
+          createMutation.mutate({ name: outfitName.trim(), items: selected, tags: [] });
         }}
         width={560}
         confirmLoading={createMutation.isPending}
       >
-        <div style={{ fontSize: 13, color: "#8c8c8c", marginBottom: 16 }}>
+        <div style={{ marginBottom: 16 }}>
+          <Input
+            placeholder="搭配名称，如：周末约会、通勤第一天"
+            value={outfitName}
+            onChange={(e) => setOutfitName(e.target.value)}
+            maxLength={30}
+          />
+        </div>
+        <div style={{ fontSize: 13, color: "#8c8c8c", marginBottom: 12 }}>
           选择衣物，为每件指定穿搭位置
         </div>
 

@@ -7,6 +7,7 @@
 import logging
 import re
 from datetime import datetime
+
 import httpx
 
 from app.schemas import WeatherInfo

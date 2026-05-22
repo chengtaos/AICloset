@@ -8,11 +8,13 @@ Phase 2：filter_candidates 作为 LLM 的前置粗筛，match 作为 fallback�
 import logging
 import random
 from datetime import date, timedelta
+
 from sqlalchemy.orm import Session
 
-logger = logging.getLogger(__name__)
 from app.models import ClothingItem, WearRecord
 from app.schemas import WeatherInfo
+
+logger = logging.getLogger(__name__)
 
 
 def _season_label(month: int) -> str:

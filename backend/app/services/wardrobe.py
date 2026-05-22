@@ -1,9 +1,17 @@
 from datetime import date
 from typing import Optional
-from sqlalchemy.orm import Session
+
 from sqlalchemy import func
-from app.models import ClothingItem, WearRecord
-from app.schemas import ClothingItemCreate, ClothingItemUpdate, CategoryStat, WardrobeStats
+from sqlalchemy.orm import Session
+
+from app.models import ClothingItem, Outfit, WearRecord
+from app.schemas import (
+    CategoryStat,
+    ClothingItemBrief,
+    ClothingItemCreate,
+    ClothingItemUpdate,
+    WardrobeStats,
+)
 
 
 def list_items(
@@ -16,6 +24,7 @@ def list_items(
     search: Optional[str] = None,
     sort: str = "created_at",
 ):
+    """查询衣物列表，支持分类、季节、风格等多条件筛选和排序。"""
     q = db.query(ClothingItem).filter(
         ClothingItem.user_id == user_id,
         ClothingItem.status == status,
@@ -29,7 +38,6 @@ def list_items(
     if search:
         q = q.filter(ClothingItem.sub_category.contains(search))
 
-    # 排序
     sort_map = {
         "created_at": ClothingItem.created_at.desc(),
         "-created_at": ClothingItem.created_at.asc(),
@@ -39,10 +47,11 @@ def list_items(
     order_by = sort_map.get(sort, ClothingItem.created_at.desc())
     items = q.order_by(order_by).all()
 
-    # 批量获取最后穿着日期
+    # 批量查询最后穿着日期，避免对每件衣物单独查 WearRecord（N+1）
     item_ids = [it.id for it in items]
     last_worn_map: dict[int, date] = {}
     if item_ids:
+        item_id_set = set(item_ids)
         rows = (
             db.query(WearRecord.item_ids, WearRecord.wear_date)
             .filter(WearRecord.user_id == user_id)
@@ -50,14 +59,16 @@ def list_items(
             .all()
         )
         seen: set[int] = set()
-        for item_ids_row, wear_date in rows:
-            for iid in (item_ids_row or []):
-                if iid not in seen and iid in set(item_ids):
-                    seen.add(iid)
-                    if wear_date and (iid not in last_worn_map or wear_date > last_worn_map[iid]):
-                        last_worn_map[iid] = wear_date
+        for row_item_ids, wear_date in rows:
+            for iid in (row_item_ids or []):
+                if iid in seen or iid not in item_id_set:
+                    continue
+                seen.add(iid)
+                # 行已按 wear_date 降序，首次遇到即为最后穿着日期
+                if wear_date:
+                    last_worn_map[iid] = wear_date
 
-    # 注入 last_worn_date（动态属性，Pydantic from_attributes 可读取）
+    # 将 last_worn_date 作为动态属性注入 ORM 对象，Pydantic from_attributes 可读取
     for it in items:
         it.last_worn_date = last_worn_map.get(it.id)  # type: ignore[attr-defined]
 
@@ -65,6 +76,7 @@ def list_items(
 
 
 def get_item(db: Session, item_id: int, user_id: int = 1) -> Optional[ClothingItem]:
+    """按 ID 获取单件衣物。"""
     return db.query(ClothingItem).filter(
         ClothingItem.id == item_id,
         ClothingItem.user_id == user_id,
@@ -72,6 +84,7 @@ def get_item(db: Session, item_id: int, user_id: int = 1) -> Optional[ClothingIt
 
 
 def create_item(db: Session, data: ClothingItemCreate, user_id: int = 1) -> ClothingItem:
+    """创建新衣物，image_path 会作为首张图片存入 images 列表。"""
     payload = data.model_dump()
     image_path = payload.pop("image_path", None)
     item = ClothingItem(user_id=user_id, **payload)
@@ -84,6 +97,7 @@ def create_item(db: Session, data: ClothingItemCreate, user_id: int = 1) -> Clot
 
 
 def update_item(db: Session, item_id: int, data: ClothingItemUpdate, user_id: int = 1) -> Optional[ClothingItem]:
+    """更新衣物字段，仅更新传入的非空字段。"""
     item = get_item(db, item_id, user_id)
     if not item:
         return None
@@ -96,6 +110,7 @@ def update_item(db: Session, item_id: int, data: ClothingItemUpdate, user_id: in
 
 
 def delete_item(db: Session, item_id: int, user_id: int = 1) -> bool:
+    """硬删除衣物记录。"""
     item = get_item(db, item_id, user_id)
     if not item:
         return False
@@ -105,6 +120,7 @@ def delete_item(db: Session, item_id: int, user_id: int = 1) -> bool:
 
 
 def add_image(db: Session, item_id: int, image_path: str, user_id: int = 1) -> Optional[ClothingItem]:
+    """向衣物追加一张图片。"""
     item = get_item(db, item_id, user_id)
     if not item:
         return None
@@ -116,7 +132,20 @@ def add_image(db: Session, item_id: int, image_path: str, user_id: int = 1) -> O
     return item
 
 
+def _item_to_brief(item: ClothingItem) -> ClothingItemBrief:
+    """将 ORM 对象转为轻量 Brief schema，供列表/统计场景使用。"""
+    return ClothingItemBrief(
+        id=item.id,
+        category=item.category,
+        sub_category=item.sub_category,
+        colors=item.colors or [],
+        images=item.images or [],
+        style_tags=item.style_tags or [],
+    )
+
+
 def get_stats(db: Session, user_id: int = 1) -> WardrobeStats:
+    """聚合衣橱统计数据：总价值、品类分布、颜色分布、穿着频次、沉睡单品。"""
     items = db.query(ClothingItem).filter(
         ClothingItem.user_id == user_id,
         ClothingItem.status == "available",
@@ -130,19 +159,21 @@ def get_stats(db: Session, user_id: int = 1) -> WardrobeStats:
         cat_counts[it.category] = cat_counts.get(it.category, 0) + 1
     category_dist = [CategoryStat(category=k, count=v) for k, v in cat_counts.items()]
 
-    # 颜色分布
+    # 颜色分布：取出现次数最多的前 10 种颜色
     color_counts: dict[str, int] = {}
     for it in items:
         for c in (it.colors or []):
             color_counts[c] = color_counts.get(c, 0) + 1
-    color_dist = [CategoryStat(category=k, count=v) for k, v in
-                  sorted(color_counts.items(), key=lambda x: -x[1])[:10]]
+    color_dist = [
+        CategoryStat(category=k, count=v)
+        for k, v in sorted(color_counts.items(), key=lambda x: -x[1])[:10]
+    ]
 
-    # 穿着频次 Top5
+    # 穿着频次 Top5（仅包含至少穿过一次的）
     sorted_by_wear = sorted(items, key=lambda x: -x.wear_count)[:5]
     most_worn = [_item_to_brief(it) for it in sorted_by_wear if it.wear_count > 0]
 
-    # 沉睡单品（从未穿过的）
+    # 沉睡单品：从未穿过的衣物，最多展示 10 件
     sleeping = [it for it in items if it.wear_count == 0]
     sleeping_items = [_item_to_brief(it) for it in sleeping[:10]]
 
@@ -156,7 +187,15 @@ def get_stats(db: Session, user_id: int = 1) -> WardrobeStats:
     )
 
 
-def record_wear(db: Session, user_id: int, outfit_id: Optional[int], item_ids: list[int], wear_date: Optional[date], note: str) -> WearRecord:
+def record_wear(
+    db: Session,
+    user_id: int,
+    outfit_id: Optional[int],
+    item_ids: list[int],
+    wear_date: Optional[date],
+    note: str,
+) -> WearRecord:
+    """记录一次穿着，同时递增相关衣物的 wear_count。"""
     record_date = wear_date or date.today()
     record = WearRecord(
         user_id=user_id,
@@ -167,15 +206,15 @@ def record_wear(db: Session, user_id: int, outfit_id: Optional[int], item_ids: l
     )
     db.add(record)
 
-    # 更新物品穿着次数
+    # 收集所有关联的衣物 ID：直接传入的散件 + 搭配中的衣物
     all_ids = set(item_ids)
     if outfit_id:
-        from app.models import Outfit
         outfit = db.query(Outfit).filter(Outfit.id == outfit_id).first()
         if outfit and outfit.items:
             for oi in outfit.items:
                 all_ids.add(oi["item_id"])
 
+    # 批量递增穿着次数
     for iid in all_ids:
         item = db.query(ClothingItem).filter(ClothingItem.id == iid).first()
         if item:
@@ -187,21 +226,10 @@ def record_wear(db: Session, user_id: int, outfit_id: Optional[int], item_ids: l
 
 
 def get_wear_history(db: Session, user_id: int = 1, year: int = 0, month: int = 0):
+    """查询穿着历史，支持按年月筛选。"""
     q = db.query(WearRecord).filter(WearRecord.user_id == user_id)
     if year:
         q = q.filter(func.strftime('%Y', WearRecord.wear_date) == str(year))
     if month:
         q = q.filter(func.strftime('%m', WearRecord.wear_date) == f"{month:02d}")
     return q.order_by(WearRecord.wear_date.desc()).all()
-
-
-def _item_to_brief(item: ClothingItem):
-    from app.schemas import ClothingItemBrief
-    return ClothingItemBrief(
-        id=item.id,
-        category=item.category,
-        sub_category=item.sub_category,
-        colors=item.colors or [],
-        images=item.images or [],
-        style_tags=item.style_tags or [],
-    )

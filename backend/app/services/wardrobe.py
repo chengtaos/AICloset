@@ -14,6 +14,7 @@ def list_items(
     style: Optional[str] = None,
     status: str = "available",
     search: Optional[str] = None,
+    sort: str = "created_at",
 ):
     q = db.query(ClothingItem).filter(
         ClothingItem.user_id == user_id,
@@ -27,7 +28,40 @@ def list_items(
         q = q.filter(ClothingItem.style_tags.contains(style))
     if search:
         q = q.filter(ClothingItem.sub_category.contains(search))
-    return q.order_by(ClothingItem.updated_at.desc()).all()
+
+    # 排序
+    sort_map = {
+        "created_at": ClothingItem.created_at.desc(),
+        "-created_at": ClothingItem.created_at.asc(),
+        "wear_count": ClothingItem.wear_count.desc(),
+        "-wear_count": ClothingItem.wear_count.asc(),
+    }
+    order_by = sort_map.get(sort, ClothingItem.created_at.desc())
+    items = q.order_by(order_by).all()
+
+    # 批量获取最后穿着日期
+    item_ids = [it.id for it in items]
+    last_worn_map: dict[int, date] = {}
+    if item_ids:
+        rows = (
+            db.query(WearRecord.item_ids, WearRecord.wear_date)
+            .filter(WearRecord.user_id == user_id)
+            .order_by(WearRecord.wear_date.desc())
+            .all()
+        )
+        seen: set[int] = set()
+        for item_ids_row, wear_date in rows:
+            for iid in (item_ids_row or []):
+                if iid not in seen and iid in set(item_ids):
+                    seen.add(iid)
+                    if wear_date and (iid not in last_worn_map or wear_date > last_worn_map[iid]):
+                        last_worn_map[iid] = wear_date
+
+    # 注入 last_worn_date（动态属性，Pydantic from_attributes 可读取）
+    for it in items:
+        it.last_worn_date = last_worn_map.get(it.id)  # type: ignore[attr-defined]
+
+    return items
 
 
 def get_item(db: Session, item_id: int, user_id: int = 1) -> Optional[ClothingItem]:

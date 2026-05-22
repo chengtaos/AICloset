@@ -19,6 +19,7 @@ export async function fetchItems(params?: {
   season?: string;
   style?: string;
   search?: string;
+  sort?: string;
 }) {
   const { data } = await api.get<ClothingItem[]>("/wardrobe/items", { params });
   return data;

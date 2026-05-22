@@ -53,6 +53,7 @@ class ClothingItemResponse(BaseModel):
     purchase_price: float
     status: str
     wear_count: int
+    last_worn_date: Optional[date] = None
     created_at: datetime
     updated_at: datetime
 

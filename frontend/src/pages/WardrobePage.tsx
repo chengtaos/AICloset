@@ -142,7 +142,15 @@ export default function WardrobePage() {
           gap: 16,
         }}>
           {filtered.map((item) => (
-            <ItemCard key={item.id} item={item} onClick={() => setDetailId(item.id)} />
+            <ItemCard
+              key={item.id}
+              item={item}
+              onClick={() => setDetailId(item.id)}
+              onDelete={() => Modal.confirm({
+                title: "删除这件衣物？", okText: "删除", okType: "danger", cancelText: "取消",
+                onOk: () => deleteMutation.mutate(item.id),
+              })}
+            />
           ))}
         </div>
       ) : (
@@ -166,7 +174,15 @@ export default function WardrobePage() {
                 gap: 16,
               }}>
                 {catItems.map((item) => (
-                  <ItemCard key={item.id} item={item} onClick={() => setDetailId(item.id)} />
+                  <ItemCard
+                    key={item.id}
+                    item={item}
+                    onClick={() => setDetailId(item.id)}
+                    onDelete={() => Modal.confirm({
+                      title: "删除这件衣物？", okText: "删除", okType: "danger", cancelText: "取消",
+                      onOk: () => deleteMutation.mutate(item.id),
+                    })}
+                  />
                 ))}
               </div>
             </section>
@@ -237,6 +253,10 @@ export default function WardrobePage() {
                 <div>材质：{detailItem.material.length > 0 ? detailItem.material.join(" · ") : "—"}</div>
                 {detailItem.purchase_price > 0 && <div>价格：¥{detailItem.purchase_price}</div>}
                 <div>穿过 {detailItem.wear_count} 次</div>
+                <div>录入：{new Date(detailItem.created_at).toLocaleDateString("zh-CN")}</div>
+                {detailItem.last_worn_date && (
+                  <div>上次穿着：{new Date(detailItem.last_worn_date).toLocaleDateString("zh-CN")}</div>
+                )}
               </div>
 
               <div style={{ display: "flex", gap: 8, marginTop: 16, paddingTop: 14, borderTop: "1px solid #f0f0f0" }}>

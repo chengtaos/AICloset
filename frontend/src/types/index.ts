@@ -16,6 +16,7 @@ export interface ClothingItem {
   purchase_price: number;
   status: string;
   wear_count: number;
+  last_worn_date: string | null;
   created_at: string;
   updated_at: string;
 }

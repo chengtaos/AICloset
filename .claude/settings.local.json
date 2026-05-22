@@ -14,7 +14,11 @@
       "Bash(./node_modules/.bin/vite build *)",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(rm -f c:/Users/chengtao/Desktop/AiCloset/backend/uploads/*.png)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\chengtao\\Desktop\\AiCloset\\backend\\uploads"
     ]
   }
 }

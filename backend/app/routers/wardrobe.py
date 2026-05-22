@@ -38,9 +38,10 @@ def api_list_items(
     season: Optional[str] = Query(None),
     style: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    sort: str = Query("created_at"),
     db: Session = Depends(get_db),
 ):
-    return list_items(db, category=category, season=season, style=style, search=search)
+    return list_items(db, category=category, season=season, style=style, search=search, sort=sort)
 
 
 @router.get("/items/{item_id}", response_model=ClothingItemResponse)

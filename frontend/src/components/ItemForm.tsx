@@ -171,6 +171,29 @@ function BatchItemCard({
               </div>
             </div>
           </div>
+
+          {/* 品牌 + 价格 */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
+            <div>
+              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>品牌</div>
+              <Input
+                size="small"
+                value={item.brand || ""}
+                onChange={(e) => onUpdate({ ...item, brand: e.target.value })}
+                placeholder="Uniqlo"
+                style={{ width: "100%" }}
+              />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>购入价格</div>
+              <InputNumber
+                size="small" min={0} prefix="¥"
+                value={item.purchase_price ?? 0}
+                onChange={(v) => onUpdate({ ...item, purchase_price: v ?? 0 })}
+                style={{ width: "100%" }}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

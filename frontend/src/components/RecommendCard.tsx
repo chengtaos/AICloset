@@ -1,9 +1,14 @@
+import { Button } from "antd";
+import { CheckOutlined } from "@ant-design/icons";
 import type { RecommendResponse, ClothingItem } from "../types";
 
 interface Props {
   loading: boolean;
   data: RecommendResponse | null;
   itemMap: Map<number, ClothingItem>;
+  onAccept?: (itemIds: number[], idx: number) => void;
+  accepting?: boolean;
+  acceptedIdx?: number | null;
 }
 
 const WEATHER_ICON: Record<string, string> = {
@@ -11,7 +16,7 @@ const WEATHER_ICON: Record<string, string> = {
   "雨": "🌧", "雷阵雨": "⛈", "雪": "❄", "小雪": "🌨",
 };
 
-export default function RecommendCard({ loading, data, itemMap }: Props) {
+export default function RecommendCard({ loading, data, itemMap, onAccept, accepting, acceptedIdx }: Props) {
   if (loading) {
     return (
       <div style={{ textAlign: "center", padding: "80px 0", color: "#8c8c8c" }}>
@@ -87,9 +92,26 @@ export default function RecommendCard({ loading, data, itemMap }: Props) {
             ))}
           </div>
 
-          <div style={{ fontSize: 13, color: "#4a5c6c", lineHeight: 1.7, borderTop: "1px solid #f0f0f0", paddingTop: 14 }}>
+          <div style={{ fontSize: 13, color: "#4a5c6c", lineHeight: 1.7, borderTop: "1px solid #f0f0f0", paddingTop: 14, marginBottom: 14 }}>
             {sug.reason}
           </div>
+
+          {onAccept && acceptedIdx == null && (
+            <Button
+              icon={<CheckOutlined />}
+              size="middle"
+              loading={accepting}
+              onClick={() => onAccept(sug.items.map((it) => it.id), idx)}
+              style={{ fontSize: 12, fontWeight: 500 }}
+            >
+              就它了
+            </Button>
+          )}
+          {acceptedIdx === idx && (
+            <span style={{ fontSize: 12, color: "#4a5c6c", fontWeight: 500 }}>
+              <CheckOutlined style={{ marginRight: 4 }} />今天这么穿
+            </span>
+          )}
         </div>
       ))}
     </div>

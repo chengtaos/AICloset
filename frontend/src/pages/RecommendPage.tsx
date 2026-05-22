@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Button, Select, Input } from "antd";
+import { Button, Select, Input, message } from "antd";
 import { ThunderboltOutlined, ExperimentOutlined } from "@ant-design/icons";
 import type { RecommendResponse } from "../types";
-import { fetchItems, recommendDaily, recommendScenario } from "../api/client";
+import { fetchItems, recommendDaily, recommendScenario, recordWear } from "../api/client";
 import RecommendCard from "../components/RecommendCard";
 
 const CITIES = [
@@ -24,11 +24,16 @@ export default function RecommendPage() {
   const [city, setCity] = useState("北京");
   const [mode, setMode] = useState<"daily" | "scenario">("daily");
   const [scenarioDesc, setScenarioDesc] = useState("");
+  const [acceptedIdx, setAcceptedIdx] = useState<number | null>(null);
 
   const { data: items = [] } = useQuery({ queryKey: ["items"], queryFn: () => fetchItems() });
 
   const dailyMutation = useMutation({ mutationFn: () => recommendDaily(city) });
   const scenarioMutation = useMutation({ mutationFn: (desc: string) => recommendScenario(desc, city) });
+  const wearMutation = useMutation({
+    mutationFn: ({ itemIds, idx }: { itemIds: number[]; idx: number }) => recordWear({ item_ids: itemIds }),
+    onSuccess: (_, { idx }) => { setAcceptedIdx(idx); message.success("已记录穿着，今天就这么穿！"); },
+  });
 
   const itemMap = useMemo(() => {
     const map = new Map<number, import("../types").ClothingItem>();
@@ -121,7 +126,14 @@ export default function RecommendPage() {
       </div>
 
       {/* 结果 */}
-      <RecommendCard loading={loading} data={data} itemMap={itemMap} />
+      <RecommendCard
+        loading={loading}
+        data={data}
+        itemMap={itemMap}
+        accepting={wearMutation.isPending}
+        acceptedIdx={acceptedIdx}
+        onAccept={(itemIds, idx) => wearMutation.mutate({ itemIds, idx })}
+      />
     </div>
   );
 }

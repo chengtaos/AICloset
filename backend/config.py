@@ -11,3 +11,8 @@ DEEPSEEK_MODEL = "deepseek-chat"
 # 高德天气
 AMAP_API_KEY = os.getenv("AMAP_API_KEY", "")
 AMAP_WEATHER_URL = "https://restapi.amap.com/v3/weather/weatherInfo"
+
+# 阿里云 DashScope（视觉识别）
+DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY", "")
+DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+DASHSCOPE_VISION_MODEL = "qwen-vl-max"

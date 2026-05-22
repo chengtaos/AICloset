@@ -1,7 +1,9 @@
-import { useEffect } from "react";
-import { Modal, Form, Input, Select, InputNumber } from "antd";
+import { useEffect, useRef, useState } from "react";
+import { Modal, Form, Input, Select, InputNumber, Upload, message } from "antd";
+import { CameraOutlined, LoadingOutlined } from "@ant-design/icons";
 import type { ClothingItem, ClothingItemCreate } from "../types";
 import { CATEGORY_LABELS, SEASONS, STYLE_TAGS, SUB_CATEGORIES } from "../types";
+import { autoClassify } from "../api/client";
 
 interface Props {
   open: boolean;
@@ -18,12 +20,40 @@ const COLORS_PRESET = [
 export default function ItemForm({ open, editingItem, onClose, onSubmit }: Props) {
   const [form] = Form.useForm();
   const category = Form.useWatch("category", form);
+  const [recognizing, setRecognizing] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
       editingItem ? form.setFieldsValue(editingItem) : form.resetFields();
     }
   }, [open, editingItem, form]);
+
+  const handlePhotoRecognition = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setRecognizing(true);
+    try {
+      const result = await autoClassify(file);
+      form.setFieldsValue({
+        category: result.category,
+        sub_category: result.sub_category,
+        colors: result.colors,
+        style_tags: result.style_tags,
+        seasons: result.seasons,
+        material: result.material,
+        temp_min: result.temp_min,
+        temp_max: result.temp_max,
+      });
+      message.success(`识别完成：${result.sub_category} · ${result.colors.join("、")}`);
+    } catch {
+      message.error("识别失败，请确认图片清晰且包含单件衣物");
+    } finally {
+      setRecognizing(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
 
   const subCategories = category ? SUB_CATEGORIES[category as string] || [] : [];
 
@@ -36,6 +66,40 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit }: Props
       width={560}
       destroyOnClose
     >
+      {/* 拍照识别按钮 */}
+      <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          style={{ display: "none" }}
+          onChange={handlePhotoRecognition}
+        />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={recognizing}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            border: "1px solid #e8eaed", borderRadius: 4,
+            background: "#fff", padding: "8px 16px",
+            cursor: recognizing ? "not-allowed" : "pointer",
+            fontSize: 13, color: "#4a5c6c", fontWeight: 500,
+          }}
+        >
+          {recognizing ? (
+            <LoadingOutlined style={{ fontSize: 16 }} />
+          ) : (
+            <CameraOutlined style={{ fontSize: 16 }} />
+          )}
+          {recognizing ? "AI 识别中…" : "拍照识别"}
+        </button>
+        <span style={{ fontSize: 11, color: "#bfbfbf" }}>
+          拍照自动识别品类、颜色、风格
+        </span>
+      </div>
+
       <Form
         form={form}
         layout="vertical"

@@ -43,6 +43,27 @@ export async function deleteItem(id: number) {
   await api.delete(`/wardrobe/items/${id}`);
 }
 
+export interface AutoClassifyResult {
+  category: string;
+  sub_category: string;
+  colors: string[];
+  style_tags: string[];
+  seasons: string[];
+  material: string[];
+  temp_min: number;
+  temp_max: number;
+  image_path: string;
+}
+
+export async function autoClassify(file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await api.post<AutoClassifyResult>("/wardrobe/auto-classify", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
 export async function uploadImage(itemId: number, file: File) {
   const form = new FormData();
   form.append("file", file);

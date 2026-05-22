@@ -25,6 +25,7 @@ from app.services.wardrobe import (
     record_wear,
     get_wear_history,
 )
+from app.agent.vision import classify_image
 
 router = APIRouter(prefix="/api/wardrobe", tags=["wardrobe"])
 
@@ -87,6 +88,25 @@ async def api_upload_image(item_id: int, file: UploadFile = File(...), db: Sessi
     path_str = f"uploads/{filename}"
     item = add_image(db, item_id, path_str)
     return item
+
+
+@router.post("/auto-classify")
+async def api_auto_classify(file: UploadFile = File(...)):
+    """拍照识别衣物：上传图片 → AI 返回分类结果。"""
+    ext = Path(file.filename).suffix or ".jpg"
+    filename = f"classify_{uuid.uuid4().hex}{ext}"
+    filepath = UPLOAD_DIR / filename
+
+    content = await file.read()
+    filepath.write_bytes(content)
+
+    result = classify_image(str(filepath))
+    if result is None:
+        raise HTTPException(status_code=422, detail="AI 识别失败，请确认图片清晰且包含单件衣物")
+
+    # 补充图片路径
+    result["image_path"] = f"uploads/{filename}"
+    return result
 
 
 @router.get("/stats", response_model=WardrobeStats)

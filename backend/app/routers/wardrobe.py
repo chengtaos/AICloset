@@ -26,6 +26,7 @@ from app.services.wardrobe import (
     get_wear_history,
 )
 from app.agent.vision import classify_image
+from app.agent.segmentation import segment_image
 
 router = APIRouter(prefix="/api/wardrobe", tags=["wardrobe"])
 
@@ -85,15 +86,16 @@ async def api_upload_image(item_id: int, file: UploadFile = File(...), db: Sessi
     content = await file.read()
     filepath.write_bytes(content)
 
-    # 简单的图片压缩（Pillow 可选，这里保持原样用于 MVP）
-    path_str = f"uploads/{filename}"
+    # 服饰分割：抠出主体，透明背景；失败则用原图
+    seg_path = segment_image(str(filepath))
+    path_str = seg_path if seg_path else f"uploads/{filename}"
     item = add_image(db, item_id, path_str)
     return item
 
 
 @router.post("/auto-classify")
 async def api_auto_classify(file: UploadFile = File(...)):
-    """拍照识别衣物：上传图片 → AI 返回分类结果。"""
+    """拍照识别衣物：上传图片 → AI 返回分类结果 → 服饰分割抠图。"""
     ext = Path(file.filename).suffix or ".jpg"
     filename = f"classify_{uuid.uuid4().hex}{ext}"
     filepath = UPLOAD_DIR / filename
@@ -105,8 +107,9 @@ async def api_auto_classify(file: UploadFile = File(...)):
     if result is None:
         raise HTTPException(status_code=422, detail="AI 识别失败，请确认图片清晰且包含单件衣物")
 
-    # 补充图片路径
-    result["image_path"] = f"uploads/{filename}"
+    # 服饰分割：抠出主体，透明背景
+    seg_path = segment_image(str(filepath))
+    result["image_path"] = seg_path if seg_path else f"uploads/{filename}"
     return result
 
 

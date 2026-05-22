@@ -16,3 +16,7 @@ AMAP_WEATHER_URL = "https://restapi.amap.com/v3/weather/weatherInfo"
 DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY", "")
 DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 DASHSCOPE_VISION_MODEL = "qwen-vl-max"
+
+# 阿里云 服饰分割（SegmentCloth）
+ALIBABA_CLOUD_ACCESS_KEY_ID = os.getenv("ALIBABA_CLOUD_ACCESS_KEY_ID", "")
+ALIBABA_CLOUD_ACCESS_KEY_SECRET = os.getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET", "")

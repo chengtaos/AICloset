@@ -15,7 +15,14 @@
       "Bash(git init *)",
       "Bash(git add *)",
       "Bash(git rm *)",
-      "Bash(rm -f c:/Users/chengtao/Desktop/AiCloset/backend/uploads/*.png)"
+      "Bash(rm -f c:/Users/chengtao/Desktop/AiCloset/backend/uploads/*.png)",
+      "Bash(python -c \"from alibabacloud_imageenhan20190930.client import Client; import inspect; members = [m for m in dir\\(Client\\) if 'segment' in m.lower\\(\\)]; print\\(members\\)\")",
+      "Bash(python -c \"from alibabacloud_imageenhan20190930.client import Client; print\\([m for m in dir\\(Client\\) if not m.startswith\\('_'\\)]\\)\")",
+      "Bash(python -c \"from alibabacloud_imageenhan20190930 import models; print\\([m for m in dir\\(models\\) if 'segment' in m.lower\\(\\) or 'cloth' in m.lower\\(\\) or 'Segment' in m]\\)\")",
+      "Bash(python -c \"from alibabacloud_imageseg20191230.client import Client; methods = [m for m in dir\\(Client\\) if 'segment' in m.lower\\(\\)]; print\\(methods\\)\")",
+      "Bash(python -c \"from alibabacloud_imageseg20191230 import models; print\\([m for m in dir\\(models\\) if 'Cloth' in m]\\)\")",
+      "Bash(python -c \"from alibabacloud_imageseg20191230 import models; import inspect; r = models.SegmentClothAdvanceRequest\\(\\); print\\(inspect.signature\\(r.__init__\\)\\)\")",
+      "Bash(python -c \"from alibabacloud_imageseg20191230 import models; print\\([a for a in dir\\(models.SegmentClothAdvanceRequest\\) if not a.startswith\\('_'\\)]\\)\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\chengtao\\Desktop\\AiCloset\\backend\\uploads"

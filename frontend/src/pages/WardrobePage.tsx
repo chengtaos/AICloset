@@ -254,9 +254,18 @@ export default function WardrobePage() {
                 {detailItem.purchase_price > 0 && <div>价格：¥{detailItem.purchase_price}</div>}
                 <div>穿过 {detailItem.wear_count} 次</div>
                 <div>录入：{new Date(detailItem.created_at).toLocaleDateString("zh-CN")}</div>
-                {detailItem.last_worn_date && (
-                  <div>上次穿着：{new Date(detailItem.last_worn_date).toLocaleDateString("zh-CN")}</div>
-                )}
+                <div>
+                  上次穿着：
+                  {detailItem.last_worn_date
+                    ? (() => {
+                        const d = new Date(detailItem.last_worn_date);
+                        const now = new Date();
+                        const diff = Math.floor((now.getTime() - d.getTime()) / 86400000);
+                        const rel = diff === 0 ? "今天" : diff === 1 ? "昨天" : `${diff}天前`;
+                        return `${rel}（${d.toLocaleDateString("zh-CN")}）`;
+                      })()
+                    : "从未"}
+                </div>
               </div>
 
               <div style={{ display: "flex", gap: 8, marginTop: 16, paddingTop: 14, borderTop: "1px solid #f0f0f0" }}>

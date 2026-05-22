@@ -8,23 +8,6 @@ interface Props {
   onDelete?: () => void;
 }
 
-function formatWornTime(iso: string | null): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const now = new Date();
-  const diff = Math.floor((now.getTime() - d.getTime()) / 86400000);
-  if (diff === 0) return "今天";
-  if (diff === 1) return "昨天";
-  if (diff < 7) return `${diff}天前`;
-  if (diff < 14) return "1周前";
-  if (diff < 21) return "2周前";
-  if (diff < 28) return "3周前";
-  if (diff < 60) return "1个月前";
-  if (diff < 90) return "2个月前";
-  if (diff < 180) return "3个月前";
-  return "半年前";
-}
-
 export default function ItemCard({ item, onClick, onDelete }: Props) {
   const [imgError, setImgError] = useState(false);
   const [hover, setHover] = useState(false);
@@ -38,9 +21,15 @@ export default function ItemCard({ item, onClick, onDelete }: Props) {
       style={{
         cursor: "pointer",
         background: "#fff",
+        borderRadius: 8,
+        border: "1px solid #eee",
+        overflow: "hidden",
         position: "relative",
-        opacity: hover ? 0.7 : 1,
-        transition: "opacity 0.2s",
+        boxShadow: hover
+          ? "0 8px 24px rgba(0,0,0,0.06)"
+          : "0 1px 2px rgba(0,0,0,0.03)",
+        transform: hover ? "translateY(-2px)" : "translateY(0)",
+        transition: "box-shadow 0.25s ease, transform 0.25s ease",
       }}
     >
       {onDelete && (
@@ -49,12 +38,13 @@ export default function ItemCard({ item, onClick, onDelete }: Props) {
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
           title="删除"
           style={{
-            position: "absolute", top: 4, right: 4, zIndex: 1,
-            width: 22, height: 22, border: "none", borderRadius: 2,
-            background: "rgba(0,0,0,0.35)", color: "#fff",
-            fontSize: 13, cursor: "pointer",
+            position: "absolute", top: 6, right: 6, zIndex: 1,
+            width: 20, height: 20, border: "none", borderRadius: 4,
+            background: "rgba(0,0,0,0.3)", color: "#fff",
+            fontSize: 11, cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
             opacity: hover ? 1 : 0, transition: "opacity 0.15s",
+            backdropFilter: "blur(2px)",
           }}
         >
           <DeleteOutlined />
@@ -64,7 +54,7 @@ export default function ItemCard({ item, onClick, onDelete }: Props) {
       <div style={{
         width: "100%",
         aspectRatio: "3/4",
-        background: hasImg ? "transparent" : "#f4f4f4",
+        background: hasImg ? "transparent" : "#f6f6f6",
         overflow: "hidden",
       }}>
         {hasImg ? (
@@ -80,19 +70,13 @@ export default function ItemCard({ item, onClick, onDelete }: Props) {
             width: "100%", height: "100%",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d9d9d9" strokeWidth="1">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d9d9d9" strokeWidth="1">
               <rect x="2" y="6" width="20" height="13" rx="2" />
               <circle cx="8.5" cy="10.5" r="1.5" />
               <path d="M2 15l5-4 4 3 3-5 8 8" />
             </svg>
           </div>
         )}
-      </div>
-
-      <div style={{ padding: "6px 0 2px", textAlign: "center" }}>
-        <span style={{ fontSize: 10, color: "#bfbfbf" }}>
-          {item.last_worn_date ? formatWornTime(item.last_worn_date) : "未穿"}
-        </span>
       </div>
     </div>
   );

@@ -7,21 +7,18 @@ export default function StatsPage() {
 
   if (!stats) return null;
 
-  const avgPrice = stats.total_items > 0 ? Math.round(stats.total_value / stats.total_items) : 0;
-
   return (
     <div>
       <h2 style={{ fontSize: 20, fontWeight: 600, color: "#1a1a1a", margin: "0 0 24px" }}>统计</h2>
 
       {/* 概览 */}
       <div style={{
-        display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12,
+        display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12,
         marginBottom: 24,
       }}>
         {[
           { label: "衣物总数", value: `${stats.total_items} 件` },
           { label: "衣橱价值", value: `¥${stats.total_value.toLocaleString()}` },
-          { label: "单件均价", value: `¥${avgPrice.toLocaleString()}` },
           { label: "沉睡单品", value: `${stats.sleeping_items.length} 件` },
         ].map(({ label, value }) => (
           <div key={label} style={{

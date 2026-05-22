@@ -40,6 +40,21 @@ export default function WardrobePage() {
       setFormOpen(false);
     },
   });
+
+  const handleBatchCreate = async (items: ClothingItemCreate[], imageFile: File) => {
+    let count = 0;
+    for (const item of items) {
+      try {
+        await createItem(item);
+        count++;
+      } catch {
+        message.error(`${item.sub_category} 录入失败`);
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ["items"] });
+    message.success(`已录入 ${count} 件`);
+    setFormOpen(false);
+  };
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<ClothingItemCreate> }) => updateItem(id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["items"] }); message.success("已更新"); setFormOpen(false); setEditingId(null); },
@@ -205,6 +220,7 @@ export default function WardrobePage() {
             createMutation.mutate(values);
           }
         }}
+        onBatchSubmit={handleBatchCreate}
       />
 
       {/* 详情弹窗 */}

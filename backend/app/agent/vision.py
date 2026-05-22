@@ -14,9 +14,11 @@ logger = logging.getLogger(__name__)
 
 _client: OpenAI | None = None
 
-SYSTEM_PROMPT = """你是一个专业的女性服装分类助手，服务于电子衣橱应用。分析图片中的衣物，返回严格 JSON。
+SYSTEM_PROMPT = """你是一个专业的女性服装分类助手，服务于电子衣橱应用。分析图片中的所有衣物，返回严格 JSON 数组，每件衣物一个对象。
 
-字段说明：
+如果图中只有一件衣物，返回长度为1的数组；如果有多件，每个都识别出来；如果不是衣物，返回空数组。
+
+每件衣物的字段说明：
 - category: 品类，必须是以下之一：top / bottom / outer / dress / shoes / accessory / bag
 - sub_category: 子品类，从对应品类下的选项中选最匹配的：
   上衣(top): T恤、衬衫、卫衣、毛衣、针织衫、背心、吊带、打底衫、雪纺衫、蕾丝衫、一字肩、方领上衣、Polo衫、短款上衣、罩衫、马甲、抹胸、泡泡袖
@@ -32,10 +34,10 @@ SYSTEM_PROMPT = """你是一个专业的女性服装分类助手，服务于电�
 - material: 材质数组，从以下推测1-2个：棉、麻、羊毛、羊绒、真丝、涤纶、牛仔、皮革、羽绒、棉麻、雪纺、蕾丝、缎面、针织、灯芯绒、天鹅绒、欧根纱、莫代尔、莱赛尔、醋酸、PU、人造皮草、马海毛、府绸、丹宁、麂皮、漆皮
 - temp_min / temp_max: 适用温度范围（℃），根据衣物厚薄推测，例如薄T恤15-35、毛衣0-18、羽绒服-10-5
 
-返回格式：
-{"category":"top","sub_category":"T恤","colors":["白色"],"style_tags":["休闲","法式"],"seasons":["春","夏"],"material":["棉"],"temp_min":15,"temp_max":35}
+返回格式（JSON 数组）：
+[{"category":"top","sub_category":"T恤","colors":["白色"],"style_tags":["休闲","法式"],"seasons":["春","夏"],"material":["棉"],"temp_min":15,"temp_max":35}]
 
-只返回 JSON，不要其他内容。"""
+只返回 JSON 数组，不要其他内容。"""
 
 
 def _get_client() -> OpenAI | None:
@@ -47,9 +49,9 @@ def _get_client() -> OpenAI | None:
     return _client
 
 
-def classify_image(image_path: str) -> dict | None:
+def classify_image(image_path: str) -> list[dict] | None:
     """
-    识别图片中的衣物，返回分类 dict。
+    识别图片中的所有衣物，返回分类 dict 列表。
     失败返回 None。
     """
     client = _get_client()
@@ -61,7 +63,6 @@ def classify_image(image_path: str) -> dict | None:
         with open(image_path, "rb") as f:
             image_data = base64.b64encode(f.read()).decode("utf-8")
 
-        # 判断图片类型
         ext = image_path.lower().rsplit(".", 1)[-1]
         mime = f"image/{'jpeg' if ext == 'jpg' else ext}"
 
@@ -78,32 +79,40 @@ def classify_image(image_path: str) -> dict | None:
                             "type": "image_url",
                             "image_url": {"url": f"data:{mime};base64,{image_data}"},
                         },
-                        {"type": "text", "text": "识别这件衣物"},
+                        {"type": "text", "text": "识别图片中的所有衣物"},
                     ],
                 },
             ],
-            max_tokens=500,
+            max_tokens=800,
             temperature=0.1,
         )
 
         content = response.choices[0].message.content or ""
-        # 去掉可能的 markdown 代码块包装
         content = content.strip()
         if content.startswith("```"):
             content = content.split("\n", 1)[-1]
             if content.endswith("```"):
                 content = content[:-3]
 
-        result = json.loads(content)
+        results = json.loads(content)
+
+        if not isinstance(results, list):
+            logger.warning("模型返回非数组格式，尝试包装")
+            if isinstance(results, dict):
+                results = [results]
+            else:
+                return None
 
         # 类型校验
         valid_categories = {"top", "bottom", "outer", "dress", "shoes", "accessory", "bag"}
-        if result.get("category") not in valid_categories:
-            logger.warning("模型返回无效品类: %s", result.get("category"))
+        valid = [r for r in results if isinstance(r, dict) and r.get("category") in valid_categories]
+
+        if not valid:
+            logger.warning("模型返回无有效品类: %s", results)
             return None
 
-        logger.info("Qwen-VL 识别成功: %s %s", result.get("category"), result.get("sub_category"))
-        return result
+        logger.info("Qwen-VL 识别成功: %d 件衣物", len(valid))
+        return valid
 
     except Exception as e:
         logger.error("视觉识别失败: %s", e)

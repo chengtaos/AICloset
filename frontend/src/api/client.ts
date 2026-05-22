@@ -45,15 +45,7 @@ export async function deleteItem(id: number) {
 }
 
 export interface AutoClassifyResult {
-  category: string;
-  sub_category: string;
-  colors: string[];
-  style_tags: string[];
-  seasons: string[];
-  material: string[];
-  temp_min: number;
-  temp_max: number;
-  image_path: string;
+  items: ClothingItemCreate[];
 }
 
 export async function autoClassify(file: File) {

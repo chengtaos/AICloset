@@ -95,7 +95,7 @@ async def api_upload_image(item_id: int, file: UploadFile = File(...), db: Sessi
 
 @router.post("/auto-classify")
 async def api_auto_classify(file: UploadFile = File(...)):
-    """拍照识别衣物：上传图片 → AI 返回分类结果 → 服饰分割抠图。"""
+    """拍照识别衣物：上传图片 → AI 返回所有衣物分类结果 → 服饰分割抠图。"""
     ext = Path(file.filename).suffix or ".jpg"
     filename = f"classify_{uuid.uuid4().hex}{ext}"
     filepath = UPLOAD_DIR / filename
@@ -103,14 +103,18 @@ async def api_auto_classify(file: UploadFile = File(...)):
     content = await file.read()
     filepath.write_bytes(content)
 
-    result = classify_image(str(filepath))
-    if result is None:
-        raise HTTPException(status_code=422, detail="AI 识别失败，请确认图片清晰且包含单件衣物")
+    results = classify_image(str(filepath))
+    if results is None:
+        raise HTTPException(status_code=422, detail="AI 识别失败，请确认图片清晰且包含衣物")
 
-    # 服饰分割：抠出主体，透明背景
+    # 服饰分割：单件用抠图，多件用原图
     seg_path = segment_image(str(filepath))
-    result["image_path"] = seg_path if seg_path else f"uploads/{filename}"
-    return result
+    base_image = seg_path if (seg_path and len(results) == 1) else f"uploads/{filename}"
+
+    for item in results:
+        item["image_path"] = base_image
+
+    return {"items": results}
 
 
 @router.get("/stats", response_model=WardrobeStats)

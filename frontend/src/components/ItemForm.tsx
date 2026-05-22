@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Modal, Form, Input, Select, InputNumber, Upload, message } from "antd";
 import { CameraOutlined, LoadingOutlined } from "@ant-design/icons";
 import type { ClothingItem, ClothingItemCreate } from "../types";
-import { CATEGORY_LABELS, SEASONS, STYLE_TAGS, SUB_CATEGORIES } from "../types";
+import { CATEGORY_LABELS, SEASONS, STYLE_TAGS, SUB_CATEGORIES, COLORS_PRESET, MATERIALS } from "../types";
 import { autoClassify } from "../api/client";
 
 interface Props {
@@ -11,11 +11,6 @@ interface Props {
   onClose: () => void;
   onSubmit: (values: ClothingItemCreate) => void;
 }
-
-const COLORS_PRESET = [
-  "白色", "黑色", "灰色", "蓝色", "藏青", "卡其色", "棕色", "米色",
-  "红色", "粉色", "绿色", "牛仔蓝", "条纹", "格纹",
-];
 
 export default function ItemForm({ open, editingItem, onClose, onSubmit }: Props) {
   const [form] = Form.useForm();
@@ -149,10 +144,7 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit }: Props
         </div>
 
         <Form.Item name="material" label="材质">
-          <Select mode="multiple" options={
-            ["棉", "麻", "羊毛", "羊绒", "真丝", "涤纶", "牛仔", "皮革", "羽绒", "棉麻", "雪纺"]
-              .map((m) => ({ value: m, label: m }))
-          } />
+          <Select mode="multiple" options={MATERIALS.map((m) => ({ value: m, label: m }))} />
         </Form.Item>
       </Form>
     </Modal>

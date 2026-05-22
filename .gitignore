@@ -1,0 +1,53 @@
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+dist/
+build/
+.venv/
+venv/
+*.so
+
+# ── Environment & Secrets ──
+.env
+*.local
+*.secret
+secrets.*
+
+# ── Database ──
+backend/data/
+*.db
+*.db-journal
+*.db-wal
+
+# ── Uploads (keep directory, ignore files) ──
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# ── Frontend ──
+frontend/node_modules/
+frontend/dist/
+
+# ── Tests ──
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ── IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── Misc ──
+*.log
+*.tmp

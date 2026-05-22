@@ -1,0 +1,127 @@
+import { useState, useMemo } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Button, Select, Input } from "antd";
+import { ThunderboltOutlined, ExperimentOutlined } from "@ant-design/icons";
+import type { RecommendResponse } from "../types";
+import { fetchItems, recommendDaily, recommendScenario } from "../api/client";
+import RecommendCard from "../components/RecommendCard";
+
+const CITIES = [
+  "北京", "上海", "广州", "深圳", "成都", "杭州", "武汉", "西安",
+  "重庆", "南京", "天津", "苏州", "长沙", "郑州", "济南", "青岛",
+];
+
+const QUICK_SCENARIOS = [
+  { label: "通勤", desc: "日常通勤穿什么？" },
+  { label: "面试", desc: "明天有个重要面试，推荐一套正式得体又不死板的搭配" },
+  { label: "约会", desc: "周末约会穿什么？要好看但不刻意" },
+  { label: "运动", desc: "去健身房，推荐舒适的运动穿搭" },
+  { label: "聚会", desc: "朋友聚会，轻松时髦的搭配" },
+  { label: "度假", desc: "去海边度假，清爽的度假穿搭" },
+];
+
+export default function RecommendPage() {
+  const [city, setCity] = useState("北京");
+  const [mode, setMode] = useState<"daily" | "scenario">("daily");
+  const [scenarioDesc, setScenarioDesc] = useState("");
+
+  const { data: items = [] } = useQuery({ queryKey: ["items"], queryFn: () => fetchItems() });
+
+  const dailyMutation = useMutation({ mutationFn: () => recommendDaily(city) });
+  const scenarioMutation = useMutation({ mutationFn: (desc: string) => recommendScenario(desc, city) });
+
+  const itemMap = useMemo(() => {
+    const map = new Map<number, import("../types").ClothingItem>();
+    items.forEach((it) => map.set(it.id, it));
+    return map;
+  }, [items]);
+
+  const data: RecommendResponse | null = mode === "daily" ? dailyMutation.data ?? null : scenarioMutation.data ?? null;
+  const loading = mode === "daily" ? dailyMutation.isPending : scenarioMutation.isPending;
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 20, fontWeight: 600, color: "#1a1a1a", margin: "0 0 24px" }}>穿搭推荐</h2>
+
+      {/* 模式切换 + 输入 */}
+      <div style={{
+        border: "1px solid #e8eaed", borderRadius: 4, background: "#fff",
+        padding: 20, marginBottom: 24,
+      }}>
+        {/* Tab */}
+        <div style={{ display: "flex", gap: 0, marginBottom: 20 }}>
+          <button
+            onClick={() => setMode("daily")}
+            style={{
+              flex: 1, border: "none", background: mode === "daily" ? "#f0f2f5" : "transparent",
+              padding: "8px 0", fontSize: 13, fontWeight: mode === "daily" ? 600 : 400,
+              color: mode === "daily" ? "#1a1a1a" : "#8c8c8c", cursor: "pointer",
+              borderRadius: 4, transition: "background 0.15s",
+            }}
+          >
+            <ThunderboltOutlined style={{ marginRight: 6 }} />每日推荐
+          </button>
+          <button
+            onClick={() => setMode("scenario")}
+            style={{
+              flex: 1, border: "none", background: mode === "scenario" ? "#f0f2f5" : "transparent",
+              padding: "8px 0", fontSize: 13, fontWeight: mode === "scenario" ? 600 : 400,
+              color: mode === "scenario" ? "#1a1a1a" : "#8c8c8c", cursor: "pointer",
+              borderRadius: 4, transition: "background 0.15s",
+            }}
+          >
+            <ExperimentOutlined style={{ marginRight: 6 }} />场景推荐
+          </button>
+        </div>
+
+        {/* 城市选择 */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: mode === "scenario" ? 12 : 0 }}>
+          <span style={{ fontSize: 13, color: "#8c8c8c" }}>城市</span>
+          <Select value={city} onChange={setCity} style={{ width: 130 }}
+            options={CITIES.map((c) => ({ value: c, label: c }))} showSearch size="middle" />
+        </div>
+
+        {/* 场景输入 */}
+        {mode === "scenario" && (
+          <div style={{ marginTop: 12 }}>
+            <Input.TextArea
+              value={scenarioDesc}
+              onChange={(e) => setScenarioDesc(e.target.value)}
+              placeholder='描述场景，如："明天有个面试，推荐一套靠谱的"'
+              autoSize={{ minRows: 1, maxRows: 3 }}
+              style={{ marginBottom: 12 }}
+            />
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+              {QUICK_SCENARIOS.map((s) => (
+                <span key={s.label}
+                  onClick={() => setScenarioDesc(s.desc)}
+                  style={{
+                    fontSize: 11, color: scenarioDesc === s.desc ? "#4a5c6c" : "#8c8c8c",
+                    border: `1px solid ${scenarioDesc === s.desc ? "#4a5c6c" : "#e8eaed"}`,
+                    borderRadius: 2, padding: "3px 10px", cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                >{s.label}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* CTA */}
+        <Button
+          block
+          size="large"
+          style={{ height: 44, fontWeight: 500, fontSize: 14 }}
+          onClick={() => mode === "daily" ? dailyMutation.mutate() : scenarioMutation.mutate(scenarioDesc)}
+          loading={loading}
+          disabled={mode === "scenario" && !scenarioDesc.trim()}
+        >
+          {mode === "daily" ? "今日穿什么？" : "生成推荐"}
+        </Button>
+      </div>
+
+      {/* 结果 */}
+      <RecommendCard loading={loading} data={data} itemMap={itemMap} />
+    </div>
+  );
+}

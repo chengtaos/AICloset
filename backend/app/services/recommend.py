@@ -114,7 +114,7 @@ def _run_recommend_pipeline(
     return [{"item_ids": s["items"], "reason": s["reason"]} for s in raw]
 
 
-def recommend_daily(db: Session, req: DailyRecommendRequest, user_id: int = 1) -> RecommendResponse:
+def recommend_daily(db: Session, req: DailyRecommendRequest, user_id: int) -> RecommendResponse:
     """日常推荐：根据天气和场合生成穿搭建议。"""
     weather = get_weather(req.city)
     context = {"city": req.city, "occasion": req.occasion, "weather": weather.model_dump()}
@@ -122,7 +122,7 @@ def recommend_daily(db: Session, req: DailyRecommendRequest, user_id: int = 1) -
     return _build_response(db, weather, suggestions, user_id, "daily", context)
 
 
-def recommend_scenario(db: Session, req: ScenarioRecommendRequest, user_id: int = 1) -> RecommendResponse:
+def recommend_scenario(db: Session, req: ScenarioRecommendRequest, user_id: int) -> RecommendResponse:
     """场景推荐：根据自然语言描述识别场合后生成穿搭建议。"""
     weather = get_weather(req.city)
     occasion = _resolve_occasion(req.description)

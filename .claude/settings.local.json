@@ -69,7 +69,11 @@
       "Bash(curl -s -X POST http://localhost:8000/api/wardrobe/items -H \"Content-Type: application/json\" -d '{\"category\":\"pants\",\"sub_category\":\"牛仔裤\",\"colors\":[\"蓝色\"],\"brand\":\"Levi\",\"material\":[\"牛仔\"],\"seasons\":[\"春\",\"秋\"],\"style_tags\":[\"休闲\",\"美式\"],\"temp_min\":10,\"temp_max\":28}')",
       "Bash(curl -s -X POST http://localhost:8000/api/wardrobe/items -H \"Content-Type: application/json\" -d '{\"category\":\"shoes\",\"sub_category\":\"运动鞋\",\"colors\":[\"白色\"],\"brand\":\"Nike\",\"material\":[\"网面\"],\"seasons\":[\"春\",\"夏\",\"秋\"],\"style_tags\":[\"运动\",\"休闲\"],\"temp_min\":5,\"temp_max\":38}')",
       "Bash(curl -s -X POST http://localhost:8000/api/wardrobe/items -H \"Content-Type: application/json\" -d '{\"category\":\"sweater\",\"sub_category\":\"针织开衫\",\"colors\":[\"卡其色\"],\"brand\":\"MUJI\",\"material\":[\"羊毛\"],\"seasons\":[\"秋\",\"冬\"],\"style_tags\":[\"法式\",\"通勤\"],\"temp_min\":0,\"temp_max\":18}')",
-      "Bash(curl -s -X POST http://localhost:8000/api/wardrobe/items -H \"Content-Type: application/json\" -d '{\"category\":\"outer\",\"sub_category\":\"风衣\",\"colors\":[\"卡其色\"],\"brand\":\"Burberry\",\"material\":[\"棉\"],\"seasons\":[\"春\",\"秋\"],\"style_tags\":[\"通勤\",\"英伦\"],\"temp_min\":5,\"temp_max\":20}')"
+      "Bash(curl -s -X POST http://localhost:8000/api/wardrobe/items -H \"Content-Type: application/json\" -d '{\"category\":\"outer\",\"sub_category\":\"风衣\",\"colors\":[\"卡其色\"],\"brand\":\"Burberry\",\"material\":[\"棉\"],\"seasons\":[\"春\",\"秋\"],\"style_tags\":[\"通勤\",\"英伦\"],\"temp_min\":5,\"temp_max\":20}')",
+      "Bash(taskkill //F //IM uvicorn.exe)",
+      "Bash(pip show *)",
+      "Bash(python -c \"from app.routers import auth, wardrobe, outfits, recommend; print\\('All routers OK'\\); from app.auth import get_current_user, create_token; print\\('Auth OK'\\)\")",
+      "Bash(npm list *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\chengtao\\Desktop\\AiCloset\\backend\\uploads"

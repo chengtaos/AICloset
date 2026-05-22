@@ -91,7 +91,7 @@ def _weighted_pick(
 def filter_candidates(
     db: Session,
     weather: WeatherInfo,
-    user_id: int = 1,
+    user_id: int,
 ) -> dict[str, list[ClothingItem]]:
     """
     粗筛：根据天气条件过滤候选衣物，按品类分组返回。
@@ -129,7 +129,7 @@ def filter_candidates(
 def match(
     db: Session,
     weather: WeatherInfo,
-    user_id: int = 1,
+    user_id: int,
     occasion: str = "",
     limit: int = 3,
     profile: UserProfile | None = None,

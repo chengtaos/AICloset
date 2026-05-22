@@ -20,7 +20,7 @@ UPLOAD_DIR = Path(__file__).parent.parent.parent / "uploads"
 
 def list_items(
     db: Session,
-    user_id: int = 1,
+    user_id: int,
     category: Optional[str] = None,
     season: Optional[str] = None,
     style: Optional[str] = None,

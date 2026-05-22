@@ -4,11 +4,22 @@ from sqlalchemy import Column, Integer, String, Float, Date, DateTime, Text, JSO
 from app.database import Base
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    phone = Column(String(20), unique=True, nullable=False, index=True)
+    nickname = Column(String(50), default="")
+    password_hash = Column(String(255), nullable=False)
+    avatar = Column(String(255), default="")
+    created_at = Column(DateTime, default=func.now())
+
+
 class ClothingItem(Base):
     __tablename__ = "clothing_items"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, default=1, nullable=False, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
     category = Column(String(20), nullable=False)  # blouse, tshirt, hoodie, sweater, outer, pants, shorts, skirt, dress, shoes, bag, accessory
     sub_category = Column(String(30), nullable=False)
     colors = Column(JSON, default=list)         # ["白色", "黑色"]
@@ -31,7 +42,7 @@ class Outfit(Base):
     __tablename__ = "outfits"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, default=1, nullable=False, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
     name = Column(String(100), default="")
     items = Column(JSON, default=list)
     # [{"item_id": 1, "position": "upper"}, {"item_id": 2, "position": "lower"}]
@@ -44,7 +55,7 @@ class WearRecord(Base):
     __tablename__ = "wear_records"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, default=1, nullable=False, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
     outfit_id = Column(Integer, nullable=True)
     item_ids = Column(JSON, default=list)        # 直接穿的散件
     wear_date = Column(Date, default=func.current_date(), index=True)
@@ -56,7 +67,7 @@ class Recommendation(Base):
     __tablename__ = "recommendations"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, default=1, nullable=False)
+    user_id = Column(Integer, nullable=False)
     type = Column(String(20), nullable=False)    # daily, scenario
     context = Column(JSON, default=dict)          # weather, occasion etc.
     result = Column(JSON, default=dict)           # suggested outfits
@@ -74,7 +85,7 @@ class UserProfile(Base):
     __tablename__ = "user_profiles"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, unique=True, nullable=False, default=1, index=True)
+    user_id = Column(Integer, unique=True, nullable=False, index=True)
 
     # ── V1 字段（保留兼容，不再写入）──
     style_counts = Column(JSON, default=dict)

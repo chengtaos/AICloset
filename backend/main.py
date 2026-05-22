@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.database import init_db
-from app.routers import wardrobe, outfits, recommend
+from app.routers import wardrobe, outfits, recommend, auth
 
 # ── 日志配置 ──
 logging.basicConfig(
@@ -50,6 +50,7 @@ uploads_dir = Path(__file__).parent / "uploads"
 uploads_dir.mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 
+app.include_router(auth.router)
 app.include_router(wardrobe.router)
 app.include_router(outfits.router)
 app.include_router(recommend.router)

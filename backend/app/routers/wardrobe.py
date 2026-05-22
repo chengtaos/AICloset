@@ -5,7 +5,9 @@ import uuid
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.database import get_db
+from app.models import User
 from app.schemas import (
     ClothingItemCreate,
     ClothingItemUpdate,
@@ -41,41 +43,42 @@ def api_list_items(
     search: Optional[str] = Query(None),
     sort: str = Query("created_at"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return list_items(db, category=category, season=season, style=style, search=search, sort=sort)
+    return list_items(db, user_id=current_user.id, category=category, season=season, style=style, search=search, sort=sort)
 
 
 @router.get("/items/{item_id}", response_model=ClothingItemResponse)
-def api_get_item(item_id: int, db: Session = Depends(get_db)):
-    item = get_item(db, item_id)
+def api_get_item(item_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    item = get_item(db, item_id, user_id=current_user.id)
     if not item:
         raise HTTPException(status_code=404, detail="衣物不存在")
     return item
 
 
 @router.post("/items", response_model=ClothingItemResponse, status_code=201)
-def api_create_item(data: ClothingItemCreate, db: Session = Depends(get_db)):
-    return create_item(db, data)
+def api_create_item(data: ClothingItemCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return create_item(db, data, user_id=current_user.id)
 
 
 @router.put("/items/{item_id}", response_model=ClothingItemResponse)
-def api_update_item(item_id: int, data: ClothingItemUpdate, db: Session = Depends(get_db)):
-    item = update_item(db, item_id, data)
+def api_update_item(item_id: int, data: ClothingItemUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    item = update_item(db, item_id, data, user_id=current_user.id)
     if not item:
         raise HTTPException(status_code=404, detail="衣物不存在")
     return item
 
 
 @router.delete("/items/{item_id}", status_code=204)
-def api_delete_item(item_id: int, db: Session = Depends(get_db)):
-    ok = delete_item(db, item_id)
+def api_delete_item(item_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    ok = delete_item(db, item_id, user_id=current_user.id)
     if not ok:
         raise HTTPException(status_code=404, detail="衣物不存在")
 
 
 @router.post("/items/{item_id}/images", response_model=ClothingItemResponse)
-async def api_upload_image(item_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
-    item = get_item(db, item_id)
+async def api_upload_image(item_id: int, file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    item = get_item(db, item_id, user_id=current_user.id)
     if not item:
         raise HTTPException(status_code=404, detail="衣物不存在")
 
@@ -89,7 +92,7 @@ async def api_upload_image(item_id: int, file: UploadFile = File(...), db: Sessi
     # 服饰分割：抠出主体，透明背景；失败则用原图
     seg_path = segment_image(str(filepath))
     path_str = seg_path if seg_path else f"uploads/{filename}"
-    item = add_image(db, item_id, path_str)
+    item = add_image(db, item_id, path_str, user_id=current_user.id)
     return item
 
 
@@ -118,17 +121,17 @@ async def api_auto_classify(file: UploadFile = File(...)):
 
 
 @router.get("/stats", response_model=WardrobeStats)
-def api_get_stats(db: Session = Depends(get_db)):
-    return get_stats(db)
+def api_get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return get_stats(db, user_id=current_user.id)
 
 
 # ── 穿着记录 ──
 
 @router.post("/wear-records", response_model=WearRecordResponse, status_code=201)
-def api_record_wear(data: WearRecordCreate, db: Session = Depends(get_db)):
+def api_record_wear(data: WearRecordCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return record_wear(
         db,
-        user_id=1,
+        user_id=current_user.id,
         outfit_id=data.outfit_id,
         item_ids=data.item_ids,
         wear_date=data.wear_date,
@@ -141,5 +144,6 @@ def api_get_wear_history(
     year: int = Query(0),
     month: int = Query(0),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return get_wear_history(db, year=year, month=month)
+    return get_wear_history(db, user_id=current_user.id, year=year, month=month)

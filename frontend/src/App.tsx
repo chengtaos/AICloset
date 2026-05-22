@@ -1,11 +1,19 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Layout from "./components/Layout";
 import WardrobePage from "./pages/WardrobePage";
 import OutfitsPage from "./pages/OutfitsPage";
 import RecommendPage from "./pages/RecommendPage";
 import StatsPage from "./pages/StatsPage";
+import LoginPage from "./pages/LoginPage";
 
-export default function App() {
+function ProtectedRoutes() {
+  const { token } = useAuth();
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -16,5 +24,16 @@ export default function App() {
         <Route path="*" element={<Navigate to="/recommend" replace />} />
       </Route>
     </Routes>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="*" element={<ProtectedRoutes />} />
+      </Routes>
+    </AuthProvider>
   );
 }

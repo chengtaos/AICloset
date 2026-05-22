@@ -1,4 +1,5 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const NAV = [
   { path: "/recommend", label: "推荐", icon: "✨" },
@@ -10,9 +11,48 @@ const NAV = [
 export default function Layout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8f9fa" }}>
+      {/* 顶部栏 */}
+      <header
+        style={{
+          height: 48,
+          background: "rgba(255,255,255,0.92)",
+          backdropFilter: "blur(8px)",
+          borderBottom: "1px solid #e8eaed",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 24px",
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+        }}
+      >
+        <span style={{ fontSize: 13, color: "#6c7a89", fontWeight: 500 }}>
+          {user?.nickname || "AiCloset"}
+        </span>
+        <button
+          onClick={handleLogout}
+          style={{
+            border: "none",
+            background: "none",
+            color: "#9aa5b0",
+            fontSize: 12,
+            cursor: "pointer",
+          }}
+        >
+          退出
+        </button>
+      </header>
+
       {/* 内容区 */}
       <main style={{ paddingBottom: 72, maxWidth: 860, margin: "0 auto", padding: "32px 24px 88px" }}>
         <Outlet />

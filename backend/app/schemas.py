@@ -150,6 +150,10 @@ class RecommendResponse(BaseModel):
     suggestions: list[RecommendSuggestion]
 
 
+class RecommendationFeedback(BaseModel):
+    feedback: str  # "liked" or "disliked"
+
+
 # ── Stats ─────────────────────────────────────────────────────
 
 class CategoryStat(BaseModel):

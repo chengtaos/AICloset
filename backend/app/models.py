@@ -62,3 +62,54 @@ class Recommendation(Base):
     result = Column(JSON, default=dict)           # suggested outfits
     feedback = Column(String(10), default="neutral")  # liked, disliked, neutral
     created_at = Column(DateTime, default=func.now())
+
+
+class UserProfile(Base):
+    """多级记忆用户偏好档案。
+
+    L2 短期偏好（14天滑动窗口，7天半衰期）
+    L3 长期档案（春夏秋冬独立偏好向量，90天半衰期）
+    L4 关系记忆（物品共现对 + 品类搭配模式）
+    """
+    __tablename__ = "user_profiles"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, unique=True, nullable=False, default=1, index=True)
+
+    # ── V1 字段（保留兼容，不再写入）──
+    style_counts = Column(JSON, default=dict)
+    color_counts = Column(JSON, default=dict)
+    category_counts = Column(JSON, default=dict)
+    item_affinity = Column(JSON, default=dict)
+    learned_temp_min = Column(Integer, nullable=True)
+    learned_temp_max = Column(Integer, nullable=True)
+
+    # ── L2: 短期偏好（14天滑动窗口）──
+    short_term_styles = Column(JSON, default=dict)     # {"休闲": 3, "法式": 2}
+    short_term_colors = Column(JSON, default=dict)     # {"黑色": 4, "白色": 2}
+    short_term_categories = Column(JSON, default=dict) # {"tshirt": 3, "pants": 3}
+    short_term_updated = Column(DateTime, nullable=True)
+
+    # ── L3: 长期档案（季节感知）──
+    # {"春": {"休闲": 15,...}, "夏": {...}, "秋": {...}, "冬": {...}}
+    seasonal_styles = Column(JSON, default=dict)
+    seasonal_colors = Column(JSON, default=dict)
+    seasonal_categories = Column(JSON, default=dict)
+    # 季节 × 温度舒适区间: {"春": [10, 25], "夏": [22, 35], ...}
+    seasonal_temp = Column(JSON, default=dict)
+    # 场合偏好: {"通勤": {"styles": {...}, "categories": {...}}, ...}
+    occasion_prefs = Column(JSON, default=dict)
+
+    # ── L4: 关系记忆 ──
+    item_pairs = Column(JSON, default=dict)       # {"1_3": 5, "2_4": 3}
+    category_pairs = Column(JSON, default=dict)   # {"tshirt_jeans": 10}
+
+    # ── 元信息 ──
+    disliked_items = Column(JSON, default=list)
+    total_wear_events = Column(Integer, default=0)
+    l2_event_count = Column(Integer, default=0)
+    l3_event_count = Column(Integer, default=0)
+    l4_event_count = Column(Integer, default=0)
+    last_updated = Column(DateTime, default=func.now(), onupdate=func.now())
+    last_decay_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=func.now())

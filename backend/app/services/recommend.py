@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 from app.agent.llm import generate_recommendations
 from app.agent.matcher import filter_candidates, match
 from app.agent.weather import get_weather
-from app.models import ClothingItem, Recommendation
+from app.models import ClothingItem, Recommendation, UserProfile
+from app.services.preferences import format_preferences_for_llm
 from app.schemas import (
     ClothingItemBrief,
     DailyRecommendRequest,
@@ -95,16 +96,21 @@ def _run_recommend_pipeline(
     occasion: str,
     user_id: int,
 ) -> list[dict]:
-    """执行推荐流水线：规则粗筛 → LLM 精排；LLM 不可用时降级为规则引擎。"""
+    """执行推荐流水线：加载偏好 → 规则粗筛 → LLM 精排（注入偏好）；LLM 不可用时降级为偏好加权规则引擎。"""
     candidates = filter_candidates(db, weather, user_id)
-    llm_result = generate_recommendations(candidates, weather, occasion, limit=3)
+
+    # 加载用户偏好档案
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+    preferences_text = format_preferences_for_llm(profile)
+
+    llm_result = generate_recommendations(candidates, weather, occasion, limit=3, preferences_text=preferences_text)
 
     if llm_result:
-        logger.info("使用 LLM 推荐结果")
+        logger.info("使用 LLM 推荐结果（偏好注入=%s）", bool(preferences_text))
         return [{"item_ids": r["item_ids"], "reason": r["reason"]} for r in llm_result]
 
-    logger.info("LLM 不可用，降级到规则引擎")
-    raw = match(db, weather, user_id, occasion, limit=3)
+    logger.info("LLM 不可用，降级到规则引擎（偏好加权=%s）", bool(profile and (profile.total_wear_events or 0) >= 5))
+    raw = match(db, weather, user_id, occasion, limit=3, profile=profile)
     return [{"item_ids": s["items"], "reason": s["reason"]} for s in raw]
 
 

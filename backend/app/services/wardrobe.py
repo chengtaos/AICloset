@@ -6,7 +6,7 @@ from typing import Optional
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.models import ClothingItem, Outfit, WearRecord
+from app.models import ClothingItem, Outfit, UserProfile, WearRecord
 from app.schemas import (
     CategoryStat,
     ClothingItemBrief,
@@ -211,8 +211,9 @@ def record_wear(
     item_ids: list[int],
     wear_date: Optional[date],
     note: str,
+    occasion: str = "",
 ) -> WearRecord:
-    """记录一次穿着，同时递增相关衣物的 wear_count。"""
+    """记录一次穿着，同时递增相关衣物的 wear_count 并更新多级偏好。"""
     record_date = wear_date or date.today()
     record = WearRecord(
         user_id=user_id,
@@ -236,6 +237,16 @@ def record_wear(
         item = db.query(ClothingItem).filter(ClothingItem.id == iid).first()
         if item:
             item.wear_count = (item.wear_count or 0) + 1
+
+    # 更新用户多级偏好档案（L2/L3/L4）
+    from app.services.preferences import update_preferences_on_wear, update_category_pairs_from_items
+    update_preferences_on_wear(db, user_id, list(all_ids), occasion)
+
+    # L4: 品类共现对
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+    if profile:
+        items = db.query(ClothingItem).filter(ClothingItem.id.in_(list(all_ids))).all()
+        update_category_pairs_from_items(profile, items)
 
     db.commit()
     db.refresh(record)

@@ -26,20 +26,23 @@ def _get_client() -> OpenAI | None:
     return _client
 
 
-SYSTEM_PROMPT = """你是一位专业的时尚造型师。用户会提供：
+SYSTEM_PROMPT = """你是一位专业的时尚造型师，了解用户的穿搭历史和偏好。用户会提供：
 1. 当日天气信息
 2. 穿搭场合
-3. 衣橱中可选的衣物列表（每件有id、品类、颜色、风格等属性）
+3. 用户的穿搭记忆（近期偏好、季节偏好、经典搭配）
+4. 衣橱中可选的衣物列表（每件有id、品类、颜色、风格等属性）
 
-请根据天气和场合，从候选衣物中挑选并搭配出 3 套完整的穿搭方案。
+请根据天气、场合和用户的穿搭记忆，从候选衣物中挑选并搭配出 3 套完整的穿搭方案。
 
 要求：
 - 颜色搭配协调，风格统一
 - 考虑天气因素（温度决定厚薄，雨雪天避免浅色下装和不耐水材质，大风天建议防风外套）
-- 每套搭配必须包含上衣(top/连衣裙(dress))和下装(bottom)，根据天气决定是否需要外套(outer)和鞋子(shoes)
+- 每套搭配必须包含上衣(blouse/tshirt/hoodie/sweater/outer)或连衣裙(dress)和下装(pants/shorts/skirt)，根据天气决定是否需要外套(outer)和鞋子(shoes)
 - 优先选择连衣裙+外套的组合（如果候选中有连衣裙）
 - 推荐理由需具体说明配色逻辑和场合适配性，自然有温度，不要模板化的套话
 - 尽量避免连续选择相同品类（如不要三套都是T恤+牛仔裤）
+- 如果用户有穿搭记忆，优先参考其近期偏好和季节偏好，特别是经典搭配中的组合
+- 避免推荐用户明确不喜欢的衣物
 
 返回严格的 JSON 格式，不要包含 markdown 代码块标记：
 {
@@ -57,9 +60,11 @@ def generate_recommendations(
     weather: WeatherInfo,
     occasion: str = "",
     limit: int = 3,
+    preferences_text: str = "",
 ) -> list[dict]:
     """
     调用 DeepSeek API 生成穿搭建议。
+    preferences_text 为偏好引擎生成的用户偏好段落，空字符串表示冷启动。
     失败时返回空列表，上游应 fallback 到规则引擎。
     """
     client = _get_client()
@@ -88,9 +93,11 @@ def generate_recommendations(
 
     occasion_text = f"场合：{occasion}" if occasion else "场合：日常出行"
 
+    pref_section = f"\n{preferences_text}\n" if preferences_text else ""
+
     user_message = f"""天气：{weather.city}，{weather.condition}，气温{weather.temperature}°C（体感{weather.feels_like}°C），湿度{weather.humidity}%，风力{weather.wind_level}级，紫外线指数{weather.uv_index}
 {occasion_text}
-
+{pref_section}
 可选衣物：
 {items_text}
 

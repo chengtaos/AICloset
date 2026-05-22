@@ -26,6 +26,36 @@ class Base(DeclarativeBase):
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    _migrate_user_profiles()
+
+
+def _migrate_user_profiles():
+    """为已存在的 user_profiles 表添加新列（SQLite 不支持 IF NOT EXISTS for ADD COLUMN，用 try/except）。"""
+    new_columns = [
+        ("short_term_styles", "TEXT DEFAULT '{}'"),
+        ("short_term_colors", "TEXT DEFAULT '{}'"),
+        ("short_term_categories", "TEXT DEFAULT '{}'"),
+        ("short_term_updated", "DATETIME"),
+        ("seasonal_styles", "TEXT DEFAULT '{}'"),
+        ("seasonal_colors", "TEXT DEFAULT '{}'"),
+        ("seasonal_categories", "TEXT DEFAULT '{}'"),
+        ("seasonal_temp", "TEXT DEFAULT '{}'"),
+        ("occasion_prefs", "TEXT DEFAULT '{}'"),
+        ("item_pairs", "TEXT DEFAULT '{}'"),
+        ("category_pairs", "TEXT DEFAULT '{}'"),
+        ("l2_event_count", "INTEGER DEFAULT 0"),
+        ("l3_event_count", "INTEGER DEFAULT 0"),
+        ("l4_event_count", "INTEGER DEFAULT 0"),
+        ("last_decay_at", "DATETIME"),
+    ]
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        for col_name, col_type in new_columns:
+            try:
+                conn.execute(text(f"ALTER TABLE user_profiles ADD COLUMN {col_name} {col_type}"))
+                conn.commit()
+            except Exception:
+                pass  # column already exists
 
 
 def get_db():

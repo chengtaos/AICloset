@@ -11,7 +11,7 @@ from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
-from app.models import ClothingItem, WearRecord
+from app.models import ClothingItem, UserProfile, WearRecord
 from app.schemas import WeatherInfo
 
 logger = logging.getLogger(__name__)
@@ -66,6 +66,28 @@ def _get_recently_worn_ids(db: Session, user_id: int, days: int = 3) -> set[int]
     return ids
 
 
+def _weighted_pick(
+    items: list[ClothingItem],
+    scores: dict[int, float],
+    recently_worn: set[int],
+) -> ClothingItem:
+    """按偏好分数加权随机选择，优先避免近期已穿过的物品。"""
+    if not items:
+        raise ValueError("候选列表为空")
+    if len(items) == 1:
+        return items[0]
+
+    # 优先从非近期穿着中选，近期穿着降权
+    weights = []
+    for it in items:
+        w = scores.get(it.id, 1.0)
+        if it.id in recently_worn:
+            w *= 0.15  # 近期穿过的降权
+        weights.append(max(w, 0.01))
+
+    return random.choices(items, weights=weights, k=1)[0]
+
+
 def filter_candidates(
     db: Session,
     weather: WeatherInfo,
@@ -110,11 +132,14 @@ def match(
     user_id: int = 1,
     occasion: str = "",
     limit: int = 3,
+    profile: UserProfile | None = None,
 ) -> list[dict]:
     """
-    Fallback：纯规则随机组合 + 模板理由。
-    LLM 不可用时使用。
+    Fallback：规则组合 + 偏好加权随机 + 模板理由。
+    LLM 不可用时使用。profile 非空时启用偏好加权。
     """
+    from app.services.preferences import score_items_by_preferences
+
     by_category = filter_candidates(db, weather, user_id)
     recently_worn = _get_recently_worn_ids(db, user_id, days=3)
 
@@ -125,52 +150,54 @@ def match(
     dress_candidates = [it for cat in FULL_BODY for it in by_category.get(cat, [])]
     shoes_candidates = [it for cat in FOOTWEAR for it in by_category.get(cat, [])]
 
+    # 基础偏好评分（不包含 L4 共现）
+    base_scores = score_items_by_preferences(by_category, profile)
+
     need_outer = weather.feels_like < 15 or weather.wind_level >= 5 or weather.condition in ("雨", "雷阵雨", "雪")
 
     suggestions: list[dict] = []
 
     for _ in range(limit):
         picked: list[ClothingItem] = []
+        selected_ids: list[int] = []
 
         use_dress = dress_candidates and random.random() < 0.4
         if use_dress:
-            dress = random.choice(dress_candidates)
-            if len(dress_candidates) > 1:
-                for _tries in range(5):
-                    if dress.id not in recently_worn:
-                        break
-                    dress = random.choice(dress_candidates)
+            dress = _weighted_pick(dress_candidates, base_scores, recently_worn)
             picked.append(dress)
+            selected_ids.append(dress.id)
         else:
             if upper_candidates:
-                top = random.choice(upper_candidates)
-                if len(upper_candidates) > 1:
-                    for _tries in range(5):
-                        if top.id not in recently_worn:
-                            break
-                        top = random.choice(upper_candidates)
-                picked.append(top)
+                upper = _weighted_pick(upper_candidates, base_scores, recently_worn)
+                picked.append(upper)
+                selected_ids.append(upper.id)
+
+            # L4: 以已选上衣计算下装共现分数
+            lower_scores = score_items_by_preferences(by_category, profile, selected_ids)
+            # 合并基础分和共现分
+            combined_lower = dict(base_scores)
+            for iid, s in lower_scores.items():
+                combined_lower[iid] = max(combined_lower.get(iid, 1.0), s)
 
             if lower_candidates:
-                bottom = random.choice(lower_candidates)
-                if len(lower_candidates) > 1:
-                    for _tries in range(5):
-                        if bottom.id not in recently_worn:
-                            break
-                        bottom = random.choice(lower_candidates)
-                picked.append(bottom)
+                lower = _weighted_pick(lower_candidates, combined_lower, recently_worn)
+                picked.append(lower)
+                selected_ids.append(lower.id)
 
         if need_outer and outer_candidates:
-            outer = random.choice(outer_candidates)
-            picked.append(outer)
+            outer_scores = score_items_by_preferences(by_category, profile, selected_ids)
+            combined_outer = dict(base_scores)
+            for iid, s in outer_scores.items():
+                combined_outer[iid] = max(combined_outer.get(iid, 1.0), s)
+            picked.append(_weighted_pick(outer_candidates, combined_outer, recently_worn))
 
         if shoes_candidates:
-            shoes = random.choice(shoes_candidates)
             if weather.condition in ("雨", "雷阵雨"):
                 waterproof = [s for s in shoes_candidates if s.sub_category in ("运动鞋", "靴子", "雨鞋")]
                 if waterproof:
-                    shoes = random.choice(waterproof)
-            picked.append(shoes)
+                    picked.append(_weighted_pick(waterproof, base_scores, recently_worn))
+                    continue
+            picked.append(_weighted_pick(shoes_candidates, base_scores, recently_worn))
 
         if not picked:
             continue

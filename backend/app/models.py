@@ -9,7 +9,7 @@ class ClothingItem(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, default=1, nullable=False, index=True)
-    category = Column(String(20), nullable=False)  # top, bottom, outer, dress, shoes, accessory, bag
+    category = Column(String(20), nullable=False)  # blouse, tshirt, hoodie, sweater, outer, pants, shorts, skirt, dress, shoes, bag, accessory
     sub_category = Column(String(30), nullable=False)
     colors = Column(JSON, default=list)         # ["白色", "黑色"]
     brand = Column(String(50), default="")
@@ -34,7 +34,7 @@ class Outfit(Base):
     user_id = Column(Integer, default=1, nullable=False, index=True)
     name = Column(String(100), default="")
     items = Column(JSON, default=list)
-    # [{"item_id": 1, "position": "top"}, {"item_id": 2, "position": "bottom"}]
+    # [{"item_id": 1, "position": "upper"}, {"item_id": 2, "position": "lower"}]
     tags = Column(JSON, default=list)            # ["通勤", "休闲"]
     is_ai_generated = Column(Integer, default=0)
     created_at = Column(DateTime, default=func.now())

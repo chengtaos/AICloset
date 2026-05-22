@@ -16,6 +16,14 @@ from app.schemas import WeatherInfo
 
 logger = logging.getLogger(__name__)
 
+# 品类 → 身体部位分组
+UPPER_BODY = {"blouse", "tshirt", "hoodie", "sweater"}
+OUTER_LAYER = {"outer"}
+LOWER_BODY = {"pants", "shorts", "skirt"}
+FULL_BODY = {"dress"}
+FOOTWEAR = {"shoes"}
+SIDE_ITEMS = {"bag", "accessory"}
+
 
 def _season_label(month: int) -> str:
     if month in (3, 4, 5):
@@ -74,9 +82,7 @@ def filter_candidates(
         ClothingItem.status == "available",
     ).all()
 
-    by_category: dict[str, list[ClothingItem]] = {
-        "top": [], "bottom": [], "outer": [], "dress": [], "shoes": [],
-    }
+    by_category: dict[str, list[ClothingItem]] = {}
 
     for item in items:
         if (
@@ -85,14 +91,13 @@ def filter_candidates(
             and _match_condition(item, weather.condition)
         ):
             cat = item.category
-            if cat in by_category:
-                by_category[cat].append(item)
+            if cat not in by_category:
+                by_category[cat] = []
+            by_category[cat].append(item)
 
     logger.debug(
-        "粗筛结果: 总数=%d → top=%d bottom=%d outer=%d dress=%d shoes=%d (体感%d°C 季节=%s)",
-        len(items),
-        len(by_category["top"]), len(by_category["bottom"]),
-        len(by_category["outer"]), len(by_category["dress"]), len(by_category["shoes"]),
+        "粗筛结果: 总数=%d → 通过=%d (体感%d°C 季节=%s)",
+        len(items), sum(len(v) for v in by_category.values()),
         weather.feels_like, season,
     )
 
@@ -113,17 +118,18 @@ def match(
     by_category = filter_candidates(db, weather, user_id)
     recently_worn = _get_recently_worn_ids(db, user_id, days=3)
 
+    # 按身体部位聚合候选
+    upper_candidates = [it for cat in UPPER_BODY for it in by_category.get(cat, [])]
+    lower_candidates = [it for cat in LOWER_BODY for it in by_category.get(cat, [])]
+    outer_candidates = [it for cat in OUTER_LAYER for it in by_category.get(cat, [])]
+    dress_candidates = [it for cat in FULL_BODY for it in by_category.get(cat, [])]
+    shoes_candidates = [it for cat in FOOTWEAR for it in by_category.get(cat, [])]
+
     need_outer = weather.feels_like < 15 or weather.wind_level >= 5 or weather.condition in ("雨", "雷阵雨", "雪")
 
     suggestions: list[dict] = []
 
     for _ in range(limit):
-        top_candidates = by_category.get("top", [])
-        bottom_candidates = by_category.get("bottom", [])
-        dress_candidates = by_category.get("dress", [])
-        outer_candidates = by_category.get("outer", [])
-        shoes_candidates = by_category.get("shoes", [])
-
         picked: list[ClothingItem] = []
 
         use_dress = dress_candidates and random.random() < 0.4
@@ -136,22 +142,22 @@ def match(
                     dress = random.choice(dress_candidates)
             picked.append(dress)
         else:
-            if top_candidates:
-                top = random.choice(top_candidates)
-                if len(top_candidates) > 1:
+            if upper_candidates:
+                top = random.choice(upper_candidates)
+                if len(upper_candidates) > 1:
                     for _tries in range(5):
                         if top.id not in recently_worn:
                             break
-                        top = random.choice(top_candidates)
+                        top = random.choice(upper_candidates)
                 picked.append(top)
 
-            if bottom_candidates:
-                bottom = random.choice(bottom_candidates)
-                if len(bottom_candidates) > 1:
+            if lower_candidates:
+                bottom = random.choice(lower_candidates)
+                if len(lower_candidates) > 1:
                     for _tries in range(5):
                         if bottom.id not in recently_worn:
                             break
-                        bottom = random.choice(bottom_candidates)
+                        bottom = random.choice(lower_candidates)
                 picked.append(bottom)
 
         if need_outer and outer_candidates:

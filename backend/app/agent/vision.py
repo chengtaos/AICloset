@@ -19,15 +19,21 @@ SYSTEM_PROMPT = """你是一个专业的女性服装分类助手，服务于电�
 如果图中只有一件衣物，返回长度为1的数组；如果有多件，每个都识别出来；如果不是衣物，返回空数组。
 
 每件衣物的字段说明：
-- category: 品类，必须是以下之一：top / bottom / outer / dress / shoes / accessory / bag
-- sub_category: 子品类，从对应品类下的选项中选最匹配的：
-  上衣(top): T恤、衬衫、卫衣、毛衣、针织衫、背心、吊带、打底衫、雪纺衫、蕾丝衫、一字肩、方领上衣、Polo衫、短款上衣、罩衫、马甲、抹胸、泡泡袖
-  下装(bottom): 牛仔裤、西裤、休闲裤、短裤、阔腿裤、半身裙、百褶裙、A字裙、包臀裙、鱼尾裙、伞裙、工装裤、瑜伽裤、骑行裤、喇叭裤、直筒裤、烟管裤、皮短裤、纱裙、缎面裙
-  外套(outer): 风衣、西装外套、牛仔外套、皮衣、羽绒服、棉服、大衣、夹克、针织开衫、小香风外套、棒球服、冲锋衣、毛呢大衣、羊羔绒外套、披肩、斗篷、摇粒绒外套、工装外套
-  连衣裙(dress): 短袖连衣裙、长袖连衣裙、吊带裙、衬衫裙、茶歇裙、裹身裙、娃娃裙、旗袍、小黑裙、蕾丝裙、缎面裙、针织裙、碎花裙、波点裙、格纹裙、鱼尾连衣裙、抹胸裙、挂脖裙
-  鞋子(shoes): 运动鞋、帆布鞋、乐福鞋、高跟鞋、靴子、凉鞋、拖鞋、玛丽珍鞋、穆勒鞋、切尔西靴、过膝靴、老爹鞋、芭蕾舞鞋、厚底鞋、罗马凉鞋、细高跟、粗跟鞋、马丁靴、雪地靴、尖头鞋、方头鞋
-  配饰(accessory): 帽子、围巾、手套、腰带、手表、耳环、项链、手链、戒指、发饰、丝巾、墨镜、发箍、胸针、领巾、choker
-  包袋(bag): 双肩包、单肩包、手提包、斜挎包、托特包、腋下包、法棍包、水桶包、链条包、帆布包、迷你包、腰包、邮差包、云朵包、草编包、剑桥包、马鞍包
+- category: 品类，必须是以下之一：blouse / tshirt / hoodie / sweater / outer / pants / shorts / skirt / dress / shoes / bag / accessory
+  品类对照：
+  blouse(衬衫/罩衫): 衬衫、罩衫、雪纺衫、蕾丝衫、一字肩、方领上衣、Polo衫、短款上衣
+  tshirt(T恤/背心): T恤、背心、吊带、抹胸、打底衫
+  hoodie(卫衣): 卫衣、帽衫、运动夹克
+  sweater(毛衣/针织): 毛衣、针织衫、羊绒衫、针织开衫
+  outer(外套/大衣): 风衣、大衣、羽绒服、棉服、夹克、皮衣、西装外套、牛仔外套
+  pants(裤装): 牛仔裤、西裤、休闲裤、阔腿裤、直筒裤、工装裤、瑜伽裤
+  shorts(短裤): 牛仔短裤、运动短裤、百慕大短裤
+  skirt(半身裙): 半身裙、百褶裙、A字裙、包臀裙、鱼尾裙、伞裙
+  dress(连衣裙): 短袖连衣裙、长袖连衣裙、吊带裙、衬衫裙、旗袍
+  shoes(鞋靴): 运动鞋、帆布鞋、高跟鞋、靴子、凉鞋、乐福鞋
+  bag(包袋): 双肩包、单肩包、手提包、斜挎包、托特包
+  accessory(配饰): 帽子、围巾、首饰、腰带、墨镜、丝巾
+- sub_category: 子品类，从上面对应品类下的选项中选择最匹配的一个
 - colors: 颜色数组，从以下选项中选择1-3个最匹配的：白色、黑色、灰色、藏青、卡其色、棕色、米色、燕麦色、奶油白、大象灰、炭灰、红色、粉色、橙色、黄色、绿色、蓝色、紫色、酒红、裸粉、雾霾蓝、牛油果绿、香芋紫、克莱因蓝、勃艮第红、焦糖色、军绿、宝蓝、玫红、珊瑚橘、婴儿蓝、淡紫、鹅黄、条纹、格纹、碎花、波点、豹纹、斑马纹、千鸟格
 - style_tags: 风格标签数组，从以下选择2-3个最匹配的：休闲、通勤、运动、甜美、复古、极简、度假、街头、正式、居家、法式、韩系、日系、新中式、老钱风、学院风、辣妹风、纯欲风、Y2K、芭蕾风、静奢风、多巴胺、美拉德、波西米亚、工装风、机车风、Athleisure、Clean Fit、Gorpcore
 - seasons: 适用季节数组，从 春/夏/秋/冬 中选择
@@ -35,7 +41,7 @@ SYSTEM_PROMPT = """你是一个专业的女性服装分类助手，服务于电�
 - temp_min / temp_max: 适用温度范围（℃），根据衣物厚薄推测，例如薄T恤15-35、毛衣0-18、羽绒服-10-5
 
 返回格式（JSON 数组）：
-[{"category":"top","sub_category":"T恤","colors":["白色"],"style_tags":["休闲","法式"],"seasons":["春","夏"],"material":["棉"],"temp_min":15,"temp_max":35}]
+[{"category":"tshirt","sub_category":"T恤","colors":["白色"],"style_tags":["休闲","法式"],"seasons":["春","夏"],"material":["棉"],"temp_min":15,"temp_max":35}]
 
 只返回 JSON 数组，不要其他内容。"""
 
@@ -104,7 +110,7 @@ def classify_image(image_path: str) -> list[dict] | None:
                 return None
 
         # 类型校验
-        valid_categories = {"top", "bottom", "outer", "dress", "shoes", "accessory", "bag"}
+        valid_categories = {"blouse", "tshirt", "hoodie", "sweater", "outer", "pants", "shorts", "skirt", "dress", "shoes", "bag", "accessory"}
         valid = [r for r in results if isinstance(r, dict) and r.get("category") in valid_categories]
 
         if not valid:

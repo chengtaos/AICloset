@@ -1,9 +1,181 @@
 import { useEffect, useRef, useState } from "react";
 import { Modal, Form, Input, Select, InputNumber, message } from "antd";
+// InputNumber used in BatchItemCard above
 import { CameraOutlined, PictureOutlined, LoadingOutlined, CloseOutlined } from "@ant-design/icons";
 import type { ClothingItem, ClothingItemCreate } from "../types";
 import { CATEGORY_LABELS, SEASONS, STYLE_TAGS, SUB_CATEGORIES, COLORS_PRESET, MATERIALS } from "../types";
 import { autoClassify } from "../api/client";
+
+/** 批量识别中的单件衣物卡片：支持展开编辑 */
+function BatchItemCard({
+  item, index, onUpdate, onRemove,
+}: {
+  item: ClothingItemCreate;
+  index: number;
+  onUpdate: (item: ClothingItemCreate) => void;
+  onRemove: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const catLabel = CATEGORY_LABELS[item.category] || item.category;
+  const subCats = SUB_CATEGORIES[item.category] || [];
+
+  return (
+    <div style={{
+      border: "1px solid #f0f0f0", borderRadius: 6, marginBottom: 8,
+      background: "#fafafa", overflow: "hidden",
+    }}>
+      {/* 折叠头部：缩略图 + 摘要 + 操作按钮 */}
+      <div
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          display: "flex", alignItems: "center", gap: 12,
+          padding: "10px 12px", cursor: "pointer",
+        }}
+      >
+        <div style={{
+          width: 44, height: 56, borderRadius: 4,
+          background: "#f0f0f0", overflow: "hidden", flexShrink: 0,
+        }}>
+          {item.image_path ? (
+            <img src={`http://localhost:8000/${item.image_path}`} alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: 18, opacity: 0.15 }}>👤</span>
+          )}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 500 }}>
+            {catLabel} · {item.sub_category}
+          </div>
+          <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>
+            {(item.colors || []).join(" · ") || "未设颜色"}
+            {(item.style_tags || []).length > 0 && ` · ${(item.style_tags || []).slice(0, 2).join(" · ")}`}
+            {` · ${(item.seasons || []).join("·") || "未设季节"}`}
+          </div>
+        </div>
+        <span style={{ fontSize: 11, color: "#bbb", flexShrink: 0 }}>
+          {expanded ? "收起 ▲" : "编辑 ▼"}
+        </span>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onRemove(); }}
+          style={{
+            width: 22, height: 22, flexShrink: 0,
+            border: "none", borderRadius: 4,
+            background: "rgba(0,0,0,0.06)", color: "#999",
+            cursor: "pointer", display: "flex",
+            alignItems: "center", justifyContent: "center",
+            fontSize: 12,
+          }}
+        >
+          <CloseOutlined />
+        </button>
+      </div>
+
+      {/* 展开编辑区 */}
+      {expanded && (
+        <div style={{ padding: "8px 12px 14px", borderTop: "1px solid #f0f0f0" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {/* 品类 */}
+            <div>
+              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>品类</div>
+              <Select
+                size="small"
+                value={item.category}
+                onChange={(v) => onUpdate({ ...item, category: v, sub_category: (SUB_CATEGORIES[v] || [])[0] || "" })}
+                options={Object.entries(CATEGORY_LABELS).map(([k, v]) => ({ value: k, label: v }))}
+                style={{ width: "100%" }}
+              />
+            </div>
+            {/* 子品类 */}
+            <div>
+              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>子品类</div>
+              <Select
+                size="small"
+                value={item.sub_category}
+                onChange={(v) => onUpdate({ ...item, sub_category: v })}
+                options={subCats.map((s) => ({ value: s, label: s }))}
+                style={{ width: "100%" }}
+                showSearch
+              />
+            </div>
+          </div>
+
+          {/* 颜色 */}
+          <div style={{ marginTop: 8 }}>
+            <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>颜色</div>
+            <Select
+              size="small" mode="multiple"
+              value={item.colors || []}
+              onChange={(v) => onUpdate({ ...item, colors: v })}
+              options={COLORS_PRESET.map((c) => ({ value: c, label: c }))}
+              style={{ width: "100%" }}
+              maxTagCount={4}
+            />
+          </div>
+
+          {/* 风格 + 季节 */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
+            <div>
+              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>风格</div>
+              <Select
+                size="small" mode="multiple"
+                value={item.style_tags || []}
+                onChange={(v) => onUpdate({ ...item, style_tags: v })}
+                options={STYLE_TAGS.map((s) => ({ value: s, label: s }))}
+                style={{ width: "100%" }}
+                maxTagCount={2}
+              />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>季节</div>
+              <Select
+                size="small" mode="multiple"
+                value={item.seasons || []}
+                onChange={(v) => onUpdate({ ...item, seasons: v })}
+                options={SEASONS.map((s) => ({ value: s, label: s }))}
+                style={{ width: "100%" }}
+              />
+            </div>
+          </div>
+
+          {/* 材质 + 温度 */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
+            <div>
+              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>材质</div>
+              <Select
+                size="small" mode="multiple"
+                value={item.material || []}
+                onChange={(v) => onUpdate({ ...item, material: v })}
+                options={MATERIALS.map((m) => ({ value: m, label: m }))}
+                style={{ width: "100%" }}
+                maxTagCount={2}
+              />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>温度范围 °C</div>
+              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                <InputNumber
+                  size="small" min={-20} max={45}
+                  value={item.temp_min}
+                  onChange={(v) => onUpdate({ ...item, temp_min: v ?? 5 })}
+                  style={{ width: "100%" }}
+                />
+                <span style={{ color: "#ccc" }}>~</span>
+                <InputNumber
+                  size="small" min={-5} max={50}
+                  value={item.temp_max}
+                  onChange={(v) => onUpdate({ ...item, temp_max: v ?? 30 })}
+                  style={{ width: "100%" }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface Props {
   open: boolean;
@@ -210,64 +382,22 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit, onBatch
         </span>
       </div>
 
-      {/* 批量识别结果 */}
+      {/* 批量识别结果：支持逐件编辑 */}
       {isBatch ? (
-        <div style={{ maxHeight: 400, overflow: "auto" }}>
+        <div style={{ maxHeight: 460, overflow: "auto" }}>
           <div style={{ fontSize: 12, color: "#999", marginBottom: 10 }}>
-            以下为识别结果，可删除不需要的项，确认后一次性录入
+            识别到 {batchItems.length} 件，点击展开可编辑品类、颜色等信息，不需要的可删除
           </div>
           {batchItems.map((item, idx) => (
-            <div key={idx} style={{
-              display: "flex", alignItems: "center", gap: 12,
-              padding: "10px 12px", border: "1px solid #f0f0f0",
-              borderRadius: 6, marginBottom: 8,
-              background: "#fafafa",
-            }}>
-              <div style={{
-                width: 44, height: 56, borderRadius: 4,
-                background: "#f0f0f0", overflow: "hidden",
-                flexShrink: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                {item.image_path ? (
-                  <img
-                    src={`http://localhost:8000/${item.image_path}`}
-                    alt=""
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d9d9d9" strokeWidth="1">
-                    <rect x="2" y="6" width="20" height="13" rx="2" />
-                    <circle cx="8.5" cy="10.5" r="1.5" />
-                    <path d="M2 15l5-4 4 3 3-5 8 8" />
-                  </svg>
-                )}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 500 }}>
-                  {CATEGORY_LABELS[item.category as keyof typeof CATEGORY_LABELS] || item.category} · {item.sub_category}
-                </div>
-                <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>
-                  {(item.colors || []).join(" · ")}
-                  {(item.style_tags || []).length > 0 && ` · ${(item.style_tags || []).slice(0, 2).join(" · ")}`}
-                  {` · ${(item.seasons || []).join("·")}`}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleRemoveBatchItem(idx)}
-                style={{
-                  width: 22, height: 22, flexShrink: 0,
-                  border: "none", borderRadius: 4,
-                  background: "rgba(0,0,0,0.06)", color: "#999",
-                  cursor: "pointer", display: "flex",
-                  alignItems: "center", justifyContent: "center",
-                  fontSize: 12,
-                }}
-              >
-                <CloseOutlined />
-              </button>
-            </div>
+            <BatchItemCard
+              key={idx}
+              item={item}
+              index={idx}
+              onUpdate={(updated) => {
+                setBatchItems((prev) => prev.map((it, i) => (i === idx ? updated : it)));
+              }}
+              onRemove={() => handleRemoveBatchItem(idx)}
+            />
           ))}
         </div>
       ) : (

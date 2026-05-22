@@ -30,7 +30,10 @@
       "Bash(python -m uvicorn app.main:app --host 0.0.0.0 --port 8000)",
       "Bash(python -m uvicorn main:app --host 0.0.0.0 --port 8000)",
       "Bash(python -m py_compile app/services/wardrobe.py)",
-      "Bash(python -m py_compile app/routers/wardrobe.py)"
+      "Bash(python -m py_compile app/routers/wardrobe.py)",
+      "Bash(python -m py_compile app/agent/vision.py)",
+      "Bash(python -m py_compile app/agent/matcher.py)",
+      "Bash(python -m py_compile app/models.py)"
     ],
     "additionalDirectories": [
       "c:\\Users\\chengtao\\Desktop\\AiCloset\\backend\\uploads"

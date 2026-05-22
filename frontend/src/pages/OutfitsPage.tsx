@@ -9,12 +9,12 @@ import OutfitCard from "../components/OutfitCard";
 
 // 穿搭部位选项：每件衣物在搭配中充当的角色
 const POSITION_OPTIONS = [
-  { value: "top", label: "上身" },
-  { value: "bottom", label: "下身" },
+  { value: "upper", label: "上身" },
+  { value: "lower", label: "下身" },
   { value: "outer", label: "外套" },
   { value: "dress", label: "连衣裙" },
   { value: "shoes", label: "鞋子" },
-  { value: "accessory", label: "配饰" },
+  { value: "side", label: "配饰/包袋" },
 ];
 
 export default function OutfitsPage() {

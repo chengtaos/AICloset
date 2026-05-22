@@ -14,15 +14,20 @@ interface Props {
 const BASE_W = 72;
 const BASE_H = 90;
 
-/** 各类别的默认锚点位置 */
+/** 各类别的默认锚点位置：上身在上、下身在下、鞋子在底、配饰在侧 */
 const DEFAULT_STATE: Record<string, ItemState> = {
-  outer:  { x: 50, y: 15, scale: 1.0 },
-  top:    { x: 50, y: 28, scale: 1.0 },
-  dress:  { x: 50, y: 38, scale: 1.1 },
-  bottom: { x: 50, y: 55, scale: 1.0 },
-  shoes:  { x: 50, y: 82, scale: 0.85 },
+  outer:     { x: 50, y: 15, scale: 1.05 },
+  blouse:    { x: 50, y: 28, scale: 1.0 },
+  tshirt:    { x: 50, y: 28, scale: 1.0 },
+  hoodie:    { x: 50, y: 26, scale: 1.05 },
+  sweater:   { x: 50, y: 27, scale: 1.0 },
+  dress:     { x: 50, y: 38, scale: 1.15 },
+  pants:     { x: 50, y: 55, scale: 1.0 },
+  shorts:    { x: 50, y: 57, scale: 0.85 },
+  skirt:     { x: 50, y: 55, scale: 1.0 },
+  shoes:     { x: 50, y: 82, scale: 0.85 },
   accessory: { x: 18, y: 30, scale: 0.7 },
-  bag:    { x: 82, y: 42, scale: 0.75 },
+  bag:       { x: 82, y: 42, scale: 0.75 },
 };
 
 type DragMode = "move" | "resize";

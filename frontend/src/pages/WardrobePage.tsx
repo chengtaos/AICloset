@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Modal, Upload, message, Input } from "antd";
 import { PlusOutlined, UploadOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from "@ant-design/icons";
-import type { ClothingItemCreate } from "../types";
+import type { ClothingItem, ClothingItemCreate } from "../types";
 import { CATEGORY_LABELS } from "../types";
 import { fetchItems, createItem, updateItem, deleteItem, uploadImage } from "../api/client";
 import ItemCard from "../components/ItemCard";
@@ -26,9 +26,19 @@ export default function WardrobePage() {
     queryFn: () => fetchItems(),
   });
 
+  const pendingImageFile = useRef<File | null>(null);
+
   const createMutation = useMutation({
     mutationFn: createItem,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["items"] }); message.success("已录入"); setFormOpen(false); },
+    onSuccess: (item: ClothingItem) => {
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      if (pendingImageFile.current) {
+        uploadMutation.mutate({ id: item.id, file: pendingImageFile.current });
+        pendingImageFile.current = null;
+      }
+      message.success("已录入");
+      setFormOpen(false);
+    },
   });
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<ClothingItemCreate> }) => updateItem(id, data),
@@ -169,9 +179,15 @@ export default function WardrobePage() {
         open={formOpen}
         editingItem={editingItem}
         onClose={() => { setFormOpen(false); setEditingId(null); }}
-        onSubmit={(values) => {
-          if (editingId != null) updateMutation.mutate({ id: editingId, data: values });
-          else createMutation.mutate(values);
+        onSubmit={(values, imageFile) => {
+          if (editingId != null) {
+            updateMutation.mutate({ id: editingId, data: values });
+          } else {
+            if (imageFile && !values.image_path) {
+              pendingImageFile.current = imageFile;
+            }
+            createMutation.mutate(values);
+          }
         }}
       />
 

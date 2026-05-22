@@ -18,6 +18,7 @@ class ClothingItemCreate(BaseModel):
     purchase_date: Optional[date] = None
     purchase_price: float = 0.0
     status: str = "available"
+    image_path: Optional[str] = None
 
 
 class ClothingItemUpdate(BaseModel):

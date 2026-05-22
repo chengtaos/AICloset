@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Modal, Form, Input, Select, InputNumber, Upload, message } from "antd";
-import { CameraOutlined, LoadingOutlined } from "@ant-design/icons";
+import { Modal, Form, Input, Select, InputNumber, message } from "antd";
+import { CameraOutlined, PictureOutlined, LoadingOutlined } from "@ant-design/icons";
 import type { ClothingItem, ClothingItemCreate } from "../types";
 import { CATEGORY_LABELS, SEASONS, STYLE_TAGS, SUB_CATEGORIES, COLORS_PRESET, MATERIALS } from "../types";
 import { autoClassify } from "../api/client";
@@ -9,28 +9,39 @@ interface Props {
   open: boolean;
   editingItem?: ClothingItem | null;
   onClose: () => void;
-  onSubmit: (values: ClothingItemCreate) => void;
+  onSubmit: (values: ClothingItemCreate, imageFile?: File) => void;
 }
 
 export default function ItemForm({ open, editingItem, onClose, onSubmit }: Props) {
   const [form] = Form.useForm();
   const category = Form.useWatch("category", form);
   const [recognizing, setRecognizing] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [hasPhoto, setHasPhoto] = useState(false);
+  const imagePathRef = useRef<string | null>(null);
+  const imageFileRef = useRef<File | null>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
-      editingItem ? form.setFieldsValue(editingItem) : form.resetFields();
+      if (editingItem) {
+        form.setFieldsValue(editingItem);
+        setHasPhoto(editingItem.images.length > 0);
+      } else {
+        form.resetFields();
+        setHasPhoto(false);
+      }
+      imagePathRef.current = null;
+      imageFileRef.current = null;
     }
   }, [open, editingItem, form]);
 
-  const handlePhotoRecognition = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processPhoto = async (file: File) => {
     setRecognizing(true);
+    imageFileRef.current = file;
     try {
       const result = await autoClassify(file);
+      imagePathRef.current = result.image_path;
       form.setFieldsValue({
         category: result.category,
         sub_category: result.sub_category,
@@ -41,13 +52,38 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit }: Props
         temp_min: result.temp_min,
         temp_max: result.temp_max,
       });
+      setHasPhoto(true);
       message.success(`识别完成：${result.sub_category} · ${result.colors.join("、")}`);
     } catch {
-      message.error("识别失败，请确认图片清晰且包含单件衣物");
+      imagePathRef.current = null;
+      setHasPhoto(true); // 识别失败但图片仍保留
+      message.error("识别失败，请手动填写字段");
     } finally {
       setRecognizing(false);
-      if (fileRef.current) fileRef.current.value = "";
     }
+  };
+
+  const handleCamera = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processPhoto(file);
+  };
+
+  const handleGalleryPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    imageFileRef.current = file;
+    imagePathRef.current = null;
+    setHasPhoto(true);
+  };
+
+  const handleSubmit = () => {
+    const values = form.getFieldsValue() as ClothingItemCreate;
+    if (imagePathRef.current) {
+      values.image_path = imagePathRef.current;
+    }
+    onSubmit(values, imageFileRef.current || undefined);
+    form.resetFields();
   };
 
   const subCategories = category ? SUB_CATEGORIES[category as string] || [] : [];
@@ -61,19 +97,26 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit }: Props
       width={560}
       destroyOnClose
     >
-      {/* 拍照识别按钮 */}
+      {/* 拍照识别 / 相册选择 */}
       <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
         <input
-          ref={fileRef}
+          ref={cameraRef}
           type="file"
           accept="image/*"
           capture="environment"
           style={{ display: "none" }}
-          onChange={handlePhotoRecognition}
+          onChange={handleCamera}
+        />
+        <input
+          ref={galleryRef}
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={handleGalleryPick}
         />
         <button
           type="button"
-          onClick={() => fileRef.current?.click()}
+          onClick={() => cameraRef.current?.click()}
           disabled={recognizing}
           style={{
             display: "flex", alignItems: "center", gap: 6,
@@ -90,15 +133,30 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit }: Props
           )}
           {recognizing ? "AI 识别中…" : "拍照识别"}
         </button>
-        <span style={{ fontSize: 11, color: "#bfbfbf" }}>
-          拍照自动识别品类、颜色、风格
+        <button
+          type="button"
+          onClick={() => galleryRef.current?.click()}
+          disabled={recognizing}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            border: "1px solid #e8eaed", borderRadius: 4,
+            background: "#fff", padding: "8px 16px",
+            cursor: recognizing ? "not-allowed" : "pointer",
+            fontSize: 13, color: "#8c8c8c", fontWeight: 500,
+          }}
+        >
+          <PictureOutlined style={{ fontSize: 16 }} />
+          相册
+        </button>
+        <span style={{ fontSize: 11, color: hasPhoto ? "#4a5c6c" : "#bfbfbf" }}>
+          {hasPhoto ? "已选择图片" : "拍照自动识别，或从相册选择"}
         </span>
       </div>
 
       <Form
         form={form}
         layout="vertical"
-        onFinish={(v) => { onSubmit(v as ClothingItemCreate); form.resetFields(); }}
+        onFinish={handleSubmit}
         initialValues={{
           colors: [], material: [], seasons: [], style_tags: [],
           temp_min: 5, temp_max: 30, purchase_price: 0,

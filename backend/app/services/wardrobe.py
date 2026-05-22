@@ -38,7 +38,11 @@ def get_item(db: Session, item_id: int, user_id: int = 1) -> Optional[ClothingIt
 
 
 def create_item(db: Session, data: ClothingItemCreate, user_id: int = 1) -> ClothingItem:
-    item = ClothingItem(user_id=user_id, **data.model_dump())
+    payload = data.model_dump()
+    image_path = payload.pop("image_path", None)
+    item = ClothingItem(user_id=user_id, **payload)
+    if image_path:
+        item.images = [image_path]
     db.add(item)
     db.commit()
     db.refresh(item)

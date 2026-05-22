@@ -31,6 +31,7 @@ export interface ClothingItemCreate {
   temp_min?: number;
   temp_max?: number;
   purchase_price?: number;
+  image_path?: string;
 }
 
 // ── 搭配 ──

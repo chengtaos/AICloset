@@ -107,9 +107,9 @@ async def api_auto_classify(file: UploadFile = File(...)):
     if results is None:
         raise HTTPException(status_code=422, detail="AI 识别失败，请确认图片清晰且包含衣物")
 
-    # 服饰分割：单件用抠图，多件用原图
+    # 服饰分割抠图，失败时降级到原图
     seg_path = segment_image(str(filepath))
-    base_image = seg_path if (seg_path and len(results) == 1) else f"uploads/{filename}"
+    base_image = seg_path if seg_path else f"uploads/{filename}"
 
     for item in results:
         item["image_path"] = base_image

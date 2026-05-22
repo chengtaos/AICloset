@@ -134,6 +134,26 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit, onBatch
       destroyOnClose
       okButtonProps={{ disabled: isBatch && batchItems.length === 0 }}
     >
+      {/* 图片预览：单件模式下展示分割后的抠图 */}
+      {!isBatch && hasPhoto && (
+        <div style={{
+          width: "100%", height: 200, background: "#fafafa",
+          borderRadius: 8, marginBottom: 16,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          overflow: "hidden", border: "1px solid #eee",
+        }}>
+          {imagePathRef.current ? (
+            <img
+              src={`http://localhost:8000/${imagePathRef.current}`}
+              alt="预览"
+              style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+            />
+          ) : (
+            <span style={{ fontSize: 13, color: "#ccc" }}>已选择图片，填写下方字段后录入</span>
+          )}
+        </div>
+      )}
+
       {/* 拍照识别 / 相册选择 */}
       <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
         <input

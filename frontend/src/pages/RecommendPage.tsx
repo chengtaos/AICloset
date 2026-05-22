@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Button, Select, Input, message } from "antd";
 import { ThunderboltOutlined, ExperimentOutlined } from "@ant-design/icons";
-import type { ClothingItem, RecommendResponse } from "../types";
-import { fetchItems, recommendDaily, recommendScenario, recordWear } from "../api/client";
+import type { RecommendResponse } from "../types";
+import { recommendDaily, recommendScenario, recordWear } from "../api/client";
 import RecommendCard from "../components/RecommendCard";
 
 // 和风天气支持的主要城市列表
@@ -30,11 +30,6 @@ export default function RecommendPage() {
   // 已采纳的推荐索引，用于高亮已穿搭的结果
   const [acceptedIdx, setAcceptedIdx] = useState<number | null>(null);
 
-  const { data: items = [] } = useQuery({
-    queryKey: ["items"],
-    queryFn: () => fetchItems(),
-  });
-
   const dailyMutation = useMutation({
     mutationFn: () => recommendDaily(city),
   });
@@ -49,13 +44,6 @@ export default function RecommendPage() {
       message.success("已记录穿着，今天就这么穿！");
     },
   });
-
-  // id -> ClothingItem 映射，供 RecommendCard 展示详情
-  const itemMap = useMemo(() => {
-    const map = new Map<number, ClothingItem>();
-    items.forEach((it) => map.set(it.id, it));
-    return map;
-  }, [items]);
 
   const data: RecommendResponse | null =
     mode === "daily" ? dailyMutation.data ?? null : scenarioMutation.data ?? null;
@@ -198,7 +186,6 @@ export default function RecommendPage() {
       <RecommendCard
         loading={loading}
         data={data}
-        itemMap={itemMap}
         accepting={wearMutation.isPending}
         acceptedIdx={acceptedIdx}
         onAccept={(itemIds, idx) => wearMutation.mutate({ itemIds, idx })}

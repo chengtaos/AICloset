@@ -1,4 +1,6 @@
+import os
 from datetime import date
+from pathlib import Path
 from typing import Optional
 
 from sqlalchemy import func
@@ -12,6 +14,8 @@ from app.schemas import (
     ClothingItemUpdate,
     WardrobeStats,
 )
+
+UPLOAD_DIR = Path(__file__).parent.parent.parent / "uploads"
 
 
 def list_items(
@@ -110,12 +114,25 @@ def update_item(db: Session, item_id: int, data: ClothingItemUpdate, user_id: in
 
 
 def delete_item(db: Session, item_id: int, user_id: int = 1) -> bool:
-    """硬删除衣物记录。"""
+    """硬删除衣物记录，同时清理本地图片文件。"""
     item = get_item(db, item_id, user_id)
     if not item:
         return False
+
+    # 收集所有关联的本地图片路径
+    image_paths = list(item.images or [])
     db.delete(item)
     db.commit()
+
+    # 删除本地图片文件（忽略文件不存在的错误）
+    for img_path in image_paths:
+        try:
+            full_path = UPLOAD_DIR.parent / img_path
+            if full_path.exists():
+                full_path.unlink()
+        except Exception:
+            pass
+
     return True
 
 

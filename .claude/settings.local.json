@@ -24,7 +24,13 @@
       "Bash(python -c \"from alibabacloud_imageseg20191230 import models; import inspect; r = models.SegmentClothAdvanceRequest\\(\\); print\\(inspect.signature\\(r.__init__\\)\\)\")",
       "Bash(python -c \"from alibabacloud_imageseg20191230 import models; print\\([a for a in dir\\(models.SegmentClothAdvanceRequest\\) if not a.startswith\\('_'\\)]\\)\")",
       "Bash(python -c \"from app.services.wardrobe import list_items, get_item, create_item, update_item, delete_item, add_image, get_stats, record_wear, get_wear_history; print\\('wardrobe.py OK'\\)\")",
-      "Bash(python -c \"from app.services.recommend import recommend_daily, recommend_scenario; print\\('recommend.py OK'\\)\")"
+      "Bash(python -c \"from app.services.recommend import recommend_daily, recommend_scenario; print\\('recommend.py OK'\\)\")",
+      "Bash(python -c \"import uvicorn; uvicorn.run\\('app.main:app', host='0.0.0.0', port=8000\\)\")",
+      "Bash(curl -s http://localhost:8000/api/health)",
+      "Bash(python -m uvicorn app.main:app --host 0.0.0.0 --port 8000)",
+      "Bash(python -m uvicorn main:app --host 0.0.0.0 --port 8000)",
+      "Bash(python -m py_compile app/services/wardrobe.py)",
+      "Bash(python -m py_compile app/routers/wardrobe.py)"
     ],
     "additionalDirectories": [
       "c:\\Users\\chengtao\\Desktop\\AiCloset\\backend\\uploads"

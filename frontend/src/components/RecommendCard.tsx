@@ -1,11 +1,11 @@
 import { Button } from "antd";
 import { CheckOutlined } from "@ant-design/icons";
-import type { RecommendResponse, ClothingItem } from "../types";
+import type { RecommendResponse } from "../types";
+import OutfitComposer from "./OutfitComposer";
 
 interface Props {
   loading: boolean;
   data: RecommendResponse | null;
-  itemMap: Map<number, ClothingItem>;
   onAccept?: (itemIds: number[], idx: number) => void;
   accepting?: boolean;
   acceptedIdx?: number | null;
@@ -16,7 +16,7 @@ const WEATHER_ICON: Record<string, string> = {
   "雨": "🌧", "雷阵雨": "⛈", "雪": "❄", "小雪": "🌨",
 };
 
-export default function RecommendCard({ loading, data, itemMap, onAccept, accepting, acceptedIdx }: Props) {
+export default function RecommendCard({ loading, data, onAccept, accepting, acceptedIdx }: Props) {
   if (loading) {
     return (
       <div style={{ textAlign: "center", padding: "80px 0", color: "#8c8c8c" }}>
@@ -62,37 +62,14 @@ export default function RecommendCard({ loading, data, itemMap, onAccept, accept
           border: "1px solid #e8eaed", borderRadius: 4, background: "#fff",
           padding: 20, marginBottom: 16,
         }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#8c8c8c", marginBottom: 14, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#8c8c8c", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.05em" }}>
             推荐 {idx + 1}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 12, marginBottom: 18 }}>
-            {sug.items.map((item) => (
-              <div key={item.id} style={{ textAlign: "center" }}>
-                <div style={{
-                  width: "100%", aspectRatio: "3/4", background: "#f5f5f5",
-                  borderRadius: 4, display: "flex", alignItems: "center",
-                  justifyContent: "center", overflow: "hidden", marginBottom: 6,
-                }}>
-                  {item.images.length > 0 ? (
-                    <img
-                      src={`http://localhost:8000/${item.images[0]}`}
-                      alt={item.sub_category}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                  ) : (
-                    <span style={{ fontSize: 28, opacity: 0.12 }}>👤</span>
-                  )}
-                </div>
-                <div style={{ fontSize: 12, fontWeight: 500, color: "#1a1a1a" }}>{item.sub_category}</div>
-                <div style={{ fontSize: 11, color: "#8c8c8c" }}>
-                  {item.colors.slice(0, 2).join(" · ")}
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* 矢量组合图：衣物图片叠加在身体轮廓上，支持拖动 */}
+          <OutfitComposer items={sug.items} />
 
-          <div style={{ fontSize: 13, color: "#4a5c6c", lineHeight: 1.7, borderTop: "1px solid #f0f0f0", paddingTop: 14, marginBottom: 14 }}>
+          <div style={{ fontSize: 13, color: "#4a5c6c", lineHeight: 1.7, borderTop: "1px solid #f0f0f0", paddingTop: 14, marginTop: 20, marginBottom: 14 }}>
             {sug.reason}
           </div>
 

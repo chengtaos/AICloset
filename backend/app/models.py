@@ -108,6 +108,8 @@ class UserProfile(Base):
     seasonal_categories = Column(JSON, default=dict)
     # 季节 × 温度舒适区间: {"春": [10, 25], "夏": [22, 35], ...}
     seasonal_temp = Column(JSON, default=dict)
+    # 每个季节上次更新时间: {"春": "2026-03-15T10:00:00", ...}
+    seasonal_updated = Column(JSON, default=dict)
     # 场合偏好: {"通勤": {"styles": {...}, "categories": {...}}, ...}
     occasion_prefs = Column(JSON, default=dict)
 

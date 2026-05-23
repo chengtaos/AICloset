@@ -40,6 +40,7 @@ def _migrate_user_profiles():
         ("seasonal_colors", "TEXT DEFAULT '{}'"),
         ("seasonal_categories", "TEXT DEFAULT '{}'"),
         ("seasonal_temp", "TEXT DEFAULT '{}'"),
+        ("seasonal_updated", "TEXT DEFAULT '{}'"),
         ("occasion_prefs", "TEXT DEFAULT '{}'"),
         ("item_pairs", "TEXT DEFAULT '{}'"),
         ("category_pairs", "TEXT DEFAULT '{}'"),

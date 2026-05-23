@@ -1,9 +1,11 @@
 """
 多级记忆偏好引擎。
 
-L2 短期偏好（14天滑动窗口，7天半衰期）
-L3 长期档案（春夏秋冬独立偏好向量，90天半衰期）
-L4 关系记忆（物品共现对 + 品类搭配模式）
+L2 短期偏好（14天滑动窗口，7天半衰期）— 快速累积，快速遗忘，相当于工作记忆
+L3 长期档案（春夏秋冬独立偏好向量，90天半衰期）— 仅通过 Consolidation 从 L2 提升
+L4 关系记忆（物品共现对 + 品类搭配模式）— Top-100 容量裁剪
+
+生命周期：编码(importance) → L2累积 → Consolidation(L2→L3) → 遗忘(衰减+L4裁剪)
 
 从穿着历史和推荐反馈中学习，注入 LLM 提示词和规则引擎。
 """
@@ -16,6 +18,11 @@ from sqlalchemy.orm import Session
 from app.models import ClothingItem, UserProfile
 
 logger = logging.getLogger(__name__)
+
+# L2 → L3 提升阈值：同一风格/颜色/品类在 L2 累积 ≥3 次后确认
+CONSOLIDATION_THRESHOLD = 3.0
+# L4 物品共现对容量上限
+MAX_ITEM_PAIRS = 100
 
 # ── 季节工具 ──
 
@@ -66,7 +73,7 @@ def _get_or_create_profile(db: Session, user_id: int) -> UserProfile:
     return profile
 
 
-# ── 多级偏好更新 ──
+# ── 增量计数 ──
 
 def _increment_counts(target: dict, keys: list[str], weight: float = 1.0) -> dict:
     """向 dict 中增量更新计数。"""
@@ -76,13 +83,99 @@ def _increment_counts(target: dict, keys: list[str], weight: float = 1.0) -> dic
     return result
 
 
+def _multiply_counts(counts: dict, keys: list[str], factor: float) -> dict:
+    """对 dict 中指定 key 乘以系数。"""
+    result = dict(counts)
+    for k in keys:
+        if k in result:
+            result[k] = result[k] * factor
+    return result
+
+
+# ── 重要性计算 ──
+
+def _compute_importance(items: list[ClothingItem]) -> dict[int, float]:
+    """计算每件衣物的事件重要性权重。
+
+    - 首次穿着（wear_count == 0 before increment → now == 1）：2.0（探索期激励）
+    - 正常穿着：1.0
+    """
+    result: dict[int, float] = {}
+    for item in items:
+        if (item.wear_count or 0) <= 1:
+            result[item.id] = 2.0
+        else:
+            result[item.id] = 1.0
+    return result
+
+
+# ── Consolidation: L2 → L3 ──
+
+def _consolidate_l2_to_l3(
+    l2_styles: dict,
+    l2_colors: dict,
+    l2_cats: dict,
+    seasonal_styles: dict,
+    seasonal_colors: dict,
+    seasonal_cats: dict,
+    seasonal_updated: dict,
+    season: str,
+    adjacent: list[str],
+    now: datetime,
+) -> tuple[dict, dict, dict, dict, dict, dict, dict, int]:
+    """将 L2 中达到阈值的模式提升到 L3，并重置 L2 对应项。
+
+    返回更新后的 (l2_styles, l2_colors, l2_cats,
+                  seasonal_styles, seasonal_colors, seasonal_cats,
+                  seasonal_updated, promoted_count)。
+    """
+    promoted = 0
+
+    def _consolidate(l2: dict, se: dict) -> tuple[dict, dict, int]:
+        count = 0
+        for key, val in list(l2.items()):
+            if val >= CONSOLIDATION_THRESHOLD:
+                # 当前季节全权重
+                se_cur = dict(se.get(season, {}))
+                se_cur[key] = se_cur.get(key, 0.0) + val
+                se[season] = se_cur
+                # 相邻季节 0.3x
+                for adj in adjacent:
+                    se_adj = dict(se.get(adj, {}))
+                    se_adj[key] = se_adj.get(key, 0.0) + val * 0.3
+                    se[adj] = se_adj
+                l2[key] = 0.0
+                count += 1
+        return l2, se, count
+
+    l2_styles, seasonal_styles, c1 = _consolidate(l2_styles, seasonal_styles)
+    l2_colors, seasonal_colors, c2 = _consolidate(l2_colors, seasonal_colors)
+    l2_cats, seasonal_cats, c3 = _consolidate(l2_cats, seasonal_cats)
+    promoted = c1 + c2 + c3
+
+    if promoted > 0:
+        for s in [season] + adjacent:
+            seasonal_updated[s] = now.isoformat()
+
+    return (
+        l2_styles, l2_colors, l2_cats,
+        seasonal_styles, seasonal_colors, seasonal_cats,
+        seasonal_updated, promoted,
+    )
+
+
+# ── 多级偏好更新（主入口）──
+
 def update_preferences_on_wear(
     db: Session,
     user_id: int,
     item_ids: list[int],
     occasion: str = "",
 ) -> None:
-    """穿着记录后增量更新 L2/L3/L4 三级偏好。"""
+    """穿着记录后更新多级偏好。
+
+    流程：计算重要性 → L2 衰减+加权累积 → Consolidation(L2→L3) → L4 裁剪。
+    """
     profile = _get_or_create_profile(db, user_id)
     items = db.query(ClothingItem).filter(ClothingItem.id.in_(item_ids)).all()
     if not items:
@@ -91,17 +184,35 @@ def update_preferences_on_wear(
     now = datetime.now()
     season = _get_current_season()
     adjacent = _get_adjacent_seasons(season)
+    importance = _compute_importance(items)
 
-    # ── L2: 短期偏好（14天滑动窗口）──
-    # 先做一次衰减，再叠加新数据
+    # ── L2: 短期偏好 — 衰减 + 重要性加权累积 ──
     l2_styles = apply_decay(profile.short_term_styles or {}, profile.short_term_updated, 7)
     l2_colors = apply_decay(profile.short_term_colors or {}, profile.short_term_updated, 7)
     l2_cats = apply_decay(profile.short_term_categories or {}, profile.short_term_updated, 7)
 
     for item in items:
-        l2_styles = _increment_counts(l2_styles, item.style_tags or [])
-        l2_colors = _increment_counts(l2_colors, item.colors or [])
-        l2_cats = _increment_counts(l2_cats, [item.category])
+        imp = importance.get(item.id, 1.0)
+        l2_styles = _increment_counts(l2_styles, item.style_tags or [], imp)
+        l2_colors = _increment_counts(l2_colors, item.colors or [], imp)
+        l2_cats = _increment_counts(l2_cats, [item.category], imp)
+
+    # ── Consolidation: L2 达标项提升到 L3 ──
+    seasonal_updated = dict(profile.seasonal_updated or {})
+    seasonal_styles = dict(profile.seasonal_styles or {})
+    seasonal_colors = dict(profile.seasonal_colors or {})
+    seasonal_cats = dict(profile.seasonal_categories or {})
+    seasonal_temp = dict(profile.seasonal_temp or {})
+
+    (
+        l2_styles, l2_colors, l2_cats,
+        seasonal_styles, seasonal_colors, seasonal_cats,
+        seasonal_updated, promoted_count,
+    ) = _consolidate_l2_to_l3(
+        l2_styles, l2_colors, l2_cats,
+        seasonal_styles, seasonal_colors, seasonal_cats,
+        seasonal_updated, season, adjacent, now,
+    )
 
     profile.short_term_styles = l2_styles
     profile.short_term_colors = l2_colors
@@ -109,43 +220,11 @@ def update_preferences_on_wear(
     profile.short_term_updated = now
     profile.l2_event_count = (profile.l2_event_count or 0) + 1
 
-    # ── L3: 长期档案（季节感知）──
-    seasonal_styles = dict(profile.seasonal_styles or {})
-    seasonal_colors = dict(profile.seasonal_colors or {})
-    seasonal_cats = dict(profile.seasonal_categories or {})
-    seasonal_temp = dict(profile.seasonal_temp or {})
-
-    # 当前季节：全权重 1.0
-    ss = dict(seasonal_styles.get(season, {}))
-    sc = dict(seasonal_colors.get(season, {}))
-    sct = dict(seasonal_cats.get(season, {}))
-    for item in items:
-        ss = _increment_counts(ss, item.style_tags or [])
-        sc = _increment_counts(sc, item.colors or [])
-        sct = _increment_counts(sct, [item.category])
-    seasonal_styles[season] = ss
-    seasonal_colors[season] = sc
-    seasonal_cats[season] = sct
-
-    # 相邻季节：0.3x 权重（过渡期）
-    for adj in adjacent:
-        adj_s = dict(seasonal_styles.get(adj, {}))
-        adj_c = dict(seasonal_colors.get(adj, {}))
-        adj_ct = dict(seasonal_cats.get(adj, {}))
-        for item in items:
-            adj_s = _increment_counts(adj_s, item.style_tags or [], 0.3)
-            adj_c = _increment_counts(adj_c, item.colors or [], 0.3)
-            adj_ct = _increment_counts(adj_ct, [item.category], 0.3)
-        seasonal_styles[adj] = adj_s
-        seasonal_colors[adj] = adj_c
-        seasonal_cats[adj] = adj_ct
-
-    # 学习当前季节的温度舒适区间
+    # ── L3: 温度舒适区间（直接更新，不走 Consolidation）──
     temp_min = min(item.temp_min for item in items)
     temp_max = max(item.temp_max for item in items)
     existing_temp = seasonal_temp.get(season, [])
     if existing_temp and len(existing_temp) == 2:
-        # EMA 平滑：新值权重 0.3，旧值权重 0.7
         seasonal_temp[season] = [
             int(existing_temp[0] * 0.7 + temp_min * 0.3),
             int(existing_temp[1] * 0.7 + temp_max * 0.3),
@@ -153,13 +232,15 @@ def update_preferences_on_wear(
     else:
         seasonal_temp[season] = [temp_min, temp_max]
 
+    profile.seasonal_updated = seasonal_updated
     profile.seasonal_styles = seasonal_styles
     profile.seasonal_colors = seasonal_colors
     profile.seasonal_categories = seasonal_cats
     profile.seasonal_temp = seasonal_temp
-    profile.l3_event_count = (profile.l3_event_count or 0) + 1
+    if promoted_count > 0:
+        profile.l3_event_count = (profile.l3_event_count or 0) + 1
 
-    # ── L3: 场合偏好 ──
+    # ── L3: 场合偏好（直接更新）──
     if occasion:
         occasion_prefs = dict(profile.occasion_prefs or {})
         occ_entry = dict(occasion_prefs.get(occasion, {}))
@@ -173,7 +254,7 @@ def update_preferences_on_wear(
         occasion_prefs[occasion] = occ_entry
         profile.occasion_prefs = occasion_prefs
 
-    # ── L4: 关系记忆 ──
+    # ── L4: 关系记忆（含容量裁剪）──
     update_item_pairs(profile, item_ids)
 
     # ── 元信息 ──
@@ -181,30 +262,36 @@ def update_preferences_on_wear(
     profile.last_updated = now
     db.commit()
     logger.info(
-        "多级偏好已更新: user=%d events=%d season=%s items=%s occasion=%s",
-        user_id, profile.total_wear_events, season, item_ids, occasion,
+        "多级偏好已更新: user=%d events=%d season=%s items=%s importance=%s occasion=%s promoted=%d",
+        user_id, profile.total_wear_events, season, item_ids,
+        {k: v for k, v in importance.items() if v != 1.0},
+        occasion, promoted_count,
     )
 
 
+# ── L4: 关系记忆 ──
+
 def update_item_pairs(profile: UserProfile, item_ids: list[int]) -> None:
-    """更新物品共现矩阵和品类搭配模式。"""
+    """更新物品共现矩阵（含容量裁剪：只保留 Top-100 高频对）。"""
     items = sorted(set(item_ids))
     if len(items) < 2:
         return
 
-    # 物品共现对
     item_pairs = dict(profile.item_pairs or {})
     for i in range(len(items)):
         for j in range(i + 1, len(items)):
             a, b = items[i], items[j]
             pair_key = f"{a}_{b}" if a < b else f"{b}_{a}"
             item_pairs[pair_key] = item_pairs.get(pair_key, 0) + 1
+
+    # 容量裁剪：保留 Top-100
+    if len(item_pairs) > MAX_ITEM_PAIRS:
+        sorted_pairs = sorted(item_pairs.items(), key=lambda x: -x[1])
+        item_pairs = dict(sorted_pairs[:MAX_ITEM_PAIRS])
+        logger.info("L4 共现对裁剪: %d → %d", len(sorted_pairs), len(item_pairs))
+
     profile.item_pairs = item_pairs
     profile.l4_event_count = len(item_pairs)
-
-    # 品类组合（延迟查询，避免在此处引入 DB 依赖）
-    # 由调用方在 wardrobe.record_wear 中完成 item 查询后调用
-    # 这里仅做 item_id 级别的共现
 
 
 def update_category_pairs_from_items(profile: UserProfile, items: list[ClothingItem]) -> None:
@@ -220,28 +307,42 @@ def update_category_pairs_from_items(profile: UserProfile, items: list[ClothingI
     profile.category_pairs = category_pairs
 
 
+# ── 屏蔽 / 负向微调 ──
+
 def suppress_items_in_preferences(db: Session, user_id: int, item_ids: list[int]) -> None:
-    """将不喜欢的衣物加入黑名单。"""
+    """将不喜欢的衣物加入黑名单，并对 L2 短期向量做负向微调。
+
+    负向策略：对 disliked 物品的风格/颜色/品类在 L2 短期向量中 ×0.5（腰斩），
+    让系统感知到"最近不太喜欢这类风格"，而不是仅屏蔽具体物品 ID。
+    """
     profile = _get_or_create_profile(db, user_id)
+
     disliked = set(profile.disliked_items or [])
     for iid in item_ids:
         disliked.add(iid)
     profile.disliked_items = list(disliked)
+
+    items = db.query(ClothingItem).filter(ClothingItem.id.in_(item_ids)).all()
+    if items:
+        styles = dict(profile.short_term_styles or {})
+        colors = dict(profile.short_term_colors or {})
+        cats = dict(profile.short_term_categories or {})
+        for item in items:
+            styles = _multiply_counts(styles, item.style_tags or [], 0.5)
+            colors = _multiply_counts(colors, item.colors or [], 0.5)
+            cats = _multiply_counts(cats, [item.category], 0.5)
+        profile.short_term_styles = styles
+        profile.short_term_colors = colors
+        profile.short_term_categories = cats
+
     db.commit()
-    logger.info("已屏蔽不喜欢的衣物: %s", item_ids)
+    logger.info("已屏蔽不喜欢的衣物并负向微调 L2 向量: items=%s", item_ids)
 
 
 # ── 多级偏好 LLM Prompt 生成 ──
 
 def format_preferences_for_llm(profile: UserProfile | None) -> str:
-    """将多级记忆转为结构化 LLM 提示词。
-
-    冷启动分级：
-    - 无 profile → 返回 ""
-    - L2 未激活（l2 < 3 且 recent 无数据）→ 不展示近期偏好
-    - L3 未激活（l3 < 3）→ 不展示季节偏好
-    - L4 未激活（< 5 对）→ 不展示经典搭配
-    """
+    """将多级记忆转为结构化 LLM 提示词。"""
     if not profile:
         return ""
 
@@ -280,16 +381,24 @@ def format_preferences_for_llm(profile: UserProfile | None) -> str:
     l3_count = profile.l3_event_count or 0
     season = _get_current_season()
     if l3_count >= 2:
-        se_styles = (profile.seasonal_styles or {}).get(season, {})
-        se_colors = (profile.seasonal_colors or {}).get(season, {})
+        seasonal_updated = profile.seasonal_updated or {}
+        last_upd = seasonal_updated.get(season)
+        if isinstance(last_upd, str):
+            last_upd = datetime.fromisoformat(last_upd)
+        se_styles = apply_decay((profile.seasonal_styles or {}).get(season, {}), last_upd, 90)
+        se_colors = apply_decay((profile.seasonal_colors or {}).get(season, {}), last_upd, 90)
         se_temp = (profile.seasonal_temp or {}).get(season, [])
 
-        # 融合相邻季节（0.3x）
         adjacent = _get_adjacent_seasons(season)
         for adj in adjacent:
-            for k, v in (profile.seasonal_styles or {}).get(adj, {}).items():
+            adj_upd = seasonal_updated.get(adj)
+            if isinstance(adj_upd, str):
+                adj_upd = datetime.fromisoformat(adj_upd)
+            adj_styles = apply_decay((profile.seasonal_styles or {}).get(adj, {}), adj_upd, 90)
+            adj_colors = apply_decay((profile.seasonal_colors or {}).get(adj, {}), adj_upd, 90)
+            for k, v in adj_styles.items():
                 se_styles[k] = se_styles.get(k, 0) + v * 0.3
-            for k, v in (profile.seasonal_colors or {}).get(adj, {}).items():
+            for k, v in adj_colors.items():
                 se_colors[k] = se_colors.get(k, 0) + v * 0.3
 
         if se_styles or se_colors:
@@ -315,7 +424,6 @@ def format_preferences_for_llm(profile: UserProfile | None) -> str:
             lines.append(f"- 衣物#{ids[0]} + 衣物#{ids[1]}（穿过{count}次）")
         sections.append("\n".join(lines))
 
-    # ── 不喜欢的衣物 ──
     if profile.disliked_items:
         sections.append(f"### 不喜欢的衣物\n- 请避免推荐这些衣物ID：{profile.disliked_items}")
 
@@ -332,11 +440,7 @@ def score_items_by_preferences(
     profile: UserProfile | None,
     selected_items: list[int] | None = None,
 ) -> dict[int, float]:
-    """多级融合评分：L2 短期 + L3 季节 + L4 共现 + 惩罚项。
-
-    selected_items: 已选定的物品 ID，用于 L4 共现加分。
-    冷启动时返回空 dict。
-    """
+    """多级融合评分：L2 短期 + L3 季节 + L4 共现 + 惩罚项。"""
     if not profile or (profile.total_wear_events or 0) < 2:
         return {}
 
@@ -351,16 +455,26 @@ def score_items_by_preferences(
     l2_cats = apply_decay(profile.short_term_categories or {}, profile.short_term_updated, 7)
     l2_activated = (profile.l2_event_count or 0) >= 2 and any(l2_styles.values())
 
-    # L3: 当前季节 + 相邻季节融合
-    se_styles = dict((profile.seasonal_styles or {}).get(season, {}))
-    se_colors = dict((profile.seasonal_colors or {}).get(season, {}))
-    se_cats = dict((profile.seasonal_categories or {}).get(season, {}))
+    # L3: 当前季节 + 相邻季节融合（90天衰减）
+    seasonal_updated = profile.seasonal_updated or {}
+    last_upd = seasonal_updated.get(season)
+    if isinstance(last_upd, str):
+        last_upd = datetime.fromisoformat(last_upd)
+    se_styles = apply_decay((profile.seasonal_styles or {}).get(season, {}), last_upd, 90)
+    se_colors = apply_decay((profile.seasonal_colors or {}).get(season, {}), last_upd, 90)
+    se_cats = apply_decay((profile.seasonal_categories or {}).get(season, {}), last_upd, 90)
     for adj in adjacent:
-        for k, v in (profile.seasonal_styles or {}).get(adj, {}).items():
+        adj_upd = seasonal_updated.get(adj)
+        if isinstance(adj_upd, str):
+            adj_upd = datetime.fromisoformat(adj_upd)
+        adj_s = apply_decay((profile.seasonal_styles or {}).get(adj, {}), adj_upd, 90)
+        adj_c = apply_decay((profile.seasonal_colors or {}).get(adj, {}), adj_upd, 90)
+        adj_ct = apply_decay((profile.seasonal_categories or {}).get(adj, {}), adj_upd, 90)
+        for k, v in adj_s.items():
             se_styles[k] = se_styles.get(k, 0) + v * 0.3
-        for k, v in (profile.seasonal_colors or {}).get(adj, {}).items():
+        for k, v in adj_c.items():
             se_colors[k] = se_colors.get(k, 0) + v * 0.3
-        for k, v in (profile.seasonal_categories or {}).get(adj, {}).items():
+        for k, v in adj_ct.items():
             se_cats[k] = se_cats.get(k, 0) + v * 0.3
     l3_activated = (profile.l3_event_count or 0) >= 2
 
@@ -368,7 +482,6 @@ def score_items_by_preferences(
     item_pairs = profile.item_pairs or {}
     l4_activated = len(item_pairs) >= 3
 
-    # 归一化：各维度最大值
     def _max_val(d: dict) -> float:
         return max(d.values()) if d else 1.0
 
@@ -385,7 +498,6 @@ def score_items_by_preferences(
         for item in items:
             score = 1.0
 
-            # L2: 短期偏好 boost（权重 0.08/命中）
             if l2_activated:
                 for tag in (item.style_tags or []):
                     score += (l2_styles.get(tag, 0) / l2_styles_max) * 0.08
@@ -393,7 +505,6 @@ def score_items_by_preferences(
                     score += (l2_colors.get(c, 0) / l2_colors_max) * 0.05
                 score += (l2_cats.get(item.category, 0) / l2_cats_max) * 0.06
 
-            # L3: 季节偏好 boost（权重 0.04/命中）
             if l3_activated:
                 for tag in (item.style_tags or []):
                     score += (se_styles.get(tag, 0) / se_styles_max) * 0.04
@@ -401,7 +512,6 @@ def score_items_by_preferences(
                     score += (se_colors.get(c, 0) / se_colors_max) * 0.03
                 score += (se_cats.get(item.category, 0) / se_cats_max) * 0.03
 
-            # L4: 共现亲和（与已选物品的搭配度）
             if l4_activated and selected and pairs_max > 0:
                 for sid in selected:
                     a, b = (sid, item.id) if sid < item.id else (item.id, sid)
@@ -409,7 +519,6 @@ def score_items_by_preferences(
                     pair_count = item_pairs.get(pair_key, 0)
                     score += (pair_count / pairs_max) * 0.1
 
-            # 不喜欢的物品惩罚
             if item.id in disliked:
                 score *= 0.15
 

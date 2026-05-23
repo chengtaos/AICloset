@@ -73,7 +73,21 @@
       "Bash(taskkill //F //IM uvicorn.exe)",
       "Bash(pip show *)",
       "Bash(python -c \"from app.routers import auth, wardrobe, outfits, recommend; print\\('All routers OK'\\); from app.auth import get_current_user, create_token; print\\('Auth OK'\\)\")",
-      "Bash(npm list *)"
+      "Bash(npm list *)",
+      "Bash(python -c \"from app.services.preferences import suppress_items_in_preferences; print\\('OK'\\)\")",
+      "Read(//c/tmp/**)",
+      "Bash(curl -s -X POST http://localhost:8000/api/auth/login -H \"Content-Type: application/json\" -d '{\"phone\":\"13800000001\",\"password\":\"123456\"}')",
+      "WebFetch(domain:datawhalechina.github.io)",
+      "WebSearch",
+      "Bash(python -c \"from app.services.preferences import *; print\\('imports OK'\\)\")",
+      "Bash(curl -s http://localhost:8000/api/auth/me)",
+      "Bash(curl -s http://localhost:8000/api/wardrobe/items -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzgwMTM1NjI0fQ.NtHdK0F0XEOWmRIjEWyuEeqSJDGFV3S8prsNbKyzXYg')",
+      "Bash(python -c \"import sys,json; items=json.load\\(sys.stdin\\); [print\\(f'  id={i[\\\\\"id\\\\\"]}, cat={i[\\\\\"category\\\\\"]}, sub={i[\\\\\"sub_category\\\\\"]}, styles={i[\\\\\"style_tags\\\\\"]}, wear={i[\\\\\"wear_count\\\\\"]}'\\) for i in items[:10]]\")",
+      "Bash(curl -s -X POST http://localhost:8000/api/wardrobe/wear -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzgwMTM1NjI0fQ.NtHdK0F0XEOWmRIjEWyuEeqSJDGFV3S8prsNbKyzXYg' -d '{\"item_ids\":[7]}')",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d, indent=2, ensure_ascii=False\\)\\)\")",
+      "Bash(curl -s -X POST http://localhost:8000/api/wardrobe/wear-records -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzgwMTM1NjI0fQ.NtHdK0F0XEOWmRIjEWyuEeqSJDGFV3S8prsNbKyzXYg' -d '{\"item_ids\":[7]}')",
+      "Bash(curl -s -X POST http://localhost:8000/api/wardrobe/wear-records -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzgwMTM1NjI0fQ.NtHdK0F0XEOWmRIjEWyuEeqSJDGFV3S8prsNbKyzXYg' -d '{\"item_ids\":[1]}')",
+      "Bash(curl -s -X POST http://localhost:8000/api/recommend/daily -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzgwMTM1NjI0fQ.NtHdK0F0XEOWmRIjEWyuEeqSJDGFV3S8prsNbKyzXYg' -d '{}')"
     ],
     "additionalDirectories": [
       "c:\\Users\\chengtao\\Desktop\\AiCloset\\backend\\uploads"

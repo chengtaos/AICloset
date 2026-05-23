@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Select, Input, message } from "antd";
 import { ThunderboltOutlined, ExperimentOutlined } from "@ant-design/icons";
 import type { RecommendResponse } from "../types";
@@ -22,19 +22,39 @@ const QUICK_SCENARIOS = [
   { label: "度假", desc: "去海边度假，清爽的度假穿搭" },
 ];
 
+const RECOMMEND_DAILY_KEY = ["recommend", "daily"] as const;
+const RECOMMEND_SCENARIO_KEY = ["recommend", "scenario"] as const;
+
 export default function RecommendPage() {
   const [city, setCity] = useState("北京");
-  // 推荐模式：每日推荐 / 场景推荐
   const [mode, setMode] = useState<"daily" | "scenario">("daily");
   const [scenarioDesc, setScenarioDesc] = useState("");
-  // 已采纳的推荐索引，用于高亮已穿搭的结果
   const [acceptedIdx, setAcceptedIdx] = useState<number | null>(null);
+  const queryClient = useQueryClient();
+
+  // 从缓存读取推荐结果，切换导航再回来不会丢失
+  const { data: dailyData } = useQuery({
+    queryKey: RECOMMEND_DAILY_KEY,
+    queryFn: () => null,
+    staleTime: Infinity,
+  });
+  const { data: scenarioData } = useQuery({
+    queryKey: RECOMMEND_SCENARIO_KEY,
+    queryFn: () => null,
+    staleTime: Infinity,
+  });
 
   const dailyMutation = useMutation({
     mutationFn: () => recommendDaily(city),
+    onSuccess: (data) => {
+      queryClient.setQueryData(RECOMMEND_DAILY_KEY, data);
+    },
   });
   const scenarioMutation = useMutation({
     mutationFn: (desc: string) => recommendScenario(desc, city),
+    onSuccess: (data) => {
+      queryClient.setQueryData(RECOMMEND_SCENARIO_KEY, data);
+    },
   });
   const wearMutation = useMutation({
     mutationFn: ({ itemIds, idx }: { itemIds: number[]; idx: number }) =>
@@ -46,7 +66,7 @@ export default function RecommendPage() {
   });
 
   const data: RecommendResponse | null =
-    mode === "daily" ? dailyMutation.data ?? null : scenarioMutation.data ?? null;
+    mode === "daily" ? (dailyData as RecommendResponse | null) ?? null : (scenarioData as RecommendResponse | null) ?? null;
   const loading =
     mode === "daily" ? dailyMutation.isPending : scenarioMutation.isPending;
 

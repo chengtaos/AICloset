@@ -59,8 +59,7 @@ export default function RecommendCard({ loading, data, onAccept, accepting, acce
       {/* 搭配卡片 */}
       {suggestions.map((sug, idx) => (
         <div key={idx} style={{
-          border: "1px solid #e8eaed", borderRadius: 4, background: "#fff",
-          padding: 20, marginBottom: 16,
+          padding: "20px 0", marginBottom: 16,
         }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: "#8c8c8c", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.05em" }}>
             推荐 {idx + 1}

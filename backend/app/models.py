@@ -11,6 +11,7 @@ class User(Base):
     phone = Column(String(20), unique=True, nullable=False, index=True)
     nickname = Column(String(50), default="")
     password_hash = Column(String(255), nullable=False)
+    token_version = Column(Integer, default=0)  # 改密码时 +1，使旧 token 失效
     avatar = Column(String(255), default="")
     created_at = Column(DateTime, default=func.now())
 

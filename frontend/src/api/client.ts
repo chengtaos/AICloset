@@ -12,22 +12,74 @@ import type {
 
 const api = axios.create({ baseURL: "/api" });
 
+// ── access token 内存存储（非 localStorage，防 XSS）──
+let _accessToken: string | null = null;
+let _refreshPromise: Promise<string | null> | null = null;
+
+export function setAccessToken(token: string | null) {
+  _accessToken = token;
+}
+
+export function getAccessToken() {
+  return _accessToken;
+}
+
+// ── 请求拦截器：自动附加 Bearer token ──
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (_accessToken) {
+    config.headers.Authorization = `Bearer ${_accessToken}`;
   }
   return config;
 });
 
+// ── 响应拦截器：401 自动静默刷新 ──
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+  async (error) => {
+    const status = error.response?.status;
+    const url: string = error.config?.url || "";
+
+    // 登录/注册/刷新接口的 401 不触发刷新（避免死循环）
+    const isAuthEndpoint =
+      url.includes("/auth/login") ||
+      url.includes("/auth/register") ||
+      url.includes("/auth/refresh");
+
+    if (status === 401 && !isAuthEndpoint && !error.config._retry) {
+      error.config._retry = true;
+
+      // 去重：多个并发 401 只刷新一次
+      if (!_refreshPromise) {
+        _refreshPromise = (async () => {
+          try {
+            const { data } = await axios.post("/api/auth/refresh", {}, { withCredentials: true });
+            _accessToken = data.token;
+            return data.token;
+          } catch {
+            _accessToken = null;
+            return null;
+          } finally {
+            _refreshPromise = null;
+          }
+        })();
+      }
+
+      const newToken = await _refreshPromise;
+      if (newToken) {
+        // 重试原始请求
+        error.config.headers.Authorization = `Bearer ${newToken}`;
+        return api.request(error.config);
+      }
+
+      // 刷新失败 → 跳转登录
       window.location.href = "/login";
     }
+
+    // 登出接口返回 401 直接跳转
+    if (status === 401 && url.includes("/auth/logout")) {
+      window.location.href = "/login";
+    }
+
     return Promise.reject(error);
   },
 );

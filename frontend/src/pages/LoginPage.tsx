@@ -11,6 +11,11 @@ export default function LoginPage() {
   const [nickname, setNickname] = useState("");
   const [error, setError] = useState("");
 
+  // 启动时等待 refresh token 校验
+  if (loading && !token) {
+    return <div style={{ minHeight: "100vh" }} />;
+  }
+
   // 已登录直接跳转
   if (token) {
     return <Navigate to="/recommend" replace />;

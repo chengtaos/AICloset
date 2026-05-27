@@ -27,6 +27,7 @@ class Base(DeclarativeBase):
 def init_db():
     Base.metadata.create_all(bind=engine)
     _migrate_user_profiles()
+    _migrate_users_token_version()
 
 
 def _migrate_user_profiles():
@@ -57,6 +58,16 @@ def _migrate_user_profiles():
                 conn.commit()
             except Exception:
                 pass  # column already exists
+
+
+def _migrate_users_token_version():
+    """为已存在的 users 表添加 token_version 列。"""
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 0"))
+            conn.commit()
+        except Exception:
+            pass
 
 
 def get_db():

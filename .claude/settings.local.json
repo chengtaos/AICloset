@@ -89,7 +89,8 @@
       "Bash(curl -s -X POST http://localhost:8000/api/wardrobe/wear-records -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzgwMTM1NjI0fQ.NtHdK0F0XEOWmRIjEWyuEeqSJDGFV3S8prsNbKyzXYg' -d '{\"item_ids\":[1]}')",
       "Bash(curl -s -X POST http://localhost:8000/api/recommend/daily -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzgwMTM1NjI0fQ.NtHdK0F0XEOWmRIjEWyuEeqSJDGFV3S8prsNbKyzXYg' -d '{}')",
       "Bash(python -c \"from main import app; print\\('limiter:', app.state.LIMITER\\); print\\('routes:', len\\(app.routes\\)\\)\")",
-      "Bash(python -c \"from main import app; print\\('limiter:', type\\(app.state.LIMITER\\).__name__\\); print\\('routes:', len\\(app.routes\\)\\)\")"
+      "Bash(python -c \"from main import app; print\\('limiter:', type\\(app.state.LIMITER\\).__name__\\); print\\('routes:', len\\(app.routes\\)\\)\")",
+      "Bash(sqlite3 data/aicloset.db \"ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 0;\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\chengtao\\Desktop\\AiCloset\\backend\\uploads"

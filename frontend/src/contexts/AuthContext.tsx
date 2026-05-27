@@ -6,8 +6,8 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { jwtDecode } from "jwt-decode";
-import api from "../api/client";
+import api, { setAccessToken } from "../api/client";
+import axios from "axios";
 
 interface User {
   id: number;
@@ -22,55 +22,52 @@ interface AuthState {
   loading: boolean;
   login: (phone: string, password: string) => Promise<void>;
   register: (phone: string, password: string, nickname: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
-function loadFromStorage(): { user: User | null; token: string | null } {
-  const token = localStorage.getItem("token");
-  if (!token) return { user: null, token: null };
-  try {
-    const payload = jwtDecode<{ sub: string; exp: number }>(token);
-    if (payload.exp * 1000 < Date.now()) {
-      localStorage.removeItem("token");
-      return { user: null, token: null };
-    }
-  } catch {
-    localStorage.removeItem("token");
-    return { user: null, token: null };
-  }
-  const raw = localStorage.getItem("user");
-  const user = raw ? (JSON.parse(raw) as User) : null;
-  return { user, token };
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => loadFromStorage().user);
-  const [token, setToken] = useState<string | null>(() => loadFromStorage().token);
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true); // 初始为 true，等待 refresh 完成
 
+  // 启动时尝试用 refresh cookie 恢复登录态
   useEffect(() => {
-    if (token) {
-      localStorage.setItem("token", token);
-    } else {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-    }
-  }, [token]);
-
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
-    }
-  }, [user]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await axios.post(
+          "/api/auth/refresh",
+          {},
+          { withCredentials: true },
+        );
+        if (!cancelled) {
+          setAccessToken(data.token);
+          setToken(data.token);
+          setUser(data.user);
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+      } catch {
+        if (!cancelled) {
+          setAccessToken(null);
+          localStorage.removeItem("user");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const login = useCallback(async (phone: string, password: string) => {
     setLoading(true);
     try {
       const { data } = await api.post("/auth/login", { phone, password });
+      setAccessToken(data.token);
       setToken(data.token);
       setUser(data.user);
+      localStorage.setItem("user", JSON.stringify(data.user));
     } finally {
       setLoading(false);
     }
@@ -81,12 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       try {
         const { data } = await api.post("/auth/register", {
-          phone,
-          password,
-          nickname,
+          phone, password, nickname,
         });
+        setAccessToken(data.token);
         setToken(data.token);
         setUser(data.user);
+        localStorage.setItem("user", JSON.stringify(data.user));
       } finally {
         setLoading(false);
       }
@@ -94,9 +91,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // 即使网络错误也清除本地状态
+    }
+    setAccessToken(null);
     setToken(null);
     setUser(null);
+    localStorage.removeItem("user");
   }, []);
 
   return (

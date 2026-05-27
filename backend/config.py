@@ -13,6 +13,10 @@ RATE_LIMIT_AUTH = os.getenv("RATE_LIMIT_AUTH", "5/minute")
 # Redis（可选，用于分布式限流）
 REDIS_URL = os.getenv("REDIS_URL", "")
 
+# 图片上传限制
+MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", "10"))
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+
 # DeepSeek
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"

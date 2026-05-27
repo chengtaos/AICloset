@@ -29,6 +29,7 @@ from app.services.wardrobe import (
 )
 from app.agent.vision import classify_image
 from app.agent.segmentation import segment_image
+from app.upload import validate_image, validate_image_size
 
 router = APIRouter(prefix="/api/wardrobe", tags=["wardrobe"])
 
@@ -78,6 +79,8 @@ def api_delete_item(item_id: int, db: Session = Depends(get_db), current_user: U
 
 @router.post("/items/{item_id}/images", response_model=ClothingItemResponse)
 async def api_upload_image(item_id: int, file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await validate_image(file)
+
     item = get_item(db, item_id, user_id=current_user.id)
     if not item:
         raise HTTPException(status_code=404, detail="衣物不存在")
@@ -87,6 +90,7 @@ async def api_upload_image(item_id: int, file: UploadFile = File(...), db: Sessi
     filepath = UPLOAD_DIR / filename
 
     content = await file.read()
+    validate_image_size(content)
     filepath.write_bytes(content)
 
     # 服饰分割：抠出主体，透明背景；失败则用原图
@@ -99,11 +103,14 @@ async def api_upload_image(item_id: int, file: UploadFile = File(...), db: Sessi
 @router.post("/auto-classify")
 async def api_auto_classify(file: UploadFile = File(...)):
     """拍照识别衣物：上传图片 → AI 返回所有衣物分类结果 → 服饰分割抠图。"""
+    await validate_image(file)
+
     ext = Path(file.filename).suffix or ".jpg"
     filename = f"classify_{uuid.uuid4().hex}{ext}"
     filepath = UPLOAD_DIR / filename
 
     content = await file.read()
+    validate_image_size(content)
     filepath.write_bytes(content)
 
     results = classify_image(str(filepath))

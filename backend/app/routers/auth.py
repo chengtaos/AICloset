@@ -1,4 +1,3 @@
-import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -10,6 +9,8 @@ from app.auth import (
     clear_refresh_cookie,
     get_current_user,
     get_current_user_via_refresh,
+    hash_password,
+    verify_password,
 )
 from app.database import get_db
 from app.limiter import limiter
@@ -44,14 +45,6 @@ class AuthResponse(BaseModel):
     user: UserResponse
 
 
-def _hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
-
-def _verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode(), hashed.encode())
-
-
 def _auth_response(user: User, response: Response) -> AuthResponse:
     """签发双 token：access token 放 body，refresh token 放 httpOnly cookie。"""
     access = create_access_token(user)
@@ -75,7 +68,7 @@ def api_register(
     user = User(
         phone=req.phone,
         nickname=req.nickname or f"用户{req.phone[-4:]}",
-        password_hash=_hash_password(req.password),
+        password_hash=hash_password(req.password),
         token_version=1,
     )
     db.add(user)
@@ -93,7 +86,7 @@ def api_login(
     db: Session = Depends(get_db),
 ):
     user = db.query(User).filter(User.phone == req.phone).first()
-    if not user or not _verify_password(req.password, user.password_hash):
+    if not user or not verify_password(req.password, user.password_hash):
         raise HTTPException(status_code=401, detail="手机号或密码错误")
     return _auth_response(user, response)
 

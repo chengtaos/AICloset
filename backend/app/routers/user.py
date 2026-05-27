@@ -1,15 +1,22 @@
-"""用户设置路由：自备 API Key 管理。"""
+"""用户设置路由：自备 API Key 管理 + 个人资料编辑。"""
 
-from fastapi import APIRouter, Depends, HTTPException
+import uuid
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user
+from app.auth import get_current_user, verify_password, hash_password
 from app.crypto import encrypt, decrypt
 from app.database import get_db
 from app.models import User, UserProfile
+from app.schemas import ProfileUpdate, PasswordChange, ProfileResponse
+from app.upload import validate_image, validate_image_size
 
 router = APIRouter(prefix="/api/user", tags=["user"])
+
+UPLOAD_DIR = Path(__file__).parent.parent.parent / "uploads"
 
 
 class ApiKeysRequest(BaseModel):
@@ -87,3 +94,61 @@ def update_keys(
     db.commit()
 
     return get_keys(db=db, current_user=current_user)
+
+
+# ── 个人资料 ──
+
+@router.get("/profile", response_model=ProfileResponse)
+def get_profile(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.put("/profile", response_model=ProfileResponse)
+def update_profile(
+    req: ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if req.nickname is not None:
+        current_user.nickname = req.nickname.strip()
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.put("/password")
+def change_password(
+    req: PasswordChange,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not verify_password(req.old_password, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="旧密码不正确")
+    if len(req.new_password) < 6:
+        raise HTTPException(status_code=400, detail="新密码至少6位")
+    current_user.password_hash = hash_password(req.new_password)
+    current_user.token_version += 1  # 使所有旧 token 失效
+    db.commit()
+    return {"status": "ok"}
+
+
+@router.post("/avatar", response_model=ProfileResponse)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await validate_image(file)
+
+    ext = Path(file.filename).suffix or ".jpg"
+    filename = f"avatar_{uuid.uuid4().hex}{ext}"
+    filepath = UPLOAD_DIR / filename
+
+    content = await file.read()
+    validate_image_size(content)
+    filepath.write_bytes(content)
+
+    current_user.avatar = f"uploads/{filename}"
+    db.commit()
+    db.refresh(current_user)
+    return current_user

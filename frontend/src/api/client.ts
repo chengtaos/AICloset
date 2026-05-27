@@ -223,3 +223,35 @@ export async function updateApiKeys(keys: UserApiKeys) {
   const { data } = await api.put<UserApiKeys>("/user/keys", keys);
   return data;
 }
+
+// ── 个人资料 ──
+
+export interface UserProfile {
+  id: number;
+  phone: string;
+  nickname: string;
+  avatar: string;
+}
+
+export async function fetchProfile() {
+  const { data } = await api.get<UserProfile>("/user/profile");
+  return data;
+}
+
+export async function updateProfile(req: { nickname?: string }) {
+  const { data } = await api.put<UserProfile>("/user/profile", req);
+  return data;
+}
+
+export async function changePassword(req: { old_password: string; new_password: string }) {
+  await api.put("/user/password", req);
+}
+
+export async function uploadAvatar(file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await api.post<UserProfile>("/user/avatar", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}

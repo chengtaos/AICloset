@@ -165,6 +165,26 @@ class RecommendationFeedback(BaseModel):
     feedback: str  # "liked" or "disliked"
 
 
+# ── User Profile ────────────────────────────────────────────────
+
+class ProfileUpdate(BaseModel):
+    nickname: Optional[str] = None
+
+
+class PasswordChange(BaseModel):
+    old_password: str
+    new_password: str
+
+
+class ProfileResponse(BaseModel):
+    id: int
+    phone: str
+    nickname: str
+    avatar: str
+
+    model_config = {"from_attributes": True}
+
+
 # ── Stats ─────────────────────────────────────────────────────
 
 class CategoryStat(BaseModel):

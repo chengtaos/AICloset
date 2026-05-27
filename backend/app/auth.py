@@ -3,6 +3,7 @@
 import os
 from datetime import datetime, timedelta
 
+import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordBearer
@@ -10,6 +11,14 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User
+
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed.encode())
 
 JWT_SECRET = os.getenv("JWT_SECRET")
 if not JWT_SECRET:

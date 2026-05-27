@@ -191,8 +191,34 @@ def get_stats(db: Session, user_id: int = 1) -> WardrobeStats:
     sorted_by_wear = sorted(items, key=lambda x: -x.wear_count)[:5]
     most_worn = [_item_to_brief(it) for it in sorted_by_wear if it.wear_count > 0]
 
-    # 沉睡单品：从未穿过的衣物，最多展示 10 件
-    sleeping = [it for it in items if it.wear_count == 0]
+    # 沉睡单品：超过30天未穿或从未穿过的衣物，最多展示 10 件
+    from datetime import date, timedelta
+    thirty_days_ago = date.today() - timedelta(days=30)
+
+    # 批量计算最后穿着日期
+    item_ids = [it.id for it in items]
+    last_worn_map: dict[int, date] = {}
+    if item_ids:
+        item_id_set = set(item_ids)
+        rows = (
+            db.query(WearRecord.item_ids, WearRecord.wear_date)
+            .filter(WearRecord.user_id == user_id)
+            .order_by(WearRecord.wear_date.desc())
+            .all()
+        )
+        seen: set[int] = set()
+        for row_item_ids, wear_date in rows:
+            for iid in (row_item_ids or []):
+                if iid in seen or iid not in item_id_set:
+                    continue
+                seen.add(iid)
+                if wear_date:
+                    last_worn_map[iid] = wear_date
+
+    sleeping = [
+        it for it in items
+        if (last_worn_map.get(it.id) or date(2000, 1, 1)) < thirty_days_ago
+    ]
     sleeping_items = [_item_to_brief(it) for it in sleeping[:10]]
 
     return WardrobeStats(

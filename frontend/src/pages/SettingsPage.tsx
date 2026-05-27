@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchApiKeys, updateApiKeys, type UserApiKeys } from "../api/client";
+import { fetchProfile, updateProfile, changePassword, uploadAvatar, type UserProfile } from "../api/client";
+import { getImageUrl } from "../utils/imageUrl";
 import { useResponsive } from "../hooks/useResponsive";
+import { useAuth } from "../contexts/AuthContext";
 
 const FIELD_LABELS: Record<keyof UserApiKeys, string> = {
   deepseek: "DeepSeek API Key",
@@ -19,140 +22,254 @@ const FIELD_PLACEHOLDERS: Record<keyof UserApiKeys, string> = {
 };
 
 const FIELD_KEYS: (keyof UserApiKeys)[] = [
-  "deepseek",
-  "amap",
-  "dashscope",
-  "alibaba_access_key_id",
-  "alibaba_access_key_secret",
+  "deepseek", "amap", "dashscope",
+  "alibaba_access_key_id", "alibaba_access_key_secret",
 ];
 
+type Section = "profile" | "password" | "keys";
+
 export default function SettingsPage() {
+  const { user, setUser } = useAuth();
   const { isMobile } = useResponsive();
+
+  // 当前展开区域
+  const [section, setSection] = useState<Section>("profile");
+
+  // ── 个人资料 ──
+  const [nickname, setNickname] = useState(user?.nickname || "");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // ── 密码 ──
+  const [oldPwd, setOldPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [pwdSaving, setPwdSaving] = useState(false);
+  const [pwdMsg, setPwdMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // ── API Keys ──
   const [keys, setKeys] = useState<UserApiKeys>({
-    deepseek: "",
-    amap: "",
-    dashscope: "",
-    alibaba_access_key_id: "",
-    alibaba_access_key_secret: "",
+    deepseek: "", amap: "", dashscope: "",
+    alibaba_access_key_id: "", alibaba_access_key_secret: "",
   });
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [keysSaving, setKeysSaving] = useState(false);
+  const [keysMsg, setKeysMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     (async () => {
-      try {
-        const data = await fetchApiKeys();
-        setKeys(data);
-      } catch {
-        // 加载失败静默处理
-      }
+      try { const data = await fetchProfile(); setAvatarUrl(data.avatar); } catch {}
     })();
   }, []);
 
-  const handleChange = (field: keyof UserApiKeys, value: string) => {
-    setKeys((prev) => ({ ...prev, [field]: value }));
-  };
+  useEffect(() => {
+    if (section === "keys") {
+      (async () => {
+        try { const data = await fetchApiKeys(); setKeys(data); } catch {}
+      })();
+    }
+  }, [section]);
 
-  const handleSave = useCallback(async () => {
-    setSaving(true);
-    setMsg(null);
+  const handleSaveProfile = useCallback(async () => {
+    setProfileSaving(true);
+    setProfileMsg(null);
     try {
-      // 包含 **** 的字段表示未修改，发送空字符串让后端保留已有值
+      await updateProfile({ nickname });
+      setProfileMsg({ type: "success", text: "保存成功" });
+      if (user) setUser({ ...user, nickname });
+    } catch {
+      setProfileMsg({ type: "error", text: "保存失败" });
+    } finally {
+      setProfileSaving(false);
+    }
+  }, [nickname, setUser, user]);
+
+  const handleAvatarUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const updated = await uploadAvatar(file);
+      setAvatarUrl(updated.avatar);
+      if (user) setUser({ ...user, avatar: updated.avatar });
+    } catch {
+      // ignore
+    } finally {
+      setAvatarUploading(false);
+    }
+  }, [setUser, user]);
+
+  const handleChangePassword = useCallback(async () => {
+    if (!oldPwd || !newPwd) return;
+    if (newPwd.length < 6) { setPwdMsg({ type: "error", text: "新密码至少6位" }); return; }
+    setPwdSaving(true);
+    setPwdMsg(null);
+    try {
+      await changePassword({ old_password: oldPwd, new_password: newPwd });
+      setPwdMsg({ type: "success", text: "密码已修改，请重新登录" });
+      setOldPwd(""); setNewPwd("");
+    } catch (e: unknown) {
+      const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setPwdMsg({ type: "error", text: detail || "修改失败" });
+    } finally {
+      setPwdSaving(false);
+    }
+  }, [oldPwd, newPwd]);
+
+  const handleSaveKeys = useCallback(async () => {
+    setKeysSaving(true);
+    setKeysMsg(null);
+    try {
       const payload: UserApiKeys = { ...keys };
       for (const k of FIELD_KEYS) {
-        if (payload[k].includes("****")) {
-          payload[k] = "";
-        }
+        if (payload[k].includes("****")) payload[k] = "";
       }
       const updated = await updateApiKeys(payload);
       setKeys(updated);
-      setMsg({ type: "success", text: "保存成功" });
+      setKeysMsg({ type: "success", text: "保存成功" });
     } catch {
-      setMsg({ type: "error", text: "保存失败，请重试" });
+      setKeysMsg({ type: "error", text: "保存失败，请重试" });
     } finally {
-      setSaving(false);
+      setKeysSaving(false);
     }
   }, [keys]);
 
+  const sectionBtn = (s: Section, label: string) => (
+    <button
+      onClick={() => setSection(s)}
+      style={{
+        border: "none", background: section === s ? "#f0f2f5" : "transparent",
+        padding: "8px 16px", fontSize: 13, fontWeight: section === s ? 600 : 400,
+        color: section === s ? "#1a1a1a" : "#8c8c8c",
+        cursor: "pointer", borderRadius: 4, transition: "all 0.15s",
+      }}
+    >
+      {label}
+    </button>
+  );
+
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 500, color: "#4a5c6c", margin: "0 0 8px" }}>
-        API 密钥设置
-      </h2>
-      <p style={{ color: "#9aa5b0", fontSize: 13, margin: "0 0 24px", lineHeight: 1.6 }}>
-        AiCloset 完全免费，AI 功能需要你提供自己的 API Key。
-        <br />
-        密钥加密存储在服务器，仅在你使用推荐/识别功能时按需调用。
-      </p>
+      <h2 style={{ fontSize: 20, fontWeight: 600, color: "#1a1a1a", margin: "0 0 20px" }}>设置</h2>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {FIELD_KEYS.map((field) => (
-          <div key={field}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 13,
-                fontWeight: 500,
-                color: "#4a5c6c",
-                marginBottom: 6,
-              }}
-            >
-              {FIELD_LABELS[field]}
+      {/* 子导航 */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 28 }}>
+        {sectionBtn("profile", "个人资料")}
+        {sectionBtn("password", "修改密码")}
+        {sectionBtn("keys", "API 密钥")}
+      </div>
+
+      {/* ── 个人资料 ── */}
+      {section === "profile" && (
+        <div style={{ maxWidth: 400 }}>
+          {/* 头像 */}
+          <div style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: "50%", overflow: "hidden",
+              background: "#f0f0f0", display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {avatarUrl ? (
+                <img src={getImageUrl(avatarUrl)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <span style={{ fontSize: 24, opacity: 0.2 }}>👤</span>
+              )}
+            </div>
+            <label style={{
+              fontSize: 12, color: "#4a5c6c", cursor: "pointer",
+              border: "1px solid #dde1e6", borderRadius: 4, padding: "6px 14px",
+            }}>
+              {avatarUploading ? "上传中..." : "更换头像"}
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarUpload} />
             </label>
+          </div>
+
+          {/* 昵称 */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#4a5c6c", marginBottom: 6 }}>昵称</label>
             <input
-              type="password"
-              placeholder={FIELD_PLACEHOLDERS[field]}
-              value={keys[field]}
-              onChange={(e) => handleChange(field, e.target.value)}
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              placeholder="输入昵称"
+              maxLength={20}
               style={inputStyle}
             />
           </div>
-        ))}
 
-        {msg && (
-          <p
-            style={{
-              color: msg.type === "success" ? "#4a5c6c" : "#c44",
-              fontSize: 13,
-              margin: 0,
-            }}
-          >
-            {msg.text}
+          {profileMsg && (
+            <p style={{ color: profileMsg.type === "success" ? "#4a5c6c" : "#c44", fontSize: 13 }}>{profileMsg.text}</p>
+          )}
+
+          <button onClick={handleSaveProfile} disabled={profileSaving} style={btnStyle}>
+            {profileSaving ? "保存中..." : "保存"}
+          </button>
+        </div>
+      )}
+
+      {/* ── 修改密码 ── */}
+      {section === "password" && (
+        <div style={{ maxWidth: 400 }}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#4a5c6c", marginBottom: 6 }}>旧密码</label>
+            <input type="password" value={oldPwd} onChange={(e) => setOldPwd(e.target.value)} style={inputStyle} />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#4a5c6c", marginBottom: 6 }}>新密码（至少6位）</label>
+            <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} style={inputStyle} />
+          </div>
+
+          {pwdMsg && (
+            <p style={{ color: pwdMsg.type === "success" ? "#4a5c6c" : "#c44", fontSize: 13 }}>{pwdMsg.text}</p>
+          )}
+
+          <button onClick={handleChangePassword} disabled={pwdSaving || !oldPwd || !newPwd} style={btnStyle}>
+            {pwdSaving ? "修改中..." : "修改密码"}
+          </button>
+        </div>
+      )}
+
+      {/* ── API 密钥 ── */}
+      {section === "keys" && (
+        <div style={{ maxWidth: 400 }}>
+          <p style={{ color: "#9aa5b0", fontSize: 13, margin: "0 0 24px", lineHeight: 1.6 }}>
+            AiCloset 完全免费，AI 功能需要你提供自己的 API Key。密钥加密存储，仅在按需调用时解密使用。
           </p>
-        )}
 
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          style={{
-            width: isMobile ? "100%" : undefined,
-            height: 44,
-            border: "none",
-            borderRadius: 6,
-            background: "#4a5c6c",
-            color: "#fff",
-            fontSize: 15,
-            letterSpacing: "0.04em",
-            cursor: "pointer",
-            opacity: saving ? 0.6 : 1,
-            marginTop: 8,
-          }}
-        >
-          {saving ? "保存中..." : "保存"}
-        </button>
-      </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {FIELD_KEYS.map((field) => (
+              <div key={field}>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#4a5c6c", marginBottom: 6 }}>{FIELD_LABELS[field]}</label>
+                <input
+                  type="password"
+                  placeholder={FIELD_PLACEHOLDERS[field]}
+                  value={keys[field]}
+                  onChange={(e) => setKeys((prev) => ({ ...prev, [field]: e.target.value }))}
+                  style={inputStyle}
+                />
+              </div>
+            ))}
+
+            {keysMsg && (
+              <p style={{ color: keysMsg.type === "success" ? "#4a5c6c" : "#c44", fontSize: 13, margin: 0 }}>{keysMsg.text}</p>
+            )}
+
+            <button onClick={handleSaveKeys} disabled={keysSaving} style={{ ...btnStyle, width: isMobile ? "100%" : undefined }}>
+              {keysSaving ? "保存中..." : "保存"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 const inputStyle: React.CSSProperties = {
-  width: "100%",
-  height: 44,
-  padding: "0 14px",
-  border: "1px solid #dde1e6",
-  borderRadius: 6,
-  fontSize: 14,
-  outline: "none",
-  background: "#fff",
-  boxSizing: "border-box",
+  width: "100%", height: 44, padding: "0 14px",
+  border: "1px solid #dde1e6", borderRadius: 6,
+  fontSize: 14, outline: "none", background: "#fff", boxSizing: "border-box",
+};
+
+const btnStyle: React.CSSProperties = {
+  height: 44, border: "none", borderRadius: 6,
+  background: "#4a5c6c", color: "#fff", fontSize: 15,
+  letterSpacing: "0.04em", cursor: "pointer",
 };

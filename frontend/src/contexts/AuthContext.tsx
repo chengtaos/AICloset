@@ -23,6 +23,7 @@ interface AuthState {
   login: (phone: string, password: string) => Promise<void>;
   register: (phone: string, password: string, nickname: string) => Promise<void>;
   logout: () => Promise<void>;
+  setUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -103,8 +104,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("user");
   }, []);
 
+  const updateUser = useCallback((u: User) => {
+    setUser(u);
+    localStorage.setItem("user", JSON.stringify(u));
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, setUser: updateUser }}>
       {children}
     </AuthContext.Provider>
   );

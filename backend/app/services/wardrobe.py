@@ -153,6 +153,7 @@ def _item_to_brief(item: ClothingItem) -> ClothingItemBrief:
     """将 ORM 对象转为轻量 Brief schema，供列表/统计场景使用。"""
     return ClothingItemBrief(
         id=item.id,
+        name=item.name or "",
         category=item.category,
         sub_category=item.sub_category,
         colors=item.colors or [],

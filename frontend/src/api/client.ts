@@ -173,6 +173,11 @@ export async function createOutfit(outfit: OutfitCreate) {
   return data;
 }
 
+export async function updateOutfit(id: number, outfit: Partial<OutfitCreate>) {
+  const { data } = await api.put<Outfit>(`/outfits/${id}`, outfit);
+  return data;
+}
+
 export async function deleteOutfit(id: number) {
   await api.delete(`/outfits/${id}`);
 }
@@ -193,6 +198,10 @@ export async function recommendScenario(description: string, city: string) {
     city,
   });
   return data;
+}
+
+export async function submitFeedback(recommendationId: number, feedback: "liked" | "disliked") {
+  await api.post(`/recommend/${recommendationId}/feedback`, { feedback });
 }
 
 // ── 用户设置 ──

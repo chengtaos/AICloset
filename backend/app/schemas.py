@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 # ── ClothingItem ──────────────────────────────────────────────
 
 class ClothingItemCreate(BaseModel):
+    name: str = ""
     category: str
     sub_category: str
     colors: list[str] = []
@@ -22,6 +23,7 @@ class ClothingItemCreate(BaseModel):
 
 
 class ClothingItemUpdate(BaseModel):
+    name: Optional[str] = None
     category: Optional[str] = None
     sub_category: Optional[str] = None
     colors: Optional[list[str]] = None
@@ -39,6 +41,7 @@ class ClothingItemUpdate(BaseModel):
 class ClothingItemResponse(BaseModel):
     id: int
     user_id: int
+    name: str
     category: str
     sub_category: str
     colors: list[str]
@@ -63,6 +66,7 @@ class ClothingItemResponse(BaseModel):
 class ClothingItemBrief(BaseModel):
     """Brief item info used inside outfit/recommendation responses."""
     id: int
+    name: str
     category: str
     sub_category: str
     colors: list[str]
@@ -83,6 +87,12 @@ class OutfitCreate(BaseModel):
     name: str = ""
     items: list[OutfitItem]
     tags: list[str] = []
+
+
+class OutfitUpdate(BaseModel):
+    name: Optional[str] = None
+    items: Optional[list[OutfitItem]] = None
+    tags: Optional[list[str]] = None
 
 
 class OutfitResponse(BaseModel):
@@ -146,6 +156,7 @@ class RecommendSuggestion(BaseModel):
 
 
 class RecommendResponse(BaseModel):
+    recommendation_id: int
     weather: WeatherInfo
     suggestions: list[RecommendSuggestion]
 

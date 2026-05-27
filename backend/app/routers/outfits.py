@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import Outfit, User
-from app.schemas import OutfitCreate, OutfitResponse
+from app.schemas import OutfitCreate, OutfitUpdate, OutfitResponse
 
 router = APIRouter(prefix="/api/outfits", tags=["outfits"])
 
@@ -53,6 +53,30 @@ def api_get_outfit(
     )
     if not outfit:
         raise HTTPException(status_code=404, detail="搭配不存在")
+    return outfit
+
+
+@router.put("/{outfit_id}", response_model=OutfitResponse)
+def api_update_outfit(
+    outfit_id: int,
+    data: OutfitUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    outfit = (
+        db.query(Outfit)
+        .filter(Outfit.id == outfit_id, Outfit.user_id == current_user.id)
+        .first()
+    )
+    if not outfit:
+        raise HTTPException(status_code=404, detail="搭配不存在")
+    update_data = data.model_dump(exclude_unset=True)
+    if "items" in update_data:
+        update_data["items"] = [it if isinstance(it, dict) else it.model_dump() for it in update_data["items"]]
+    for key, value in update_data.items():
+        setattr(outfit, key, value)
+    db.commit()
+    db.refresh(outfit)
     return outfit
 
 

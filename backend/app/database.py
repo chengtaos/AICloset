@@ -29,6 +29,7 @@ def init_db():
     _migrate_user_profiles()
     _migrate_users_token_version()
     _migrate_user_api_keys()
+    _migrate_clothing_name()
 
 
 def _migrate_user_profiles():
@@ -66,6 +67,17 @@ def _migrate_users_token_version():
     with engine.connect() as conn:
         try:
             conn.execute(text("ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 0"))
+            conn.commit()
+        except Exception:
+            pass
+
+
+def _migrate_clothing_name():
+    """为已存在的 clothing_items 表添加 name 列。"""
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE clothing_items ADD COLUMN name VARCHAR(100) DEFAULT ''"))
             conn.commit()
         except Exception:
             pass

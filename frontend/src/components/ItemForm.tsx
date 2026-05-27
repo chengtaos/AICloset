@@ -431,10 +431,14 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit, onBatch
           layout="vertical"
           onFinish={handleSubmit}
           initialValues={{
-            colors: [], material: [], seasons: [], style_tags: [],
+            name: "", colors: [], material: [], seasons: [], style_tags: [],
             temp_min: 5, temp_max: 30, purchase_price: 0,
           }}
         >
+          <Form.Item name="name" label="名称（选填）">
+            <Input placeholder="如：优衣库白T、黑色通勤长裤" maxLength={30} />
+          </Form.Item>
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
             <Form.Item name="category" label="品类" rules={[{ required: true }]}>
               <Select options={Object.entries(CATEGORY_LABELS).map(([k, v]) => ({ value: k, label: v }))} />

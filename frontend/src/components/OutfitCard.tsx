@@ -1,6 +1,7 @@
-import type { Outfit, ClothingItem } from "../types";
+import type { Outfit, ClothingItem, ClothingItemBrief } from "../types";
 import { getImageUrl } from "../utils/imageUrl";
 import { useResponsive } from "../hooks/useResponsive";
+import OutfitComposer from "./OutfitComposer";
 
 interface Props {
   outfit: Outfit;
@@ -10,6 +11,21 @@ interface Props {
 
 export default function OutfitCard({ outfit, itemMap, extra }: Props) {
   const { isMobile } = useResponsive();
+
+  // 将搭配中的衣物转为 ClothingItemBrief 供 OutfitComposer 使用
+  const briefs: ClothingItemBrief[] = outfit.items
+    .map((oi) => itemMap.get(oi.item_id))
+    .filter(Boolean)
+    .map((item) => ({
+      id: item!.id,
+      name: item!.name || "",
+      category: item!.category,
+      sub_category: item!.sub_category,
+      colors: item!.colors || [],
+      images: item!.images || [],
+      style_tags: item!.style_tags || [],
+    }));
+
   return (
     <div style={{ border: "1px solid #e8eaed", borderRadius: 4, background: "#fff", padding: isMobile ? 14 : 20 }}>
       {/* 标题行 */}
@@ -27,47 +43,16 @@ export default function OutfitCard({ outfit, itemMap, extra }: Props) {
         {extra}
       </div>
 
-      {/* 衣物网格 */}
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(auto-fill, minmax(72px, 1fr))" : "repeat(auto-fill, minmax(100px, 1fr))", gap: isMobile ? 8 : 10 }}>
-        {outfit.items.map((oi, idx) => {
-          const item = itemMap.get(oi.item_id);
-          return (
-            <div key={idx} style={{ textAlign: "center" }}>
-              <div
-                style={{
-                  width: "100%",
-                  aspectRatio: "3/4",
-                  background: "#f5f5f5",
-                  borderRadius: 4,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                  marginBottom: 6,
-                }}
-              >
-                {item?.images.length ? (
-                  <img
-                    src={getImageUrl(item.images[0])}
-                    alt={item.sub_category}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                ) : (
-                  <span style={{ fontSize: 24, opacity: 0.12 }}>👤</span>
-                )}
-              </div>
-              <div style={{ fontSize: 11, color: "#8c8c8c", fontWeight: 500 }}>{oi.position}</div>
-              <div style={{ fontSize: 11, color: "#1a1a1a" }}>{item?.sub_category || "—"}</div>
-            </div>
-          );
-        })}
+      {/* 穿搭预览 */}
+      <div style={{ marginBottom: 16 }}>
+        <OutfitComposer items={briefs} />
       </div>
 
       {/* 标签 */}
       {outfit.tags.length > 0 && (
         <div style={{ marginTop: 14, display: "flex", gap: 6, flexWrap: "wrap" }}>
           {outfit.tags.map((t) => (
-            <span key={t} style={{ fontSize: 11, color: "#8c8c8c", border: "1px solid #e8eaed", borderRadius: 2, padding: "2px 8px" }}>
+            <span key={t} style={{ fontSize: 11, color: "#4a5c6c", border: "1px solid #4a5c6c", borderRadius: 2, padding: "2px 8px" }}>
               {t}
             </span>
           ))}

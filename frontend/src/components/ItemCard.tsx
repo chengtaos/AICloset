@@ -61,7 +61,7 @@ export default function ItemCard({ item, onClick, onDelete }: Props) {
         {hasImg ? (
           <img
             src={getImageUrl(item.images[0])}
-            alt={item.sub_category}
+            alt={item.name || item.sub_category}
             onError={() => setImgError(true)}
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
             loading="lazy"
@@ -69,7 +69,9 @@ export default function ItemCard({ item, onClick, onDelete }: Props) {
         ) : (
           <div style={{
             width: "100%", height: "100%",
-            display: "flex", alignItems: "center", justifyContent: "center",
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+            gap: 6, padding: 8,
           }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d9d9d9" strokeWidth="1">
               <rect x="2" y="6" width="20" height="13" rx="2" />
@@ -78,6 +80,20 @@ export default function ItemCard({ item, onClick, onDelete }: Props) {
             </svg>
           </div>
         )}
+      </div>
+
+      {/* 名称标签 */}
+      <div style={{
+        padding: "8px 10px",
+        fontSize: 12,
+        color: "#1a1a1a",
+        fontWeight: 500,
+        lineHeight: 1.3,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}>
+        {item.name || item.sub_category}
       </div>
     </div>
   );

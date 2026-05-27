@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button, Modal, Upload, message, Input } from "antd";
+import { Button, Modal, Upload, message, Input, Select } from "antd";
 import {
   PlusOutlined,
   UploadOutlined,
@@ -9,7 +9,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import type { ClothingItem, ClothingItemCreate } from "../types";
-import { CATEGORY_LABELS } from "../types";
+import { CATEGORY_LABELS, SEASONS, STYLE_TAGS, COLORS_PRESET } from "../types";
 import { fetchItems, createItem, updateItem, deleteItem, uploadImage } from "../api/client";
 import { getImageUrl } from "../utils/imageUrl";
 import { useResponsive } from "../hooks/useResponsive";
@@ -38,13 +38,17 @@ export default function WardrobePage() {
   const { isMobile } = useResponsive();
   const [activeCat, setActiveCat] = useState("");
   const [search, setSearch] = useState("");
+  const [seasonFilter, setSeasonFilter] = useState<string>("");
+  const [styleFilter, setStyleFilter] = useState<string>("");
+  const [colorFilter, setColorFilter] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("created_at");
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [detailId, setDetailId] = useState<number | null>(null);
 
   const { data: items = [] } = useQuery({
-    queryKey: ["items"],
-    queryFn: () => fetchItems(),
+    queryKey: ["items", seasonFilter, styleFilter, sortBy],
+    queryFn: () => fetchItems({ season: seasonFilter || undefined, style: styleFilter || undefined, sort: sortBy }),
   });
 
   // 暂存待上传图片：先创建 item 再绑定图片
@@ -112,10 +116,12 @@ export default function WardrobePage() {
   const { filtered, grouped } = useMemo(() => {
     let list = items;
     if (activeCat) list = list.filter((i) => i.category === activeCat);
+    if (colorFilter) list = list.filter((i) => i.colors.some((c) => c.includes(colorFilter)));
     if (search) {
       const kw = search.toLowerCase();
       list = list.filter(
         (i) =>
+          (i.name || "").toLowerCase().includes(kw) ||
           i.sub_category.toLowerCase().includes(kw) ||
           i.colors.some((c) => c.includes(kw)) ||
           i.style_tags.some((t) => t.includes(kw)),
@@ -128,7 +134,7 @@ export default function WardrobePage() {
       groups[cat].push(item);
     }
     return { filtered: list, grouped: groups };
-  }, [items, activeCat, search]);
+  }, [items, activeCat, search, colorFilter]);
 
   const editingItem =
     editingId != null ? items.find((i) => i.id === editingId) ?? null : null;
@@ -221,6 +227,48 @@ export default function WardrobePage() {
 
         {!isMobile && <div style={{ flex: 1 }} />}
 
+        <Select
+          placeholder="季节"
+          size="small"
+          value={seasonFilter || undefined}
+          onChange={(v) => setSeasonFilter(v || "")}
+          allowClear
+          options={SEASONS.map((s) => ({ value: s, label: s }))}
+          style={{ width: 80, flexShrink: 0 }}
+        />
+        <Select
+          placeholder="风格"
+          size="small"
+          value={styleFilter || undefined}
+          onChange={(v) => setStyleFilter(v || "")}
+          allowClear
+          showSearch
+          options={STYLE_TAGS.map((s) => ({ value: s, label: s }))}
+          style={{ width: 100, flexShrink: 0 }}
+        />
+        <Select
+          placeholder="颜色"
+          size="small"
+          value={colorFilter || undefined}
+          onChange={(v) => setColorFilter(v || "")}
+          allowClear
+          showSearch
+          options={COLORS_PRESET.map((c) => ({ value: c, label: c }))}
+          style={{ width: 90, flexShrink: 0 }}
+        />
+        <Select
+          size="small"
+          value={sortBy}
+          onChange={setSortBy}
+          options={[
+            { value: "created_at", label: "最新" },
+            { value: "-created_at", label: "最旧" },
+            { value: "wear_count", label: "穿最多" },
+            { value: "-wear_count", label: "穿最少" },
+          ]}
+          style={{ width: 88, flexShrink: 0 }}
+        />
+
         <Input
           prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
           placeholder="搜索"
@@ -229,7 +277,7 @@ export default function WardrobePage() {
           onChange={(e) => setSearch(e.target.value)}
           allowClear
           style={{
-            width: isMobile ? 120 : 180,
+            width: isMobile ? 120 : 140,
             flexShrink: 0,
             border: "1px solid #e8eaed",
             borderRadius: 4,
@@ -401,12 +449,17 @@ export default function WardrobePage() {
                 style={{
                   fontSize: 18,
                   fontWeight: 600,
-                  margin: "0 0 12px",
+                  margin: "0 0 4px",
                   color: "#1a1a1a",
                 }}
               >
-                {detailItem.sub_category}
+                {detailItem.name || detailItem.sub_category}
               </h3>
+              {detailItem.name && (
+                <div style={{ fontSize: 12, color: "#8c8c8c", marginBottom: 10 }}>
+                  {detailItem.sub_category}
+                </div>
+              )}
 
               <div style={{ fontSize: 12, color: "#666", lineHeight: 2 }}>
                 {detailItem.brand && <div>品牌：{detailItem.brand}</div>}

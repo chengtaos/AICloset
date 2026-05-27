@@ -2,6 +2,7 @@
 export interface ClothingItem {
   id: number;
   user_id: number;
+  name: string;
   category: "blouse" | "tshirt" | "hoodie" | "sweater" | "outer" | "pants" | "shorts" | "skirt" | "dress" | "shoes" | "bag" | "accessory";
   sub_category: string;
   colors: string[];
@@ -22,6 +23,7 @@ export interface ClothingItem {
 }
 
 export interface ClothingItemCreate {
+  name?: string;
   category: string;
   sub_category: string;
   colors?: string[];
@@ -87,6 +89,7 @@ export interface WeatherInfo {
 
 export interface ClothingItemBrief {
   id: number;
+  name: string;
   category: string;
   sub_category: string;
   colors: string[];
@@ -100,6 +103,7 @@ export interface RecommendSuggestion {
 }
 
 export interface RecommendResponse {
+  recommendation_id: number;
   weather: WeatherInfo;
   suggestions: RecommendSuggestion[];
 }

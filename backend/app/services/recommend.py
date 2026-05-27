@@ -32,6 +32,7 @@ def _item_to_brief(item: ClothingItem) -> ClothingItemBrief:
     """将 ORM 对象转为轻量 Brief schema，供推荐结果使用。"""
     return ClothingItemBrief(
         id=item.id,
+        name=item.name or "",
         category=item.category,
         sub_category=item.sub_category,
         colors=item.colors or [],
@@ -67,7 +68,7 @@ def _build_response(
             reason=s.get("reason", ""),
         ))
 
-    response = RecommendResponse(weather=weather, suggestions=result_suggestions)
+    response = RecommendResponse(recommendation_id=rec.id, weather=weather, suggestions=result_suggestions)
 
     # 持久化推荐记录，便于后续反馈闭环
     rec = Recommendation(

@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import { CheckOutlined } from "@ant-design/icons";
+import { CheckOutlined, LikeOutlined, DislikeOutlined } from "@ant-design/icons";
 import type { RecommendResponse } from "../types";
 import { useResponsive } from "../hooks/useResponsive";
 import OutfitComposer from "./OutfitComposer";
@@ -8,8 +8,10 @@ interface Props {
   loading: boolean;
   data: RecommendResponse | null;
   onAccept?: (itemIds: number[], idx: number) => void;
+  onFeedback?: (idx: number, feedback: "liked" | "disliked") => void;
   accepting?: boolean;
   acceptedIdx?: number | null;
+  feedbackIdx?: number | null;
 }
 
 const WEATHER_ICON: Record<string, string> = {
@@ -17,7 +19,7 @@ const WEATHER_ICON: Record<string, string> = {
   "雨": "🌧", "雷阵雨": "⛈", "雪": "❄", "小雪": "🌨",
 };
 
-export default function RecommendCard({ loading, data, onAccept, accepting, acceptedIdx }: Props) {
+export default function RecommendCard({ loading, data, onAccept, onFeedback, accepting, acceptedIdx, feedbackIdx }: Props) {
   const { isMobile } = useResponsive();
 
   if (loading) {
@@ -76,20 +78,41 @@ export default function RecommendCard({ loading, data, onAccept, accepting, acce
             {sug.reason}
           </div>
 
-          {onAccept && acceptedIdx == null && (
-            <Button
-              icon={<CheckOutlined />}
-              size="middle"
-              loading={accepting}
-              onClick={() => onAccept(sug.items.map((it) => it.id), idx)}
-              style={{ fontSize: 12, fontWeight: 500 }}
-            >
-              就它了
-            </Button>
+          {onAccept && acceptedIdx == null && feedbackIdx == null && (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <Button
+                icon={<CheckOutlined />}
+                size="middle"
+                loading={accepting}
+                onClick={() => onAccept(sug.items.map((it) => it.id), idx)}
+                style={{ fontSize: 12, fontWeight: 500 }}
+              >
+                就它了
+              </Button>
+              {onFeedback && (
+                <>
+                  <Button
+                    size="middle" icon={<LikeOutlined />}
+                    onClick={() => onFeedback(idx, "liked")}
+                    style={{ fontSize: 12 }}
+                  />
+                  <Button
+                    size="middle" icon={<DislikeOutlined />}
+                    onClick={() => onFeedback(idx, "disliked")}
+                    style={{ fontSize: 12 }}
+                  />
+                </>
+              )}
+            </div>
           )}
           {acceptedIdx === idx && (
             <span style={{ fontSize: 12, color: "#4a5c6c", fontWeight: 500 }}>
               <CheckOutlined style={{ marginRight: 4 }} />今天这么穿
+            </span>
+          )}
+          {feedbackIdx === idx && (
+            <span style={{ fontSize: 12, color: "#8c8c8c", fontWeight: 500 }}>
+              感谢反馈
             </span>
           )}
         </div>

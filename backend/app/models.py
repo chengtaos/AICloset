@@ -21,6 +21,7 @@ class ClothingItem(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, nullable=False, index=True)
+    name = Column(String(100), default="")            # 用户自定义名称
     category = Column(String(20), nullable=False)  # blouse, tshirt, hoodie, sweater, outer, pants, shorts, skirt, dress, shoes, bag, accessory
     sub_category = Column(String(30), nullable=False)
     colors = Column(JSON, default=list)         # ["白色", "黑色"]

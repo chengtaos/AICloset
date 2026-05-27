@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Select, Input, message } from "antd";
 import { ThunderboltOutlined, ExperimentOutlined } from "@ant-design/icons";
 import type { RecommendResponse } from "../types";
-import { recommendDaily, recommendScenario, recordWear } from "../api/client";
+import { recommendDaily, recommendScenario, recordWear, submitFeedback } from "../api/client";
 import { useResponsive } from "../hooks/useResponsive";
 import RecommendCard from "../components/RecommendCard";
 
@@ -32,6 +32,7 @@ export default function RecommendPage() {
   const [mode, setMode] = useState<"daily" | "scenario">("daily");
   const [scenarioDesc, setScenarioDesc] = useState("");
   const [acceptedIdx, setAcceptedIdx] = useState<number | null>(null);
+  const [feedbackIdx, setFeedbackIdx] = useState<number | null>(null);
   const queryClient = useQueryClient();
 
   // 从缓存读取推荐结果，切换导航再回来不会丢失
@@ -210,7 +211,18 @@ export default function RecommendPage() {
         data={data}
         accepting={wearMutation.isPending}
         acceptedIdx={acceptedIdx}
-        onAccept={(itemIds, idx) => wearMutation.mutate({ itemIds, idx })}
+        feedbackIdx={feedbackIdx}
+        onAccept={(itemIds, idx) => {
+          setFeedbackIdx(null);
+          wearMutation.mutate({ itemIds, idx });
+        }}
+        onFeedback={(idx, fb) => {
+          setAcceptedIdx(null);
+          setFeedbackIdx(idx);
+          if (data) {
+            submitFeedback(data.recommendation_id, fb).catch(() => {});
+          }
+        }}
       />
     </div>
   );

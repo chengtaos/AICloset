@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchStats, fetchWearRecords, fetchItems } from "../api/client";
+import { fetchStats, fetchWearRecords, fetchItems, fetchGapAnalysis } from "../api/client";
 import { getImageUrl } from "../utils/imageUrl";
 import { useResponsive } from "../hooks/useResponsive";
 import type { ClothingItem } from "../types";
@@ -38,6 +38,10 @@ export default function StatsPage() {
   const { data: records = [] } = useQuery({
     queryKey: ["wearRecords", calYear, calMonth],
     queryFn: () => fetchWearRecords(calYear, calMonth),
+  });
+  const { data: gap } = useQuery({
+    queryKey: ["gapAnalysis"],
+    queryFn: fetchGapAnalysis,
   });
 
   const itemMap = useMemo(() => {
@@ -311,6 +315,50 @@ export default function StatsPage() {
           )}
         </div>
       </div>
+
+      {/* 衣橱缺口分析 */}
+      {gap && (
+        <div style={{ ...cardStyle, padding: 20, marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a", margin: 0 }}>
+              衣橱缺口分析
+            </h3>
+            <span style={{
+              fontSize: 11, fontWeight: 600,
+              color: gap.coverage_score >= 70 ? "#52c41a" : gap.coverage_score >= 40 ? "#faad14" : "#ff4d4f",
+            }}>
+              {gap.owned_basics}/{gap.total_basics} · {gap.coverage_score}%
+            </span>
+          </div>
+          {gap.missing_items.length === 0 ? (
+            <div style={{ fontSize: 13, color: "#52c41a", padding: "12px 0" }}>
+              基础款已齐全，衣橱配置很完整
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {gap.missing_items.map((m) => (
+                <div
+                  key={`${m.category}-${m.sub_category}`}
+                  style={{
+                    fontSize: 11,
+                    color: "#8c8c8c",
+                    border: "1px solid #f0f0f0",
+                    borderRadius: 4,
+                    padding: "6px 12px",
+                    background: "#fafafa",
+                  }}
+                  title={m.reason}
+                >
+                  <span style={{ fontSize: 10, color: "#bfbfbf", marginRight: 4 }}>
+                    {CATEGORY_LABELS[m.category] || m.category}
+                  </span>
+                  {m.sub_category}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 穿着日历 */}
       <div style={{ marginTop: 32 }}>

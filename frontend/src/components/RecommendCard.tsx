@@ -1,7 +1,8 @@
 import { Button } from "antd";
-import { CheckOutlined, LikeOutlined, DislikeOutlined } from "@ant-design/icons";
+import { CheckOutlined, LikeOutlined, DislikeOutlined, DownloadOutlined } from "@ant-design/icons";
 import type { RecommendResponse } from "../types";
 import { useResponsive } from "../hooks/useResponsive";
+import { exportOutfitCard } from "../utils/exportImage";
 import OutfitComposer from "./OutfitComposer";
 
 interface Props {
@@ -79,7 +80,7 @@ export default function RecommendCard({ loading, data, onAccept, onFeedback, acc
           </div>
 
           {onAccept && acceptedIdx == null && feedbackIdx == null && (
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               <Button
                 icon={<CheckOutlined />}
                 size="middle"
@@ -103,6 +104,14 @@ export default function RecommendCard({ loading, data, onAccept, onFeedback, acc
                   />
                 </>
               )}
+              <Button
+                size="middle"
+                icon={<DownloadOutlined />}
+                onClick={() => exportOutfitCard(sug.items, sug.reason, weather)}
+                style={{ fontSize: 12 }}
+              >
+                导出卡片
+              </Button>
             </div>
           )}
           {acceptedIdx === idx && (

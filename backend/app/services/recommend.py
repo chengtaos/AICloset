@@ -2,12 +2,14 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from app.agent.llm import generate_recommendations
+from app.agent.llm import generate_recommendations, generate_capsule
 from app.agent.matcher import filter_candidates, match
 from app.agent.weather import get_weather
 from app.models import ClothingItem, Recommendation, UserProfile
 from app.services.preferences import format_preferences_for_llm
 from app.schemas import (
+    CapsuleRequest,
+    CapsuleResponse,
     ClothingItemBrief,
     DailyRecommendRequest,
     RecommendResponse,
@@ -149,3 +151,82 @@ def recommend_scenario(
 
     suggestions = _run_recommend_pipeline(db, weather, occasion, user_id, keys)
     return _build_response(db, weather, suggestions, user_id, "scenario", context)
+
+
+def _capsule_fallback(items: list[ClothingItem], days: int, occasions: str) -> CapsuleResponse:
+    """规则引擎 fallback：无 LLM 时从衣橱中按品类贪心选出胶囊衣橱。"""
+    from collections import defaultdict
+    by_cat = defaultdict(list)
+    for it in items:
+        by_cat[it.category].append(it)
+
+    picked: list[ClothingItem] = []
+    # 优先黑/白/灰/卡其色基础款
+    def _priority(it: ClothingItem) -> int:
+        score = 0
+        for c in (it.colors or []):
+            if any(kw in c for kw in ["黑", "白", "灰", "卡其", "米", "藏青"]):
+                score += 2
+        if any(kw in (it.style_tags or []) for kw in ["百搭", "基础", "极简", "通勤", "休闲"]):
+            score += 1
+        return score
+
+    # 按品类各取1-2件基础款
+    for cat, pool in by_cat.items():
+        pool.sort(key=_priority, reverse=True)
+        if cat in ("tshirt", "blouse", "sweater"):
+            picked.extend(pool[:2])
+        elif cat in ("pants", "shorts", "skirt"):
+            picked.extend(pool[:2])
+        elif cat in ("outer",):
+            picked.extend(pool[:1])
+        elif cat in ("dress",):
+            picked.extend(pool[:1])
+        elif cat in ("shoes",):
+            picked.extend(pool[:2])
+
+    # 限制总数
+    picked = picked[:12]
+
+    # 生成每日方案
+    occasion_list = [o.strip() for o in occasions.split(",") if o.strip()] if occasions else ["日常"]
+    outfits = []
+    for day in range(1, days + 1):
+        occ = occasion_list[(day - 1) % len(occasion_list)] if occasion_list else "日常"
+        day_ids = [it.id for it in picked[:4]]
+        outfits.append({"day": day, "item_ids": day_ids, "occasion": occ, "reason": f"第{day}天{occ}搭配"})
+
+    briefs = [_item_to_brief(it) for it in picked]
+    return CapsuleResponse(
+        items=briefs,
+        outfits=outfits,
+        packing_tip="优先选基础色系单品方便互搭，鞋子不超过2双。卷叠收纳省空间，厚重外套穿身上。",
+    )
+
+
+def recommend_capsule(
+    db: Session, req: CapsuleRequest, user_id: int, api_keys: dict[str, str] | None = None,
+) -> CapsuleResponse:
+    """旅行胶囊衣橱：用最少件数搭配最多方案。"""
+    keys = api_keys or {}
+    all_items = db.query(ClothingItem).filter(
+        ClothingItem.user_id == user_id,
+        ClothingItem.status == "available",
+    ).all()
+
+    # 尝试 LLM
+    llm_result = generate_capsule(
+        all_items, req.destination, req.days, req.occasions,
+        api_key=keys.get("deepseek", ""),
+    )
+
+    if llm_result:
+        item_ids = llm_result.get("items", [])
+        valid_items = [it for it in all_items if it.id in item_ids]
+        briefs = [_item_to_brief(it) for it in valid_items]
+        outfits = llm_result.get("outfits", [])
+        packing_tip = llm_result.get("packing_tip", "")
+        return CapsuleResponse(items=briefs, outfits=outfits, packing_tip=packing_tip)
+
+    logger.info("胶囊衣橱 LLM 不可用，降级到规则引擎")
+    return _capsule_fallback(all_items, req.days, req.occasions)

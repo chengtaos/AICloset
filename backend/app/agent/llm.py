@@ -60,6 +60,27 @@ SYSTEM_PROMPT = """你是一位专业的时尚造型师，了解用户的穿搭�
 }"""
 
 
+CAPSULE_SYSTEM_PROMPT = """你是一位专业的旅行打包顾问。用户要去旅行，会提供：
+1. 目的地、天数、场合
+2. 衣橱中所有可用的衣物列表（每件有id、品类、颜色、风格等属性）
+
+请设计一个旅行胶囊衣橱方案，核心原则：
+- 用最少件数搭配出最多套方案
+- 优先选择百搭基础款（黑/白/灰/卡其色系）
+- 每件上衣至少能和2-3件下装搭配
+- 鞋子不超过2双
+- 考虑目的地的典型天气
+
+返回严格的 JSON 格式：
+{
+  "items": [1, 2, 3, ...],
+  "outfits": [
+    {"day": 1, "item_ids": [3, 7], "occasion": "通勤", "reason": "..."}
+  ],
+  "packing_tip": "打包小贴士..."
+}"""
+
+
 def generate_recommendations(
     candidates: dict[str, list[ClothingItem]],
     weather: WeatherInfo,
@@ -156,3 +177,63 @@ def generate_recommendations(
     except Exception as e:
         logger.error(f"LLM 调用失败: {e}")
         return []
+
+
+def generate_capsule(
+    all_items: list[ClothingItem],
+    destination: str,
+    days: int,
+    occasions: str = "",
+    api_key: str = "",
+) -> dict | None:
+    """调用 DeepSeek API 生成旅行胶囊衣橱方案。失败时返回 None。"""
+    client = _get_client(api_key)
+    if client is None:
+        logger.warning("DEEPSEEK_API_KEY 未配置，无法生成胶囊衣橱")
+        return None
+
+    item_lines: list[str] = []
+    for it in all_items:
+        parts = [
+            f"  id={it.id}",
+            f"品类={it.category}/{it.sub_category}",
+            f"颜色={'+'.join(it.colors or ['未知'])}",
+            f"风格={'+'.join(it.style_tags or ['百搭'])}",
+            f"适用{it.temp_min}~{it.temp_max}°C",
+        ]
+        item_lines.append(" | ".join(parts))
+
+    items_text = "\n".join(item_lines)
+    occasion_text = f"场合需求：{occasions}" if occasions else "场合需求：日常出行 + 休闲"
+
+    user_message = f"""目的地：{destination}
+旅行天数：{days} 天
+{occasion_text}
+
+衣橱中所有可用衣物：
+{items_text}
+
+请设计一个 {days} 天的旅行胶囊衣橱，用最少件数搭配最多方案。"""
+
+    try:
+        response = client.chat.completions.create(
+            model=DEEPSEEK_MODEL,
+            messages=[
+                {"role": "system", "content": CAPSULE_SYSTEM_PROMPT},
+                {"role": "user", "content": user_message},
+            ],
+            temperature=0.7,
+            max_tokens=2000,
+            response_format={"type": "json_object"},
+        )
+
+        content = response.choices[0].message.content
+        if not content:
+            return None
+
+        data = json.loads(content)
+        return data
+
+    except Exception as e:
+        logger.error(f"胶囊衣橱 LLM 调用失败: {e}")
+        return None

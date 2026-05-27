@@ -34,6 +34,7 @@ export interface ClothingItemCreate {
   temp_min?: number;
   temp_max?: number;
   purchase_price?: number;
+  status?: string;
   image_path?: string;
 }
 
@@ -252,6 +253,33 @@ export const MATERIALS = [
   "莱赛尔", "醋酸", "PU", "人造皮草", "马海毛",
   "府绸", "丹宁", "麂皮", "漆皮",
 ];
+
+// ── 缺口分析 ──
+export interface GapItem {
+  category: string;
+  sub_category: string;
+  reason: string;
+}
+
+export interface GapAnalysis {
+  missing_items: GapItem[];
+  coverage_score: number;
+  total_basics: number;
+  owned_basics: number;
+}
+
+// ── 胶囊衣橱 ──
+export interface CapsuleRequest {
+  destination: string;
+  days: number;
+  occasions: string;
+}
+
+export interface CapsuleResponse {
+  items: ClothingItemBrief[];
+  outfits: { day: number; item_ids: number[]; occasion: string; reason: string }[];
+  packing_tip: string;
+}
 
 export const CONDITION_ICONS: Record<string, string> = {
   "晴": "☀️", "多云": "⛅", "阴": "☁️",

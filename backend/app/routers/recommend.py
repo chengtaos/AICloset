@@ -6,13 +6,15 @@ from app.database import get_db
 from app.models import Recommendation, User
 from app.routers.user import get_user_api_keys
 from app.schemas import (
+    CapsuleRequest,
+    CapsuleResponse,
     DailyRecommendRequest,
     ScenarioRecommendRequest,
     RecommendResponse,
     RecommendationFeedback,
 )
 from app.services.preferences import update_preferences_on_wear, suppress_items_in_preferences
-from app.services.recommend import recommend_daily, recommend_scenario
+from app.services.recommend import recommend_capsule, recommend_daily, recommend_scenario
 
 router = APIRouter(prefix="/api/recommend", tags=["recommend"])
 
@@ -64,3 +66,13 @@ def api_submit_feedback(
         suppress_items_in_preferences(db, rec.user_id, item_ids)
 
     return {"status": "ok"}
+
+
+@router.post("/capsule", response_model=CapsuleResponse)
+def api_recommend_capsule(
+    req: CapsuleRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    api_keys = get_user_api_keys(db, current_user.id)
+    return recommend_capsule(db, req, user_id=current_user.id, api_keys=api_keys)

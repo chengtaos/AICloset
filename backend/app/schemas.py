@@ -199,3 +199,30 @@ class WardrobeStats(BaseModel):
     color_distribution: list[CategoryStat]
     most_worn: list[ClothingItemBrief]
     sleeping_items: list[ClothingItemBrief]  # 从未穿过的
+
+
+class GapItem(BaseModel):
+    category: str
+    sub_category: str
+    reason: str  # 为什么这件是基础款
+
+
+class GapAnalysis(BaseModel):
+    missing_items: list[GapItem]
+    coverage_score: int  # 0-100，基础款覆盖率
+    total_basics: int
+    owned_basics: int
+
+
+# ── Capsule Wardrobe ──────────────────────────────────────────
+
+class CapsuleRequest(BaseModel):
+    destination: str
+    days: int = 3
+    occasions: str = ""  # 逗号分隔，如 "通勤,聚会"
+
+
+class CapsuleResponse(BaseModel):
+    items: list[ClothingItemBrief]
+    outfits: list[dict]  # [{"day": 1, "item_ids": [...], "occasion": "...", "reason": "..."}]
+    packing_tip: str

@@ -8,6 +8,8 @@ import type {
   WearRecordCreate,
   RecommendResponse,
   WardrobeStats,
+  GapAnalysis,
+  CapsuleResponse,
 } from "../types";
 
 const api = axios.create({ baseURL: "/api" });
@@ -94,6 +96,7 @@ export async function fetchItems(params?: {
   style?: string;
   search?: string;
   sort?: string;
+  status?: string;
 }) {
   const { data } = await api.get<ClothingItem[]>("/wardrobe/items", { params });
   return data;
@@ -202,6 +205,20 @@ export async function recommendScenario(description: string, city: string) {
 
 export async function submitFeedback(recommendationId: number, feedback: "liked" | "disliked") {
   await api.post(`/recommend/${recommendationId}/feedback`, { feedback });
+}
+
+export async function fetchGapAnalysis() {
+  const { data } = await api.get<GapAnalysis>("/wardrobe/gap-analysis");
+  return data;
+}
+
+export async function recommendCapsule(destination: string, days: number, occasions: string) {
+  const { data } = await api.post<CapsuleResponse>("/recommend/capsule", {
+    destination,
+    days,
+    occasions,
+  });
+  return data;
 }
 
 // ── 用户设置 ──

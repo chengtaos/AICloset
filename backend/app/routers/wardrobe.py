@@ -16,6 +16,7 @@ from app.schemas import (
     WearRecordCreate,
     WearRecordResponse,
 )
+from app.schemas import GapAnalysis
 from app.services.wardrobe import (
     list_items,
     get_item,
@@ -24,6 +25,7 @@ from app.services.wardrobe import (
     delete_item,
     add_image,
     get_stats,
+    get_gap_analysis,
     record_wear,
     get_wear_history,
 )
@@ -44,10 +46,11 @@ def api_list_items(
     style: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
     sort: str = Query("created_at"),
+    status: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return list_items(db, user_id=current_user.id, category=category, season=season, style=style, search=search, sort=sort)
+    return list_items(db, user_id=current_user.id, category=category, season=season, style=style, search=search, sort=sort, status=status or "available")
 
 
 @router.get("/items/{item_id}", response_model=ClothingItemResponse)
@@ -145,6 +148,11 @@ async def api_auto_classify(
 @router.get("/stats", response_model=WardrobeStats)
 def api_get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return get_stats(db, user_id=current_user.id)
+
+
+@router.get("/gap-analysis", response_model=GapAnalysis)
+def api_gap_analysis(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return get_gap_analysis(db, user_id=current_user.id)
 
 
 # ── 穿着记录 ──

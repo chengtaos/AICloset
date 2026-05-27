@@ -43,13 +43,14 @@ export default function WardrobePage() {
   const [styleFilter, setStyleFilter] = useState<string>("");
   const [colorFilter, setColorFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("created_at");
+  const [statusFilter, setStatusFilter] = useState<string>("available");
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [detailId, setDetailId] = useState<number | null>(null);
 
   const { data: items = [] } = useQuery({
-    queryKey: ["items", seasonFilter, styleFilter, sortBy],
-    queryFn: () => fetchItems({ season: seasonFilter || undefined, style: styleFilter || undefined, sort: sortBy }),
+    queryKey: ["items", seasonFilter, styleFilter, sortBy, statusFilter],
+    queryFn: () => fetchItems({ season: seasonFilter || undefined, style: styleFilter || undefined, sort: sortBy, status: statusFilter }),
   });
 
   // 暂存待上传图片：先创建 item 再绑定图片
@@ -278,6 +279,17 @@ export default function WardrobePage() {
             { value: "-wear_count", label: "穿最少" },
           ]}
           style={{ width: 88, flexShrink: 0 }}
+        />
+        <Select
+          size="small"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={[
+            { value: "available", label: "可穿" },
+            { value: "laundry", label: "待洗" },
+            { value: "archived", label: "已归档" },
+          ]}
+          style={{ width: 80, flexShrink: 0 }}
         />
 
         <Input
@@ -528,12 +540,33 @@ export default function WardrobePage() {
                 </div>
               </div>
 
+              {/* 状态管理 */}
+              <div style={{ display: "flex", gap: 6, marginTop: 12, paddingTop: 12, borderTop: "1px solid #f0f0f0" }}>
+                <span style={{ fontSize: 11, color: "#bfbfbf", lineHeight: "24px" }}>状态：</span>
+                {(["available", "laundry", "archived"] as const).map((s) => {
+                  const labels = { available: "可穿", laundry: "待洗", archived: "归档" };
+                  const isActive = detailItem.status === s;
+                  return (
+                    <Button
+                      key={s}
+                      size="small"
+                      type={isActive ? "primary" : "default"}
+                      ghost={!isActive}
+                      style={{ fontSize: 10 }}
+                      onClick={() => updateMutation.mutate({ id: detailItem.id, data: { status: s } })}
+                    >
+                      {labels[s]}
+                    </Button>
+                  );
+                })}
+              </div>
+
               {/* 详情操作栏 */}
               <div
                 style={{
                   display: "flex",
                   gap: 8,
-                  marginTop: 16,
+                  marginTop: 12,
                   paddingTop: 14,
                   borderTop: "1px solid #f0f0f0",
                 }}

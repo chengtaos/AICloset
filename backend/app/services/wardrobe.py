@@ -280,6 +280,63 @@ def record_wear(
     return record
 
 
+# ── 基础款清单：每个衣橱都该有的单品 ──
+# 格式：(品类, 子品类关键词, 为什么需要)
+ESSENTIAL_BASICS = [
+    ("tshirt", "白T恤", "百搭基础，单穿或内搭都合适"),
+    ("tshirt", "黑打底衫", "显瘦百搭，叠穿必备"),
+    ("blouse", "白衬衫", "通勤必备，正式与休闲皆可"),
+    ("pants", "牛仔裤", "四季皆宜的基础下装"),
+    ("pants", "黑色长裤", "通勤和正式场合的万能下装"),
+    ("outer", "风衣", "春秋过渡季的经典外套"),
+    ("outer", "西装外套", "正式场合与 smart-casual 必备"),
+    ("dress", "小黑裙", "万能连衣裙，聚会到酒会皆可"),
+    ("shoes", "白色运动鞋", "日常出行最百搭的鞋款"),
+    ("shoes", "黑色皮鞋", "正式和通勤场合的必备鞋款"),
+    ("sweater", "针织衫", "春秋内搭和叠穿的基础单品"),
+    ("bag", "托特包", "日常通勤大容量包款"),
+]
+
+
+def get_gap_analysis(db: Session, user_id: int = 1):
+    """分析衣橱缺口：检查基础款覆盖率，返回缺失的建议。"""
+    from app.schemas import GapAnalysis, GapItem
+
+    items = db.query(ClothingItem).filter(
+        ClothingItem.user_id == user_id,
+        ClothingItem.status != "archived",
+    ).all()
+
+    owned_by_category: dict[str, list[str]] = {}
+    for it in items:
+        cat = it.category
+        if cat not in owned_by_category:
+            owned_by_category[cat] = []
+        owned_by_category[cat].append(it.sub_category)
+
+    missing: list[GapItem] = []
+    for cat, sub_keyword, reason in ESSENTIAL_BASICS:
+        owned_subs = owned_by_category.get(cat, [])
+        found = any(sub_keyword in s for s in owned_subs)
+        if not found:
+            missing.append(GapItem(
+                category=cat,
+                sub_category=sub_keyword,
+                reason=reason,
+            ))
+
+    total = len(ESSENTIAL_BASICS)
+    owned = total - len(missing)
+    score = round(owned / total * 100) if total > 0 else 0
+
+    return GapAnalysis(
+        missing_items=missing,
+        coverage_score=score,
+        total_basics=total,
+        owned_basics=owned,
+    )
+
+
 def get_wear_history(db: Session, user_id: int = 1, year: int = 0, month: int = 0):
     """查询穿着历史，支持按年月筛选。"""
     q = db.query(WearRecord).filter(WearRecord.user_id == user_id)

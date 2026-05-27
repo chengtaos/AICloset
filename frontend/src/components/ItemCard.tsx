@@ -84,7 +84,7 @@ export default function ItemCard({ item, onClick, onDelete }: Props) {
 
       {/* 名称标签 */}
       <div style={{
-        padding: "8px 10px",
+        padding: "8px 10px 4px",
         fontSize: 12,
         color: "#1a1a1a",
         fontWeight: 500,
@@ -95,6 +95,20 @@ export default function ItemCard({ item, onClick, onDelete }: Props) {
       }}>
         {item.name || item.sub_category}
       </div>
+      {/* 状态标记 */}
+      {item.status !== "available" && (
+        <div style={{ padding: "0 10px 8px" }}>
+          <span style={{
+            fontSize: 10,
+            padding: "1px 6px",
+            borderRadius: 2,
+            background: item.status === "laundry" ? "#fff7e6" : "#f0f0f0",
+            color: item.status === "laundry" ? "#d48806" : "#8c8c8c",
+          }}>
+            {item.status === "laundry" ? "待洗" : "已归档"}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

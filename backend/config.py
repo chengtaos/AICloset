@@ -3,6 +3,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# CORS — 逗号分隔的允许域名，生产环境务必配置
+_CORS_RAW = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+CORS_ORIGINS = [o.strip() for o in _CORS_RAW.split(",") if o.strip()]
+
+# Rate limit — 登录/注册频率限制（默认每分钟 5 次）
+RATE_LIMIT_AUTH = os.getenv("RATE_LIMIT_AUTH", "5/minute")
+
+# Redis（可选，用于分布式限流）
+REDIS_URL = os.getenv("REDIS_URL", "")
+
 # DeepSeek
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"

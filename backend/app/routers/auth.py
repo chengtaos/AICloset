@@ -1,11 +1,13 @@
 import bcrypt
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.auth import create_token, get_current_user
 from app.database import get_db
+from app.limiter import limiter
 from app.models import User
+from config import RATE_LIMIT_AUTH
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -44,7 +46,8 @@ def _verify_password(password: str, hashed: str) -> bool:
 
 
 @router.post("/register", response_model=AuthResponse)
-def api_register(req: RegisterRequest, db: Session = Depends(get_db)):
+@limiter.limit(RATE_LIMIT_AUTH)
+def api_register(request: Request, req: RegisterRequest, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.phone == req.phone).first()
     if existing:
         raise HTTPException(status_code=409, detail="该手机号已注册")
@@ -63,7 +66,8 @@ def api_register(req: RegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=AuthResponse)
-def api_login(req: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit(RATE_LIMIT_AUTH)
+def api_login(request: Request, req: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.phone == req.phone).first()
     if not user or not _verify_password(req.password, user.password_hash):
         raise HTTPException(status_code=401, detail="手机号或密码错误")

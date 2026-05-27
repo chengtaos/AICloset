@@ -3,12 +3,19 @@ import sys
 from pathlib import Path
 from contextlib import asynccontextmanager
 
+# 环境变量必须在导入 app 模块之前加载（app.auth 依赖 JWT_SECRET）
+from config import CORS_ORIGINS
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.database import init_db
 from app.routers import wardrobe, outfits, recommend, auth
+from app.limiter import limiter
 
 # ── 日志配置 ──
 logging.basicConfig(
@@ -39,11 +46,16 @@ app = FastAPI(title="AiCloset API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# slowapi 限流中间件 + 异常处理器
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # 静态文件 — 图片访问
 uploads_dir = Path(__file__).parent / "uploads"

@@ -12,3 +12,4 @@ PyJWT>=2.8.0
 alibabacloud_imageseg20191230>=2.0.0
 alibabacloud_tea_openapi>=0.3.0
 alibabacloud_tea_util>=0.3.0
+slowapi>=0.1.9

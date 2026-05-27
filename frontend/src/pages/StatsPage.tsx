@@ -1,8 +1,11 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchStats } from "../api/client";
+import { fetchStats, fetchWearRecords, fetchItems } from "../api/client";
 import { getImageUrl } from "../utils/imageUrl";
 import { useResponsive } from "../hooks/useResponsive";
+import type { ClothingItem } from "../types";
 import { CATEGORY_LABELS } from "../types";
+import WearCalendar from "../components/WearCalendar";
 
 // 复用的卡片容器样式（概览卡、品类分布、颜色分布、最爱穿、沉睡单品共用）
 const cardStyle = {
@@ -25,8 +28,23 @@ const thumbStyle: React.CSSProperties = {
 };
 
 export default function StatsPage() {
-  const { data: stats } = useQuery({ queryKey: ["stats"], queryFn: fetchStats });
   const { isMobile } = useResponsive();
+  const now = new Date();
+  const [calYear, setCalYear] = useState(now.getFullYear());
+  const [calMonth, setCalMonth] = useState(now.getMonth() + 1);
+
+  const { data: stats } = useQuery({ queryKey: ["stats"], queryFn: fetchStats });
+  const { data: items = [] } = useQuery({ queryKey: ["items"], queryFn: () => fetchItems() });
+  const { data: records = [] } = useQuery({
+    queryKey: ["wearRecords", calYear, calMonth],
+    queryFn: () => fetchWearRecords(calYear, calMonth),
+  });
+
+  const itemMap = useMemo(() => {
+    const map = new Map<number, ClothingItem>();
+    items.forEach((it) => map.set(it.id, it));
+    return map;
+  }, [items]);
 
   if (!stats) return null;
 
@@ -36,11 +54,11 @@ export default function StatsPage() {
         统计
       </h2>
 
-      {/* 概览卡片：总数 / 价值 / 沉睡数 */}
+      {/* 概览卡片 */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : "repeat(3, 1fr)",
+          gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
           gap: isMobile ? 8 : 12,
           marginBottom: 24,
         }}
@@ -49,6 +67,12 @@ export default function StatsPage() {
           { label: "衣物总数", value: `${stats.total_items} 件` },
           { label: "衣橱价值", value: `¥${stats.total_value.toLocaleString()}` },
           { label: "沉睡单品", value: `${stats.sleeping_items.length} 件` },
+          (() => {
+            const totalWear = items.reduce((s, it) => s + (it.wear_count || 0), 0);
+            const totalPrice = items.reduce((s, it) => s + (it.purchase_price || 0), 0);
+            const avgCost = totalWear > 0 ? Math.round(totalPrice / totalWear) : 0;
+            return { label: "均次穿着成本", value: avgCost > 0 ? `¥${avgCost.toLocaleString()}` : "—" };
+          })(),
         ].map(({ label, value }) => (
           <div key={label} style={{ ...cardStyle, padding: isMobile ? "12px 14px" : "16px 20px" }}>
             <div style={{ fontSize: isMobile ? 11 : 12, color: "#8c8c8c", marginBottom: 4 }}>
@@ -183,7 +207,12 @@ export default function StatsPage() {
               还没有穿着记录
             </div>
           ) : (
-            stats.most_worn.map((item) => (
+            stats.most_worn.map((item) => {
+              const full = itemMap.get(item.id);
+              const wearCount = full?.wear_count || 1;
+              const price = full?.purchase_price || 0;
+              const costPerWear = wearCount > 0 ? Math.round(price / wearCount) : 0;
+              return (
               <div
                 key={item.id}
                 style={{
@@ -210,13 +239,14 @@ export default function StatsPage() {
                   )}
                 </div>
                 <div style={{ fontSize: 12, flex: 1 }}>
-                  <div style={{ fontWeight: 500 }}>{item.sub_category}</div>
+                  <div style={{ fontWeight: 500 }}>{item.name || item.sub_category}</div>
                   <div style={{ color: "#8c8c8c" }}>
-                    {item.colors.join(" · ")}
+                    {item.colors.join(" · ")} · 穿{wearCount}次
+                    {costPerWear > 0 && ` · ¥${costPerWear}/次`}
                   </div>
                 </div>
               </div>
-            ))
+            )})
           )}
         </div>
 
@@ -280,6 +310,27 @@ export default function StatsPage() {
             ))
           )}
         </div>
+      </div>
+
+      {/* 穿着日历 */}
+      <div style={{ marginTop: 32 }}>
+        <h3
+          style={{
+            fontSize: 15,
+            fontWeight: 600,
+            color: "#1a1a1a",
+            margin: "0 0 16px",
+          }}
+        >
+          穿着日历
+        </h3>
+        <WearCalendar
+          year={calYear}
+          month={calMonth}
+          records={records}
+          itemMap={itemMap}
+          onMonthChange={(y, m) => { setCalYear(y); setCalMonth(m); }}
+        />
       </div>
     </div>
   );

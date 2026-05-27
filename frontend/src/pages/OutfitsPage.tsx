@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Modal, Select, message, Input } from "antd";
-import { PlusOutlined, DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined } from "@ant-design/icons";
 import type { ClothingItem, Outfit, OutfitItem } from "../types";
 import { CATEGORY_LABELS, POSITION_LABELS } from "../types";
 import { fetchItems, fetchOutfits, createOutfit, updateOutfit, deleteOutfit } from "../api/client";
@@ -39,6 +39,10 @@ export default function OutfitsPage() {
   const [outfitName, setOutfitName] = useState("");
   const [outfitTags, setOutfitTags] = useState<string[]>([]);
   const [selected, setSelected] = useState<OutfitItem[]>([]);
+
+  // 筛选状态
+  const [searchText, setSearchText] = useState("");
+  const [filterTag, setFilterTag] = useState("");
 
   const { data: items = [] } = useQuery({
     queryKey: ["items"],
@@ -108,6 +112,26 @@ export default function OutfitsPage() {
     return map;
   }, [items]);
 
+  // 客户端筛选：标签 + 搜索
+  const filteredOutfits = useMemo(() => {
+    let list = outfits;
+    if (filterTag) {
+      list = list.filter((o) => o.tags.includes(filterTag));
+    }
+    if (searchText) {
+      const kw = searchText.toLowerCase();
+      list = list.filter((o) => {
+        if (o.name.toLowerCase().includes(kw)) return true;
+        // 同时搜索搭配内含的衣物名称
+        return o.items.some((oi) => {
+          const item = itemMap.get(oi.item_id);
+          return item && ((item.name || "").toLowerCase().includes(kw) || item.sub_category.toLowerCase().includes(kw));
+        });
+      });
+    }
+    return list;
+  }, [outfits, filterTag, searchText, itemMap]);
+
   // 切换选中：自动推断位置
   const toggleItem = (itemId: number) => {
     setSelected((prev) => {
@@ -151,14 +175,49 @@ export default function OutfitsPage() {
         <Button icon={<PlusOutlined />} onClick={openCreate}>创建</Button>
       </div>
 
+      {/* 筛选栏：标签 + 搜索 */}
+      {outfits.length > 0 && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 20, alignItems: "center", flexWrap: "wrap" }}>
+          {TAG_OPTIONS.map((tag) => (
+            <span
+              key={tag}
+              onClick={() => setFilterTag((prev) => (prev === tag ? "" : tag))}
+              style={{
+                fontSize: 12, cursor: "pointer",
+                padding: "4px 12px", borderRadius: 4,
+                color: filterTag === tag ? "#fff" : "#8c8c8c",
+                background: filterTag === tag ? "#4a5c6c" : "#f0f0f0",
+                transition: "all 0.15s",
+              }}
+            >
+              {tag}
+            </span>
+          ))}
+          <div style={{ flex: 1, minWidth: 0 }} />
+          <Input
+            prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+            placeholder="搜索搭配名称或衣物"
+            size="small"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
+            style={{ width: 220, border: "1px solid #e8eaed", borderRadius: 4 }}
+          />
+        </div>
+      )}
+
       {outfits.length === 0 ? (
         <div style={{ textAlign: "center", padding: "80px 0", color: "#bfbfbf" }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>👔</div>
           <div>还没有搭配，点击右上角创建</div>
         </div>
+      ) : filteredOutfits.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "60px 0", color: "#bfbfbf" }}>
+          <div style={{ fontSize: 13 }}>没有匹配的搭配</div>
+        </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {outfits.map((outfit) => (
+          {filteredOutfits.map((outfit) => (
             <OutfitCard
               key={outfit.id}
               outfit={outfit}

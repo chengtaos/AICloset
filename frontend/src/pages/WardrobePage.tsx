@@ -12,6 +12,7 @@ import type { ClothingItem, ClothingItemCreate } from "../types";
 import { CATEGORY_LABELS, SEASONS, STYLE_TAGS, COLORS_PRESET } from "../types";
 import { fetchItems, createItem, updateItem, deleteItem, uploadImage } from "../api/client";
 import { getImageUrl } from "../utils/imageUrl";
+import { exportItemsCsv } from "../utils/export";
 import { useResponsive } from "../hooks/useResponsive";
 import ItemCard from "../components/ItemCard";
 import ItemForm from "../components/ItemForm";
@@ -167,15 +168,25 @@ export default function WardrobePage() {
             {filtered.length} 件
           </div>
         </div>
-        <Button
-          icon={<PlusOutlined />}
-          onClick={() => {
-            setEditingId(null);
-            setFormOpen(true);
-          }}
-        >
-          录入
-        </Button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button
+            size="small"
+            onClick={() => exportItemsCsv(items)}
+            disabled={items.length === 0}
+            style={{ fontSize: 12 }}
+          >
+            导出 CSV
+          </Button>
+          <Button
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setEditingId(null);
+              setFormOpen(true);
+            }}
+          >
+            录入
+          </Button>
+        </div>
       </div>
 
       {/* 品类标签栏 + 搜索 */}
@@ -489,6 +500,12 @@ export default function WardrobePage() {
                   <div>价格：¥{detailItem.purchase_price}</div>
                 )}
                 <div>穿过 {detailItem.wear_count} 次</div>
+                {detailItem.purchase_price > 0 && detailItem.wear_count > 0 && (
+                  <div>
+                    次穿着成本：¥
+                    {Math.round(detailItem.purchase_price / detailItem.wear_count)}
+                  </div>
+                )}
                 <div>录入：{new Date(detailItem.created_at).toLocaleDateString("zh-CN")}</div>
                 <div>
                   上次穿着：

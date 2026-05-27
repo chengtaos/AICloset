@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { DeleteOutlined } from "@ant-design/icons";
 import type { ClothingItem } from "../types";
+import { getImageUrl } from "../utils/imageUrl";
 
 interface Props {
   item: ClothingItem;
@@ -59,7 +60,7 @@ export default function ItemCard({ item, onClick, onDelete }: Props) {
       }}>
         {hasImg ? (
           <img
-            src={`http://localhost:8000/${item.images[0]}`}
+            src={getImageUrl(item.images[0])}
             alt={item.sub_category}
             onError={() => setImgError(true)}
             style={{ width: "100%", height: "100%", objectFit: "cover" }}

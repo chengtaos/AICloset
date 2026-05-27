@@ -4,6 +4,7 @@ import { Button, Select, Input, message } from "antd";
 import { ThunderboltOutlined, ExperimentOutlined } from "@ant-design/icons";
 import type { RecommendResponse } from "../types";
 import { recommendDaily, recommendScenario, recordWear } from "../api/client";
+import { useResponsive } from "../hooks/useResponsive";
 import RecommendCard from "../components/RecommendCard";
 
 // 和风天气支持的主要城市列表
@@ -26,6 +27,7 @@ const RECOMMEND_DAILY_KEY = ["recommend", "daily"] as const;
 const RECOMMEND_SCENARIO_KEY = ["recommend", "scenario"] as const;
 
 export default function RecommendPage() {
+  const { isMobile } = useResponsive();
   const [city, setCity] = useState("北京");
   const [mode, setMode] = useState<"daily" | "scenario">("daily");
   const [scenarioDesc, setScenarioDesc] = useState("");
@@ -82,7 +84,7 @@ export default function RecommendPage() {
           border: "1px solid #e8eaed",
           borderRadius: 4,
           background: "#fff",
-          padding: 20,
+          padding: isMobile ? 14 : 20,
           marginBottom: 24,
         }}
       >

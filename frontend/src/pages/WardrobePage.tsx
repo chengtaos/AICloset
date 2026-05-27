@@ -11,6 +11,8 @@ import {
 import type { ClothingItem, ClothingItemCreate } from "../types";
 import { CATEGORY_LABELS } from "../types";
 import { fetchItems, createItem, updateItem, deleteItem, uploadImage } from "../api/client";
+import { getImageUrl } from "../utils/imageUrl";
+import { useResponsive } from "../hooks/useResponsive";
 import ItemCard from "../components/ItemCard";
 import ItemForm from "../components/ItemForm";
 
@@ -33,6 +35,7 @@ function confirmDelete(onOk: () => void) {
 
 export default function WardrobePage() {
   const queryClient = useQueryClient();
+  const { isMobile } = useResponsive();
   const [activeCat, setActiveCat] = useState("");
   const [search, setSearch] = useState("");
   const [formOpen, setFormOpen] = useState(false);
@@ -175,37 +178,48 @@ export default function WardrobePage() {
           display: "flex",
           gap: 2,
           marginBottom: 20,
-          flexWrap: "wrap",
           alignItems: "center",
         }}
       >
-        {CATEGORIES.map(({ key, label }) => {
-          const active = activeCat === key;
-          const count = key ? items.filter((i) => i.category === key).length : items.length;
-          return (
-            <button
-              key={key}
-              onClick={() => setActiveCat(key)}
-              style={{
-                border: "none",
-                background: active ? "#f0f2f5" : "transparent",
-                padding: "6px 14px",
-                fontSize: 13,
-                fontWeight: active ? 600 : 400,
-                color: active ? "#1a1a1a" : "#999",
-                cursor: "pointer",
-                borderRadius: 4,
-                transition: "all 0.15s",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {label}
-              <span style={{ marginLeft: 4, fontSize: 11, opacity: 0.6 }}>{count}</span>
-            </button>
-          );
-        })}
+        <div
+          style={{
+            display: "flex",
+            gap: 2,
+            flexWrap: isMobile ? "nowrap" : "wrap",
+            overflowX: isMobile ? "auto" : "visible",
+            flex: 1,
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          {CATEGORIES.map(({ key, label }) => {
+            const active = activeCat === key;
+            const count = key ? items.filter((i) => i.category === key).length : items.length;
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveCat(key)}
+                style={{
+                  border: "none",
+                  background: active ? "#f0f2f5" : "transparent",
+                  padding: "6px 14px",
+                  fontSize: isMobile ? 12 : 13,
+                  fontWeight: active ? 600 : 400,
+                  color: active ? "#1a1a1a" : "#999",
+                  cursor: "pointer",
+                  borderRadius: 4,
+                  transition: "all 0.15s",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}
+              >
+                {label}
+                <span style={{ marginLeft: 4, fontSize: 11, opacity: 0.6 }}>{count}</span>
+              </button>
+            );
+          })}
+        </div>
 
-        <div style={{ flex: 1 }} />
+        {!isMobile && <div style={{ flex: 1 }} />}
 
         <Input
           prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
@@ -214,7 +228,12 @@ export default function WardrobePage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           allowClear
-          style={{ width: 180, border: "1px solid #e8eaed", borderRadius: 4 }}
+          style={{
+            width: isMobile ? 120 : 180,
+            flexShrink: 0,
+            border: "1px solid #e8eaed",
+            borderRadius: 4,
+          }}
         />
       </div>
 
@@ -231,8 +250,10 @@ export default function WardrobePage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))",
-            gap: 16,
+            gridTemplateColumns: isMobile
+              ? "repeat(2, 1fr)"
+              : "repeat(auto-fill, minmax(148px, 1fr))",
+            gap: isMobile ? 10 : 16,
           }}
         >
           {filtered.map((item) => (
@@ -274,8 +295,10 @@ export default function WardrobePage() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))",
-                  gap: 16,
+                  gridTemplateColumns: isMobile
+                    ? "repeat(2, 1fr)"
+                    : "repeat(auto-fill, minmax(148px, 1fr))",
+                  gap: isMobile ? 10 : 16,
                 }}
               >
                 {catItems.map((item) => (
@@ -323,12 +346,13 @@ export default function WardrobePage() {
         closable={false}
       >
         {detailItem && (
-          <div style={{ display: "flex", gap: 20 }}>
+          <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 16 : 20 }}>
             {/* 左侧大图 */}
             <div
               style={{
-                width: 180,
-                aspectRatio: "3/4",
+                width: isMobile ? "100%" : 180,
+                maxHeight: isMobile ? 280 : undefined,
+                aspectRatio: isMobile ? "3/4" : "3/4",
                 background: "#f5f5f5",
                 flexShrink: 0,
                 overflow: "hidden",
@@ -339,7 +363,7 @@ export default function WardrobePage() {
             >
               {detailItem.images.length > 0 ? (
                 <img
-                  src={`http://localhost:8000/${detailItem.images[0]}`}
+                  src={getImageUrl(detailItem.images[0])}
                   alt=""
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />

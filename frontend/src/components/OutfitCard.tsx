@@ -1,4 +1,6 @@
 import type { Outfit, ClothingItem } from "../types";
+import { getImageUrl } from "../utils/imageUrl";
+import { useResponsive } from "../hooks/useResponsive";
 
 interface Props {
   outfit: Outfit;
@@ -7,8 +9,9 @@ interface Props {
 }
 
 export default function OutfitCard({ outfit, itemMap, extra }: Props) {
+  const { isMobile } = useResponsive();
   return (
-    <div style={{ border: "1px solid #e8eaed", borderRadius: 4, background: "#fff", padding: 20 }}>
+    <div style={{ border: "1px solid #e8eaed", borderRadius: 4, background: "#fff", padding: isMobile ? 14 : 20 }}>
       {/* 标题行 */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -25,7 +28,7 @@ export default function OutfitCard({ outfit, itemMap, extra }: Props) {
       </div>
 
       {/* 衣物网格 */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(auto-fill, minmax(72px, 1fr))" : "repeat(auto-fill, minmax(100px, 1fr))", gap: isMobile ? 8 : 10 }}>
         {outfit.items.map((oi, idx) => {
           const item = itemMap.get(oi.item_id);
           return (
@@ -45,7 +48,7 @@ export default function OutfitCard({ outfit, itemMap, extra }: Props) {
               >
                 {item?.images.length ? (
                   <img
-                    src={`http://localhost:8000/${item.images[0]}`}
+                    src={getImageUrl(item.images[0])}
                     alt={item.sub_category}
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />

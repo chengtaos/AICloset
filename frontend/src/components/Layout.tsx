@@ -1,5 +1,6 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useResponsive } from "../hooks/useResponsive";
 
 const NAV = [
   { path: "/recommend", label: "推荐", icon: "✨" },
@@ -13,6 +14,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { user, logout } = useAuth();
+  const { isMobile } = useResponsive();
 
   const handleLogout = () => {
     logout();
@@ -24,14 +26,14 @@ export default function Layout() {
       {/* 顶部栏 */}
       <header
         style={{
-          height: 48,
+          height: isMobile ? 44 : 48,
           background: "rgba(255,255,255,0.92)",
           backdropFilter: "blur(8px)",
           borderBottom: "1px solid #e8eaed",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 24px",
+          padding: isMobile ? "0 16px" : "0 24px",
           position: "sticky",
           top: 0,
           zIndex: 100,
@@ -55,7 +57,12 @@ export default function Layout() {
       </header>
 
       {/* 内容区 */}
-      <main style={{ paddingBottom: 72, maxWidth: 860, margin: "0 auto", padding: "32px 24px 88px" }}>
+      <main style={{
+        paddingBottom: 72,
+        maxWidth: 860,
+        margin: "0 auto",
+        padding: isMobile ? "20px 12px 80px" : "32px 24px 88px",
+      }}>
         <Outlet />
       </main>
 
@@ -66,7 +73,7 @@ export default function Layout() {
           bottom: 0,
           left: 0,
           right: 0,
-          height: 56,
+          height: isMobile ? 52 : 56,
           background: "rgba(255,255,255,0.92)",
           backdropFilter: "blur(8px)",
           borderTop: "1px solid #e8eaed",
@@ -74,6 +81,7 @@ export default function Layout() {
           justifyContent: "center",
           gap: 0,
           zIndex: 100,
+          paddingBottom: isMobile ? "env(safe-area-inset-bottom, 0px)" : 0,
         }}
       >
         {NAV.map(({ path, label, icon }) => {
@@ -84,24 +92,24 @@ export default function Layout() {
               onClick={() => navigate(path)}
               style={{
                 flex: 1,
-                maxWidth: 120,
+                maxWidth: isMobile ? 72 : 120,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 2,
+                gap: isMobile ? 0 : 2,
                 border: "none",
                 background: "transparent",
                 cursor: "pointer",
                 color: active ? "#4a5c6c" : "#8c8c8c",
-                fontSize: 11,
+                fontSize: isMobile ? 10 : 11,
                 fontWeight: active ? 600 : 400,
                 letterSpacing: "0.02em",
                 transition: "color 0.15s",
                 padding: 0,
               }}
             >
-              <span style={{ fontSize: 18, opacity: active ? 1 : 0.5 }}>{icon}</span>
+              <span style={{ fontSize: isMobile ? 16 : 18, opacity: active ? 1 : 0.5 }}>{icon}</span>
               <span>{label}</span>
             </button>
           );

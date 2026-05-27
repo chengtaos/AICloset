@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import type { ClothingItemBrief } from "../types";
+import { getImageUrl } from "../utils/imageUrl";
 
 interface ItemState {
   x: number;   // 百分比 0-100
@@ -157,7 +158,7 @@ export default function OutfitComposer({ items }: Props) {
             {/* 图片 */}
             {item.images.length > 0 ? (
               <img
-                src={`http://localhost:8000/${item.images[0]}`}
+                src={getImageUrl(item.images[0])}
                 alt={item.sub_category}
                 draggable={false}
                 style={{

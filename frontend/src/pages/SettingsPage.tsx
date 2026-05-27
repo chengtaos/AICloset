@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchApiKeys, updateApiKeys, type UserApiKeys } from "../api/client";
+import { useResponsive } from "../hooks/useResponsive";
 
 const FIELD_LABELS: Record<keyof UserApiKeys, string> = {
   deepseek: "DeepSeek API Key",
@@ -26,6 +27,7 @@ const FIELD_KEYS: (keyof UserApiKeys)[] = [
 ];
 
 export default function SettingsPage() {
+  const { isMobile } = useResponsive();
   const [keys, setKeys] = useState<UserApiKeys>({
     deepseek: "",
     amap: "",
@@ -123,6 +125,7 @@ export default function SettingsPage() {
           onClick={handleSave}
           disabled={saving}
           style={{
+            width: isMobile ? "100%" : undefined,
             height: 44,
             border: "none",
             borderRadius: 6,

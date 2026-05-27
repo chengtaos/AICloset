@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchStats } from "../api/client";
+import { getImageUrl } from "../utils/imageUrl";
+import { useResponsive } from "../hooks/useResponsive";
 import { CATEGORY_LABELS } from "../types";
 
 // 复用的卡片容器样式（概览卡、品类分布、颜色分布、最爱穿、沉睡单品共用）
@@ -24,6 +26,7 @@ const thumbStyle: React.CSSProperties = {
 
 export default function StatsPage() {
   const { data: stats } = useQuery({ queryKey: ["stats"], queryFn: fetchStats });
+  const { isMobile } = useResponsive();
 
   if (!stats) return null;
 
@@ -37,8 +40,8 @@ export default function StatsPage() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 12,
+          gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : "repeat(3, 1fr)",
+          gap: isMobile ? 8 : 12,
           marginBottom: 24,
         }}
       >
@@ -47,11 +50,11 @@ export default function StatsPage() {
           { label: "衣橱价值", value: `¥${stats.total_value.toLocaleString()}` },
           { label: "沉睡单品", value: `${stats.sleeping_items.length} 件` },
         ].map(({ label, value }) => (
-          <div key={label} style={{ ...cardStyle, padding: "16px 20px" }}>
-            <div style={{ fontSize: 12, color: "#8c8c8c", marginBottom: 4 }}>
+          <div key={label} style={{ ...cardStyle, padding: isMobile ? "12px 14px" : "16px 20px" }}>
+            <div style={{ fontSize: isMobile ? 11 : 12, color: "#8c8c8c", marginBottom: 4 }}>
               {label}
             </div>
-            <div style={{ fontSize: 22, fontWeight: 600, color: "#1a1a1a" }}>
+            <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 600, color: "#1a1a1a" }}>
               {value}
             </div>
           </div>
@@ -62,7 +65,7 @@ export default function StatsPage() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
           gap: 12,
           marginBottom: 24,
         }}
@@ -155,7 +158,7 @@ export default function StatsPage() {
       </div>
 
       {/* 最爱穿 + 沉睡单品 */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
         {/* 高频穿着 */}
         <div style={{ ...cardStyle, padding: 20 }}>
           <h3
@@ -194,7 +197,7 @@ export default function StatsPage() {
                 <div style={thumbStyle}>
                   {item.images.length > 0 ? (
                     <img
-                      src={`http://localhost:8000/${item.images[0]}`}
+                      src={getImageUrl(item.images[0])}
                       alt=""
                       style={{
                         width: "100%",
@@ -255,7 +258,7 @@ export default function StatsPage() {
                 <div style={thumbStyle}>
                   {item.images.length > 0 ? (
                     <img
-                      src={`http://localhost:8000/${item.images[0]}`}
+                      src={getImageUrl(item.images[0])}
                       alt=""
                       style={{
                         width: "100%",

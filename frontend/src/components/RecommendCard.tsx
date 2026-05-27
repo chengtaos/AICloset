@@ -1,6 +1,7 @@
 import { Button } from "antd";
 import { CheckOutlined } from "@ant-design/icons";
 import type { RecommendResponse } from "../types";
+import { useResponsive } from "../hooks/useResponsive";
 import OutfitComposer from "./OutfitComposer";
 
 interface Props {
@@ -17,6 +18,8 @@ const WEATHER_ICON: Record<string, string> = {
 };
 
 export default function RecommendCard({ loading, data, onAccept, accepting, acceptedIdx }: Props) {
+  const { isMobile } = useResponsive();
+
   if (loading) {
     return (
       <div style={{ textAlign: "center", padding: "80px 0", color: "#8c8c8c" }}>
@@ -41,16 +44,17 @@ export default function RecommendCard({ loading, data, onAccept, accepting, acce
     <div>
       {/* 天气条 */}
       <div style={{
-        display: "flex", alignItems: "center", gap: 16,
-        padding: "16px 20px", border: "1px solid #e8eaed", borderRadius: 4,
+        display: "flex", alignItems: "center", gap: isMobile ? 12 : 16,
+        padding: isMobile ? "12px 14px" : "16px 20px",
+        border: "1px solid #e8eaed", borderRadius: 4,
         background: "#fff", marginBottom: 24,
       }}>
-        <span style={{ fontSize: 36 }}>{icon}</span>
+        <span style={{ fontSize: isMobile ? 28 : 36 }}>{icon}</span>
         <div>
-          <div style={{ fontSize: 28, fontWeight: 600, color: "#1a1a1a", lineHeight: 1 }}>
-            {weather.temperature}°<span style={{ fontSize: 14, color: "#8c8c8c", fontWeight: 400 }}>C</span>
+          <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 600, color: "#1a1a1a", lineHeight: 1 }}>
+            {weather.temperature}°<span style={{ fontSize: isMobile ? 12 : 14, color: "#8c8c8c", fontWeight: 400 }}>C</span>
           </div>
-          <div style={{ fontSize: 12, color: "#8c8c8c", marginTop: 2 }}>
+          <div style={{ fontSize: isMobile ? 11 : 12, color: "#8c8c8c", marginTop: 2 }}>
             体感 {weather.feels_like}°C · {weather.city} · {weather.condition} · 湿度{weather.humidity}% · 风{weather.wind_level}级
           </div>
         </div>

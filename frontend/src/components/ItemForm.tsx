@@ -5,6 +5,7 @@ import { CameraOutlined, PictureOutlined, LoadingOutlined, CloseOutlined } from 
 import type { ClothingItem, ClothingItemCreate } from "../types";
 import { CATEGORY_LABELS, SEASONS, STYLE_TAGS, SUB_CATEGORIES, COLORS_PRESET, MATERIALS } from "../types";
 import { autoClassify } from "../api/client";
+import { getImageUrl } from "../utils/imageUrl";
 
 /** 批量识别中的单件衣物卡片：支持展开编辑 */
 function BatchItemCard({
@@ -37,7 +38,7 @@ function BatchItemCard({
           background: "#f0f0f0", overflow: "hidden", flexShrink: 0,
         }}>
           {item.image_path ? (
-            <img src={`http://localhost:8000/${item.image_path}`} alt=""
+            <img src={getImageUrl(item.image_path)} alt=""
               style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
             <span style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: 18, opacity: 0.15 }}>👤</span>
@@ -339,7 +340,7 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit, onBatch
         }}>
           {imagePathRef.current ? (
             <img
-              src={`http://localhost:8000/${imagePathRef.current}`}
+              src={getImageUrl(imagePathRef.current)}
               alt="预览"
               style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
             />

@@ -5,6 +5,8 @@ import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import type { ClothingItem, OutfitItem } from "../types";
 import { CATEGORY_LABELS } from "../types";
 import { fetchItems, fetchOutfits, createOutfit, deleteOutfit } from "../api/client";
+import { getImageUrl } from "../utils/imageUrl";
+import { useResponsive } from "../hooks/useResponsive";
 import OutfitCard from "../components/OutfitCard";
 
 // 穿搭部位选项：每件衣物在搭配中充当的角色
@@ -19,6 +21,7 @@ const POSITION_OPTIONS = [
 
 export default function OutfitsPage() {
   const queryClient = useQueryClient();
+  const { isMobile } = useResponsive();
   const [createOpen, setCreateOpen] = useState(false);
   const [outfitName, setOutfitName] = useState("");
   const [selected, setSelected] = useState<OutfitItem[]>([]);
@@ -194,7 +197,7 @@ export default function OutfitsPage() {
                   >
                     {item.images.length > 0 ? (
                       <img
-                        src={`http://localhost:8000/${item.images[0]}`}
+                        src={getImageUrl(item.images[0])}
                         alt=""
                         style={{
                           width: "100%",

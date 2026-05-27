@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useResponsive } from "../hooks/useResponsive";
 
 export default function LoginPage() {
   const { login, register, loading, token } = useAuth();
+  const { isMobile } = useResponsive();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [phone, setPhone] = useState("");
@@ -62,7 +64,7 @@ export default function LoginPage() {
         padding: 24,
       }}
     >
-      <div style={{ width: 360 }}>
+      <div style={{ width: isMobile ? "100%" : 360, maxWidth: 360 }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <h1
             style={{

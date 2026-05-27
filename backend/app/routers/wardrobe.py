@@ -29,6 +29,7 @@ from app.services.wardrobe import (
 )
 from app.agent.vision import classify_image
 from app.agent.segmentation import segment_image
+from app.routers.user import get_user_api_keys
 from app.upload import validate_image, validate_image_size
 
 router = APIRouter(prefix="/api/wardrobe", tags=["wardrobe"])
@@ -94,14 +95,23 @@ async def api_upload_image(item_id: int, file: UploadFile = File(...), db: Sessi
     filepath.write_bytes(content)
 
     # 服饰分割：抠出主体，透明背景；失败则用原图
-    seg_path = segment_image(str(filepath))
+    keys = get_user_api_keys(db, current_user.id)
+    seg_path = segment_image(
+        str(filepath),
+        access_key_id=keys.get("alibaba_access_key_id", ""),
+        access_key_secret=keys.get("alibaba_access_key_secret", ""),
+    )
     path_str = seg_path if seg_path else f"uploads/{filename}"
     item = add_image(db, item_id, path_str, user_id=current_user.id)
     return item
 
 
 @router.post("/auto-classify")
-async def api_auto_classify(file: UploadFile = File(...)):
+async def api_auto_classify(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """拍照识别衣物：上传图片 → AI 返回所有衣物分类结果 → 服饰分割抠图。"""
     await validate_image(file)
 
@@ -113,12 +123,17 @@ async def api_auto_classify(file: UploadFile = File(...)):
     validate_image_size(content)
     filepath.write_bytes(content)
 
-    results = classify_image(str(filepath))
+    keys = get_user_api_keys(db, current_user.id)
+    results = classify_image(str(filepath), api_key=keys.get("dashscope", ""))
     if results is None:
         raise HTTPException(status_code=422, detail="AI 识别失败，请确认图片清晰且包含衣物")
 
     # 服饰分割抠图，失败时降级到原图
-    seg_path = segment_image(str(filepath))
+    seg_path = segment_image(
+        str(filepath),
+        access_key_id=keys.get("alibaba_access_key_id", ""),
+        access_key_secret=keys.get("alibaba_access_key_secret", ""),
+    )
     base_image = seg_path if seg_path else f"uploads/{filename}"
 
     for item in results:

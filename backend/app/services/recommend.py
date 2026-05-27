@@ -95,15 +95,21 @@ def _run_recommend_pipeline(
     weather: WeatherInfo,
     occasion: str,
     user_id: int,
+    api_keys: dict[str, str] | None = None,
 ) -> list[dict]:
     """执行推荐流水线：加载偏好 → 规则粗筛 → LLM 精排（注入偏好）；LLM 不可用时降级为偏好加权规则引擎。"""
+    keys = api_keys or {}
     candidates = filter_candidates(db, weather, user_id)
 
     # 加载用户偏好档案
     profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
     preferences_text = format_preferences_for_llm(profile)
 
-    llm_result = generate_recommendations(candidates, weather, occasion, limit=3, preferences_text=preferences_text)
+    llm_result = generate_recommendations(
+        candidates, weather, occasion,
+        limit=3, preferences_text=preferences_text,
+        api_key=keys.get("deepseek", ""),
+    )
 
     if llm_result:
         logger.info("使用 LLM 推荐结果（偏好注入=%s）", bool(preferences_text))
@@ -114,17 +120,23 @@ def _run_recommend_pipeline(
     return [{"item_ids": s["items"], "reason": s["reason"]} for s in raw]
 
 
-def recommend_daily(db: Session, req: DailyRecommendRequest, user_id: int) -> RecommendResponse:
-    """日常推荐：根据天气和场合生成穿搭建议。"""
-    weather = get_weather(req.city)
+def recommend_daily(
+    db: Session, req: DailyRecommendRequest, user_id: int, api_keys: dict[str, str] | None = None,
+) -> RecommendResponse:
+    """日常推荐：根据天气和场合生成穿搭建议。api_keys 为用户自备 Key，未提供则用全局配置。"""
+    keys = api_keys or {}
+    weather = get_weather(req.city, api_key=keys.get("amap", ""))
     context = {"city": req.city, "occasion": req.occasion, "weather": weather.model_dump()}
-    suggestions = _run_recommend_pipeline(db, weather, req.occasion, user_id)
+    suggestions = _run_recommend_pipeline(db, weather, req.occasion, user_id, keys)
     return _build_response(db, weather, suggestions, user_id, "daily", context)
 
 
-def recommend_scenario(db: Session, req: ScenarioRecommendRequest, user_id: int) -> RecommendResponse:
-    """场景推荐：根据自然语言描述识别场合后生成穿搭建议。"""
-    weather = get_weather(req.city)
+def recommend_scenario(
+    db: Session, req: ScenarioRecommendRequest, user_id: int, api_keys: dict[str, str] | None = None,
+) -> RecommendResponse:
+    """场景推荐：根据自然语言描述识别场合后生成穿搭建议。api_keys 为用户自备 Key，未提供则用全局配置。"""
+    keys = api_keys or {}
+    weather = get_weather(req.city, api_key=keys.get("amap", ""))
     occasion = _resolve_occasion(req.description)
 
     context = {
@@ -134,5 +146,5 @@ def recommend_scenario(db: Session, req: ScenarioRecommendRequest, user_id: int)
         "weather": weather.model_dump(),
     }
 
-    suggestions = _run_recommend_pipeline(db, weather, occasion, user_id)
+    suggestions = _run_recommend_pipeline(db, weather, occasion, user_id, keys)
     return _build_response(db, weather, suggestions, user_id, "scenario", context)

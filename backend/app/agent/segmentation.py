@@ -22,26 +22,36 @@ _client: Client | None = None
 UPLOAD_DIR = Path(__file__).parent.parent.parent / "uploads"
 
 
-def _get_client() -> Client | None:
-    global _client
-    if not ALIBABA_CLOUD_ACCESS_KEY_ID:
+def _get_client(
+    access_key_id: str = "",
+    access_key_secret: str = "",
+) -> Client | None:
+    """获取服饰分割客户端。优先使用用户 Key，其次全局配置。"""
+    ak_id = access_key_id or ALIBABA_CLOUD_ACCESS_KEY_ID
+    ak_secret = access_key_secret or ALIBABA_CLOUD_ACCESS_KEY_SECRET
+    if not ak_id:
         return None
+    if access_key_id:
+        cfg = Config(access_key_id=ak_id, access_key_secret=ak_secret, region_id="cn-shanghai")
+        return Client(cfg)
+    global _client
     if _client is None:
-        cfg = Config(
-            access_key_id=ALIBABA_CLOUD_ACCESS_KEY_ID,
-            access_key_secret=ALIBABA_CLOUD_ACCESS_KEY_SECRET,
-            region_id="cn-shanghai",
-        )
+        cfg = Config(access_key_id=ak_id, access_key_secret=ak_secret, region_id="cn-shanghai")
         _client = Client(cfg)
     return _client
 
 
-def segment_image(image_path: str) -> str | None:
+def segment_image(
+    image_path: str,
+    access_key_id: str = "",
+    access_key_secret: str = "",
+) -> str | None:
     """
     对本地图片进行服饰分割，返回抠图后的图片路径。
     失败时返回 None，调用方应降级使用原图。
+    access_key_id/access_key_secret 可选，不传则使用全局配置。
     """
-    client = _get_client()
+    client = _get_client(access_key_id, access_key_secret)
     if client is None:
         logger.warning("ALIBABA_CLOUD_ACCESS_KEY_ID 未配置，跳过服饰分割")
         return None

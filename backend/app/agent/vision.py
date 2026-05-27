@@ -46,21 +46,26 @@ SYSTEM_PROMPT = """你是一个专业的女性服装分类助手，服务于电�
 只返回 JSON 数组，不要其他内容。"""
 
 
-def _get_client() -> OpenAI | None:
-    global _client
-    if not DASHSCOPE_API_KEY:
+def _get_client(api_key: str = "") -> OpenAI | None:
+    """获取视觉识别客户端。优先使用用户 Key，其次全局配置。"""
+    key = api_key or DASHSCOPE_API_KEY
+    if not key:
         return None
+    if api_key:
+        return OpenAI(api_key=key, base_url=DASHSCOPE_BASE_URL)
+    global _client
     if _client is None:
-        _client = OpenAI(api_key=DASHSCOPE_API_KEY, base_url=DASHSCOPE_BASE_URL)
+        _client = OpenAI(api_key=key, base_url=DASHSCOPE_BASE_URL)
     return _client
 
 
-def classify_image(image_path: str) -> list[dict] | None:
+def classify_image(image_path: str, api_key: str = "") -> list[dict] | None:
     """
     识别图片中的所有衣物，返回分类 dict 列表。
     失败返回 None。
+    api_key 可选，不传则使用全局 DASHSCOPE_API_KEY。
     """
-    client = _get_client()
+    client = _get_client(api_key)
     if client is None:
         logger.warning("DASHSCOPE_API_KEY 未配置")
         return None

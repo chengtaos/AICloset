@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import Recommendation, User
+from app.routers.user import get_user_api_keys
 from app.schemas import (
     DailyRecommendRequest,
     ScenarioRecommendRequest,
@@ -22,7 +23,8 @@ def api_recommend_daily(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return recommend_daily(db, req, user_id=current_user.id)
+    api_keys = get_user_api_keys(db, current_user.id)
+    return recommend_daily(db, req, user_id=current_user.id, api_keys=api_keys)
 
 
 @router.post("/scenario", response_model=RecommendResponse)
@@ -31,7 +33,8 @@ def api_recommend_scenario(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return recommend_scenario(db, req, user_id=current_user.id)
+    api_keys = get_user_api_keys(db, current_user.id)
+    return recommend_scenario(db, req, user_id=current_user.id, api_keys=api_keys)
 
 
 @router.post("/{recommendation_id}/feedback")

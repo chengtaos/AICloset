@@ -112,9 +112,10 @@ def _estimate_uv(condition: str, month: int) -> int:
     return uv
 
 
-def _fetch_from_amap(city: str) -> WeatherInfo | None:
-    """从高德 API 获取实况天气。"""
-    if not AMAP_API_KEY:
+def _fetch_from_amap(city: str, api_key: str = "") -> WeatherInfo | None:
+    """从高德 API 获取实况天气。优先使用用户 Key，其次全局配置。"""
+    key = api_key or AMAP_API_KEY
+    if not key:
         logger.warning("AMAP_API_KEY 未配置")
         return None
 
@@ -127,7 +128,7 @@ def _fetch_from_amap(city: str) -> WeatherInfo | None:
         resp = httpx.get(
             AMAP_WEATHER_URL,
             params={
-                "key": AMAP_API_KEY,
+                "key": key,
                 "city": adcode,
                 "extensions": "base",
                 "output": "JSON",
@@ -218,12 +219,13 @@ def _fallback_mock(city: str) -> WeatherInfo:
     )
 
 
-def get_weather(city: str) -> WeatherInfo:
+def get_weather(city: str, api_key: str = "") -> WeatherInfo:
     """
     获取城市实况天气。
     优先高德 API → 失败降级到本地模拟数据。
+    api_key 可选，不传则使用全局 AMAP_API_KEY。
     """
-    result = _fetch_from_amap(city)
+    result = _fetch_from_amap(city, api_key)
     if result is not None:
         return result
     logger.info(f"降级到模拟天气数据: {city}")

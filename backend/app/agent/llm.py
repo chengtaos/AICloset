@@ -17,12 +17,17 @@ logger = logging.getLogger(__name__)
 _client: OpenAI | None = None
 
 
-def _get_client() -> OpenAI | None:
-    global _client
-    if not DEEPSEEK_API_KEY:
+def _get_client(api_key: str = "") -> OpenAI | None:
+    """获取 LLM 客户端。优先使用用户 Key，其次全局配置。"""
+    key = api_key or DEEPSEEK_API_KEY
+    if not key:
         return None
+    if api_key:
+        # 用户自定义 Key，每次新建（不缓存）
+        return OpenAI(api_key=key, base_url=DEEPSEEK_BASE_URL)
+    global _client
     if _client is None:
-        _client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
+        _client = OpenAI(api_key=key, base_url=DEEPSEEK_BASE_URL)
     return _client
 
 
@@ -61,13 +66,15 @@ def generate_recommendations(
     occasion: str = "",
     limit: int = 3,
     preferences_text: str = "",
+    api_key: str = "",
 ) -> list[dict]:
     """
     调用 DeepSeek API 生成穿搭建议。
     preferences_text 为偏好引擎生成的用户偏好段落，空字符串表示冷启动。
+    api_key 可选，不传则使用全局 DEEPSEEK_API_KEY。
     失败时返回空列表，上游应 fallback 到规则引擎。
     """
-    client = _get_client()
+    client = _get_client(api_key)
     if client is None:
         logger.warning("DEEPSEEK_API_KEY 未配置，跳过 LLM 推荐")
         return []

@@ -194,3 +194,23 @@ export async function recommendScenario(description: string, city: string) {
   });
   return data;
 }
+
+// ── 用户设置 ──
+
+export interface UserApiKeys {
+  deepseek: string;
+  amap: string;
+  dashscope: string;
+  alibaba_access_key_id: string;
+  alibaba_access_key_secret: string;
+}
+
+export async function fetchApiKeys() {
+  const { data } = await api.get<UserApiKeys>("/user/keys");
+  return data;
+}
+
+export async function updateApiKeys(keys: UserApiKeys) {
+  const { data } = await api.put<UserApiKeys>("/user/keys", keys);
+  return data;
+}

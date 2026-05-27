@@ -6,6 +6,7 @@ const NAV = [
   { path: "/outfits", label: "搭配", icon: "👔" },
   { path: "/wardrobe", label: "衣橱", icon: "🗂" },
   { path: "/stats", label: "统计", icon: "📊" },
+  { path: "/settings", label: "设置", icon: "⚙" },
 ];
 
 export default function Layout() {

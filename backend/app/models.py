@@ -118,6 +118,9 @@ class UserProfile(Base):
     item_pairs = Column(JSON, default=dict)       # {"1_3": 5, "2_4": 3}
     category_pairs = Column(JSON, default=dict)   # {"tshirt_jeans": 10}
 
+    # ── 用户自备 API Key（加密存储）──
+    user_api_keys = Column(JSON, default=dict)  # {"deepseek": "enc_xxx", "amap": "enc_xxx", ...}
+
     # ── 元信息 ──
     disliked_items = Column(JSON, default=list)
     total_wear_events = Column(Integer, default=0)

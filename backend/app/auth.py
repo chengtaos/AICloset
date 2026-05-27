@@ -11,7 +11,9 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 
-JWT_SECRET = os.getenv("JWT_SECRET", "aicloset-dev-secret-key")
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET 环境变量未设置，请在生产环境中配置")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_DAYS = 7
 

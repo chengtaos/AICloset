@@ -2,6 +2,10 @@ import { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useResponsive } from "../hooks/useResponsive";
+import { colors, radii, spacing, fontSize, fontWeight } from "../styles/tokens";
+import Card from "../components/ui/Card";
+import { Title, Caption } from "../components/ui/Typography";
+import Button from "../components/ui/Button";
 
 export default function LoginPage() {
   const { login, register, loading, token } = useAuth();
@@ -13,12 +17,10 @@ export default function LoginPage() {
   const [nickname, setNickname] = useState("");
   const [error, setError] = useState("");
 
-  // 启动时等待 refresh token 校验
   if (loading && !token) {
     return <div style={{ minHeight: "100vh" }} />;
   }
 
-  // 已登录直接跳转
   if (token) {
     return <Navigate to="/recommend" replace />;
   }
@@ -60,101 +62,84 @@ export default function LoginPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#f8f9fa",
-        padding: 24,
+        background: colors.bg,
+        padding: spacing.xl,
       }}
     >
       <div style={{ width: isMobile ? "100%" : 360, maxWidth: 360 }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <h1
             style={{
-              fontSize: 28,
-              fontWeight: 300,
-              color: "#4a5c6c",
+              fontSize: fontSize.display,
+              fontWeight: fontWeight.regular,
+              color: colors.accent,
               letterSpacing: "0.04em",
               margin: 0,
             }}
           >
             AiCloset
           </h1>
-          <p style={{ color: "#9aa5b0", fontSize: 14, marginTop: 8 }}>
+          <Caption style={{ marginTop: 8, display: "block" }}>
             {mode === "login" ? "登录你的电子衣橱" : "创建你的电子衣橱"}
-          </p>
+          </Caption>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <input
-            type="tel"
-            placeholder="手机号"
-            maxLength={11}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            style={inputStyle}
-          />
-
-          <input
-            type="password"
-            placeholder="密码（至少6位）"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={inputStyle}
-          />
-
-          {mode === "register" && (
+        <Card variant="elevated" radius={radii.xl} padding={spacing.xxl}>
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
             <input
-              type="text"
-              placeholder="昵称（选填）"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
+              type="tel"
+              placeholder="手机号"
+              maxLength={11}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               style={inputStyle}
             />
-          )}
 
-          {error && (
-            <p style={{ color: "#c44", fontSize: 13, margin: 0 }}>{error}</p>
-          )}
+            <input
+              type="password"
+              placeholder="密码（至少6位）"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={inputStyle}
+            />
 
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            style={{
-              height: 44,
-              border: "none",
-              borderRadius: 6,
-              background: "#4a5c6c",
-              color: "#fff",
-              fontSize: 15,
-              letterSpacing: "0.04em",
-              cursor: "pointer",
-              opacity: loading ? 0.6 : 1,
-            }}
-          >
-            {loading
-              ? "请稍候..."
-              : mode === "login"
-                ? "登录"
-                : "注册"}
-          </button>
-        </div>
+            {mode === "register" && (
+              <input
+                type="text"
+                placeholder="昵称（选填）"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                style={inputStyle}
+              />
+            )}
 
-        <p
-          style={{
-            textAlign: "center",
-            marginTop: 24,
-            fontSize: 13,
-            color: "#9aa5b0",
-          }}
-        >
+            {error && (
+              <p style={{ color: colors.error, fontSize: fontSize.body, margin: 0 }}>{error}</p>
+            )}
+
+            <Button
+              variant="primary"
+              block
+              size="lg"
+              loading={loading}
+              onClick={handleSubmit}
+            >
+              {loading ? "请稍候..." : mode === "login" ? "登录" : "注册"}
+            </Button>
+          </div>
+        </Card>
+
+        <p style={{ textAlign: "center", marginTop: spacing.xl, fontSize: fontSize.body, color: colors.textSecondary }}>
           {mode === "login" ? "还没有账号？" : "已有账号？"}
           <button
             onClick={toggleMode}
             style={{
               border: "none",
               background: "none",
-              color: "#4a5c6c",
+              color: colors.accent,
               cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 500,
+              fontSize: fontSize.body,
+              fontWeight: fontWeight.medium,
             }}
           >
             {mode === "login" ? "立即注册" : "去登录"}
@@ -167,10 +152,13 @@ export default function LoginPage() {
 
 const inputStyle: React.CSSProperties = {
   height: 44,
+  width: "100%",
   padding: "0 14px",
-  border: "1px solid #dde1e6",
-  borderRadius: 6,
+  border: `1px solid ${colors.divider}`,
+  borderRadius: radii.sm,
   fontSize: 15,
   outline: "none",
-  background: "#fff",
+  background: colors.bg,
+  fontFamily: "inherit",
+  boxSizing: "border-box",
 };

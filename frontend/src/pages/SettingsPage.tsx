@@ -3,6 +3,8 @@ import { fetchApiKeys, updateApiKeys, type UserApiKeys } from "../api/client";
 import { fetchProfile, updateProfile, changePassword, uploadAvatar, type UserProfile } from "../api/client";
 import { getImageUrl } from "../utils/imageUrl";
 import { useResponsive } from "../hooks/useResponsive";
+import { colors, radii } from "../styles/tokens";
+import { Title } from "../components/ui/Typography";
 import { useAuth } from "../contexts/AuthContext";
 
 const FIELD_LABELS: Record<keyof UserApiKeys, string> = {
@@ -138,10 +140,10 @@ export default function SettingsPage() {
     <button
       onClick={() => setSection(s)}
       style={{
-        border: "none", background: section === s ? "#f0f2f5" : "transparent",
+        border: "none", background: section === s ? colors.accentSoft : "transparent",
         padding: "8px 16px", fontSize: 13, fontWeight: section === s ? 600 : 400,
-        color: section === s ? "#1a1a1a" : "#8c8c8c",
-        cursor: "pointer", borderRadius: 4, transition: "all 0.15s",
+        color: section === s ? colors.textPrimary : colors.textSecondary,
+        cursor: "pointer", borderRadius: radii.sm, transition: "all 0.15s",
       }}
     >
       {label}
@@ -150,7 +152,7 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 600, color: "#1a1a1a", margin: "0 0 20px" }}>设置</h2>
+      <Title style={{ marginBottom: 20 }}>设置</Title>
 
       {/* 子导航 */}
       <div style={{ display: "flex", gap: 4, marginBottom: 28 }}>
@@ -166,7 +168,7 @@ export default function SettingsPage() {
           <div style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{
               width: 64, height: 64, borderRadius: "50%", overflow: "hidden",
-              background: "#f0f0f0", display: "flex", alignItems: "center", justifyContent: "center",
+              background: colors.placeholder, display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               {avatarUrl ? (
                 <img src={getImageUrl(avatarUrl)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -175,8 +177,8 @@ export default function SettingsPage() {
               )}
             </div>
             <label style={{
-              fontSize: 12, color: "#4a5c6c", cursor: "pointer",
-              border: "1px solid #dde1e6", borderRadius: 4, padding: "6px 14px",
+              fontSize: 12, color: colors.accent, cursor: "pointer",
+              border: `1px solid ${colors.divider}`, borderRadius: radii.sm, padding: "6px 14px",
             }}>
               {avatarUploading ? "上传中..." : "更换头像"}
               <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarUpload} />
@@ -185,7 +187,7 @@ export default function SettingsPage() {
 
           {/* 昵称 */}
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#4a5c6c", marginBottom: 6 }}>昵称</label>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: colors.accent, marginBottom: 6 }}>昵称</label>
             <input
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
@@ -196,7 +198,7 @@ export default function SettingsPage() {
           </div>
 
           {profileMsg && (
-            <p style={{ color: profileMsg.type === "success" ? "#4a5c6c" : "#c44", fontSize: 13 }}>{profileMsg.text}</p>
+            <p style={{ color: profileMsg.type === "success" ? colors.accent : colors.error, fontSize: 13 }}>{profileMsg.text}</p>
           )}
 
           <button onClick={handleSaveProfile} disabled={profileSaving} style={btnStyle}>
@@ -209,16 +211,16 @@ export default function SettingsPage() {
       {section === "password" && (
         <div style={{ maxWidth: 400 }}>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#4a5c6c", marginBottom: 6 }}>旧密码</label>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: colors.accent, marginBottom: 6 }}>旧密码</label>
             <input type="password" value={oldPwd} onChange={(e) => setOldPwd(e.target.value)} style={inputStyle} />
           </div>
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#4a5c6c", marginBottom: 6 }}>新密码（至少6位）</label>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: colors.accent, marginBottom: 6 }}>新密码（至少6位）</label>
             <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} style={inputStyle} />
           </div>
 
           {pwdMsg && (
-            <p style={{ color: pwdMsg.type === "success" ? "#4a5c6c" : "#c44", fontSize: 13 }}>{pwdMsg.text}</p>
+            <p style={{ color: pwdMsg.type === "success" ? colors.accent : colors.error, fontSize: 13 }}>{pwdMsg.text}</p>
           )}
 
           <button onClick={handleChangePassword} disabled={pwdSaving || !oldPwd || !newPwd} style={btnStyle}>
@@ -230,14 +232,14 @@ export default function SettingsPage() {
       {/* ── API 密钥 ── */}
       {section === "keys" && (
         <div style={{ maxWidth: 400 }}>
-          <p style={{ color: "#9aa5b0", fontSize: 13, margin: "0 0 24px", lineHeight: 1.6 }}>
+          <p style={{ color: colors.textSecondary, fontSize: 13, margin: "0 0 24px", lineHeight: 1.6 }}>
             AiCloset 完全免费，AI 功能需要你提供自己的 API Key。密钥加密存储，仅在按需调用时解密使用。
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {FIELD_KEYS.map((field) => (
               <div key={field}>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#4a5c6c", marginBottom: 6 }}>{FIELD_LABELS[field]}</label>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: colors.accent, marginBottom: 6 }}>{FIELD_LABELS[field]}</label>
                 <input
                   type="password"
                   placeholder={FIELD_PLACEHOLDERS[field]}
@@ -249,7 +251,7 @@ export default function SettingsPage() {
             ))}
 
             {keysMsg && (
-              <p style={{ color: keysMsg.type === "success" ? "#4a5c6c" : "#c44", fontSize: 13, margin: 0 }}>{keysMsg.text}</p>
+              <p style={{ color: keysMsg.type === "success" ? colors.accent : colors.error, fontSize: 13, margin: 0 }}>{keysMsg.text}</p>
             )}
 
             <button onClick={handleSaveKeys} disabled={keysSaving} style={{ ...btnStyle, width: isMobile ? "100%" : undefined }}>
@@ -264,12 +266,12 @@ export default function SettingsPage() {
 
 const inputStyle: React.CSSProperties = {
   width: "100%", height: 44, padding: "0 14px",
-  border: "1px solid #dde1e6", borderRadius: 6,
-  fontSize: 14, outline: "none", background: "#fff", boxSizing: "border-box",
+  border: `1px solid ${colors.divider}`, borderRadius: radii.md,
+  fontSize: 14, outline: "none", background: colors.surface, boxSizing: "border-box",
 };
 
 const btnStyle: React.CSSProperties = {
-  height: 44, border: "none", borderRadius: 6,
-  background: "#4a5c6c", color: "#fff", fontSize: 15,
+  height: 44, border: "none", borderRadius: radii.md,
+  background: colors.accent, color: colors.surface, fontSize: 15,
   letterSpacing: "0.04em", cursor: "pointer",
 };

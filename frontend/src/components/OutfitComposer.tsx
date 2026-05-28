@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import type { ClothingItemBrief } from "../types";
 import { getImageUrl } from "../utils/imageUrl";
+import { colors, radii } from "../styles/tokens";
 
 interface ItemState {
   x: number;   // 百分比 0-100
@@ -170,9 +171,9 @@ export default function OutfitComposer({ items }: Props) {
             ) : (
               <div style={{
                 width: "100%", height: "100%",
-                background: "#f0f0f0", borderRadius: 4,
+                background: colors.placeholder, borderRadius: radii.sm,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 11, color: "#ccc",
+                fontSize: 11, color: colors.textTertiary,
               }}>
                 {item.sub_category}
               </div>
@@ -181,7 +182,7 @@ export default function OutfitComposer({ items }: Props) {
             {/* 类别标签 */}
             <div style={{
               textAlign: "center", marginTop: 2,
-              fontSize: 10, color: "#999",
+              fontSize: 10, color: colors.textSecondary,
               lineHeight: 1.2, pointerEvents: "none",
             }}>
               {item.sub_category}
@@ -194,15 +195,15 @@ export default function OutfitComposer({ items }: Props) {
                 position: "absolute", bottom: -6, right: -6,
                 width: 18, height: 18,
                 borderRadius: "50%",
-                background: "#fff",
-                border: "1px solid #d9d9d9",
+                background: colors.surface,
+                border: `1px solid ${colors.divider}`,
                 cursor: "nesw-resize",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 opacity: (isDragging || hoveredId === item.id) ? 1 : 0,
                 transition: "opacity 0.15s",
               }}
             >
-              <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="#999" strokeWidth="1.5">
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke={colors.textSecondary} strokeWidth="1.5">
                 <path d="M7 1v6H1" />
               </svg>
             </div>
@@ -215,7 +216,7 @@ export default function OutfitComposer({ items }: Props) {
         <div style={{
           position: "absolute", bottom: 8, left: "50%",
           transform: "translateX(-50%)",
-          fontSize: 10, color: "#d0d0d0",
+          fontSize: 10, color: colors.textTertiary,
           pointerEvents: "none",
           background: "rgba(255,255,255,0.7)",
           padding: "2px 8px", borderRadius: 4,

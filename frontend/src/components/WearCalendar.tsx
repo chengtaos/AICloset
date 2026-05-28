@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import type { WearRecord, ClothingItem } from "../types";
 import { getImageUrl } from "../utils/imageUrl";
+import { colors, radii, spacing, fontSize, fontWeight } from "../styles/tokens";
 
 interface Props {
   year: number;
-  month: number; // 1-12
+  month: number;
   records: WearRecord[];
   itemMap: Map<number, ClothingItem>;
   onMonthChange: (year: number, month: number) => void;
@@ -13,7 +14,6 @@ interface Props {
 const WEEKDAYS = ["一", "二", "三", "四", "五", "六", "日"];
 
 export default function WearCalendar({ year, month, records, itemMap, onMonthChange }: Props) {
-  // 构建日 → 记录映射
   const dayRecords = useMemo(() => {
     const map = new Map<number, WearRecord[]>();
     for (const r of records) {
@@ -24,13 +24,11 @@ export default function WearCalendar({ year, month, records, itemMap, onMonthCha
     return map;
   }, [records]);
 
-  // 日历网格计算
-  const { days, totalDays, startDayOfWeek } = useMemo(() => {
+  const { totalDays, startDayOfWeek } = useMemo(() => {
     const total = new Date(year, month, 0).getDate();
-    // 当月第一天是星期几（0=日，1=一...6=六）
     const jsDay = new Date(year, month - 1, 1).getDay();
-    const start = jsDay === 0 ? 6 : jsDay - 1; // 转为 0=一 ... 6=日
-    return { days: [], totalDays: total, startDayOfWeek: start };
+    const start = jsDay === 0 ? 6 : jsDay - 1;
+    return { totalDays: total, startDayOfWeek: start };
   }, [year, month]);
 
   const prevMonth = () => {
@@ -47,32 +45,39 @@ export default function WearCalendar({ year, month, records, itemMap, onMonthCha
 
   return (
     <div>
-      {/* 月份切换 */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 16 }}>
-        <button onClick={prevMonth} style={navBtnStyle}>‹</button>
-        <span style={{ fontSize: 15, fontWeight: 600, color: "#1a1a1a" }}>
+        <button onClick={prevMonth} style={{
+          border: "none", background: "transparent",
+          fontSize: 20, color: colors.accent, cursor: "pointer",
+          width: 32, height: 32, display: "flex",
+          alignItems: "center", justifyContent: "center",
+          borderRadius: radii.full,
+        }}>‹</button>
+        <span style={{ fontSize: fontSize.subtitle, fontWeight: fontWeight.semibold, color: colors.textPrimary }}>
           {year} 年 {month} 月
         </span>
-        <button onClick={nextMonth} style={navBtnStyle}>›</button>
+        <button onClick={nextMonth} style={{
+          border: "none", background: "transparent",
+          fontSize: 20, color: colors.accent, cursor: "pointer",
+          width: 32, height: 32, display: "flex",
+          alignItems: "center", justifyContent: "center",
+          borderRadius: radii.full,
+        }}>›</button>
       </div>
 
-      {/* 星期表头 */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }}>
         {WEEKDAYS.map((d) => (
-          <div key={d} style={{ textAlign: "center", fontSize: 11, color: "#8c8c8c", padding: "6px 0" }}>
+          <div key={d} style={{ textAlign: "center", fontSize: fontSize.caption, color: colors.textSecondary, padding: "6px 0" }}>
             {d}
           </div>
         ))}
       </div>
 
-      {/* 日期网格 */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
-        {/* 前置空白 */}
         {Array.from({ length: startDayOfWeek }).map((_, i) => (
           <div key={`empty-${i}`} style={cellStyle} />
         ))}
 
-        {/* 日期单元格 */}
         {Array.from({ length: totalDays }).map((_, i) => {
           const day = i + 1;
           const recs = dayRecords.get(day) || [];
@@ -81,7 +86,6 @@ export default function WearCalendar({ year, month, records, itemMap, onMonthCha
             today.getMonth() + 1 === month &&
             today.getDate() === day;
 
-          // 去重收集所有衣物
           const itemIds = new Set<number>();
           for (const r of recs) {
             for (const iid of r.item_ids) itemIds.add(iid);
@@ -98,26 +102,26 @@ export default function WearCalendar({ year, month, records, itemMap, onMonthCha
               style={{
                 ...cellStyle,
                 minHeight: 64,
-                background: isToday ? "#f0f2f5" : "#fff",
-                border: isToday ? "1px solid #4a5c6c" : "1px solid #f0f0f0",
+                background: isToday ? colors.accentSoft : "transparent",
+                boxShadow: isToday ? `inset 0 0 0 1px ${colors.accent}` : shadows.none,
               }}
             >
               <div style={{
-                fontSize: 12, fontWeight: isToday ? 600 : 400,
-                color: isToday ? "#4a5c6c" : "#1a1a1a",
+                fontSize: fontSize.body,
+                fontWeight: isToday ? fontWeight.semibold : fontWeight.regular,
+                color: isToday ? colors.accent : colors.textPrimary,
                 textAlign: "right", marginBottom: 4,
               }}>
                 {day}
               </div>
-              {/* 缩略图 */}
               <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                 {dayItems.slice(0, 4).map((item) => (
                   <div
                     key={item.id}
                     title={item.name || item.sub_category}
                     style={{
-                      width: 22, height: 28, borderRadius: 2,
-                      background: "#f5f5f5", overflow: "hidden",
+                      width: 22, height: 28, borderRadius: 4,
+                      background: colors.placeholder, overflow: "hidden",
                     }}
                   >
                     {item.images.length > 0 ? (
@@ -127,12 +131,12 @@ export default function WearCalendar({ year, month, records, itemMap, onMonthCha
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       />
                     ) : (
-                      <div style={{ width: "100%", height: "100%", background: "#eee" }} />
+                      <div style={{ width: "100%", height: "100%", background: colors.divider }} />
                     )}
                   </div>
                 ))}
                 {dayItems.length > 4 && (
-                  <span style={{ fontSize: 10, color: "#999" }}>+{dayItems.length - 4}</span>
+                  <span style={{ fontSize: 10, color: colors.textSecondary }}>+{dayItems.length - 4}</span>
                 )}
               </div>
             </div>
@@ -146,14 +150,8 @@ export default function WearCalendar({ year, month, records, itemMap, onMonthCha
 const cellStyle: React.CSSProperties = {
   aspectRatio: "1 / 1",
   padding: 4,
-  borderRadius: 4,
+  borderRadius: radii.sm,
   overflow: "hidden",
 };
 
-const navBtnStyle: React.CSSProperties = {
-  border: "none", background: "transparent",
-  fontSize: 20, color: "#4a5c6c", cursor: "pointer",
-  width: 32, height: 32, display: "flex",
-  alignItems: "center", justifyContent: "center",
-  borderRadius: 16,
-};
+const shadows = { none: "none" };

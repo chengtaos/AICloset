@@ -5,6 +5,8 @@ import { ThunderboltOutlined, ExperimentOutlined, GlobalOutlined } from "@ant-de
 import type { RecommendResponse, CapsuleResponse } from "../types";
 import { recommendDaily, recommendScenario, recordWear, submitFeedback, recommendCapsule } from "../api/client";
 import { useResponsive } from "../hooks/useResponsive";
+import { colors, radii, spacing } from "../styles/tokens";
+import { Title } from "../components/ui/Typography";
 import RecommendCard from "../components/RecommendCard";
 
 // 和风天气支持的主要城市列表
@@ -92,16 +94,14 @@ export default function RecommendPage() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 600, color: "#1a1a1a", margin: "0 0 24px" }}>
-        穿搭推荐
-      </h2>
+      <Title style={{ marginBottom: 24 }}>穿搭推荐</Title>
 
       {/* 推荐输入面板：模式切换 + 城市 + 场景描述 + CTA */}
       <div
         style={{
-          border: "1px solid #e8eaed",
-          borderRadius: 4,
-          background: "#fff",
+          border: `1px solid ${colors.divider}`,
+          borderRadius: radii.lg,
+          background: colors.surface,
           padding: isMobile ? 14 : 20,
           marginBottom: 24,
         }}
@@ -113,11 +113,11 @@ export default function RecommendPage() {
             style={{
               flex: 1,
               border: "none",
-              background: mode === "daily" ? "#f0f2f5" : "transparent",
+              background: mode === "daily" ? colors.accentSoft : "transparent",
               padding: "8px 0",
               fontSize: 13,
               fontWeight: mode === "daily" ? 600 : 400,
-              color: mode === "daily" ? "#1a1a1a" : "#8c8c8c",
+              color: mode === "daily" ? colors.textPrimary : colors.textSecondary,
               cursor: "pointer",
               borderRadius: 4,
               transition: "background 0.15s",
@@ -131,11 +131,11 @@ export default function RecommendPage() {
             style={{
               flex: 1,
               border: "none",
-              background: mode === "scenario" ? "#f0f2f5" : "transparent",
+              background: mode === "scenario" ? colors.accentSoft : "transparent",
               padding: "8px 0",
               fontSize: 13,
               fontWeight: mode === "scenario" ? 600 : 400,
-              color: mode === "scenario" ? "#1a1a1a" : "#8c8c8c",
+              color: mode === "scenario" ? colors.textPrimary : colors.textSecondary,
               cursor: "pointer",
               borderRadius: 4,
               transition: "background 0.15s",
@@ -149,11 +149,11 @@ export default function RecommendPage() {
             style={{
               flex: 1,
               border: "none",
-              background: mode === "capsule" ? "#f0f2f5" : "transparent",
+              background: mode === "capsule" ? colors.accentSoft : "transparent",
               padding: "8px 0",
               fontSize: 13,
               fontWeight: mode === "capsule" ? 600 : 400,
-              color: mode === "capsule" ? "#1a1a1a" : "#8c8c8c",
+              color: mode === "capsule" ? colors.textPrimary : colors.textSecondary,
               cursor: "pointer",
               borderRadius: 4,
               transition: "background 0.15s",
@@ -173,7 +173,7 @@ export default function RecommendPage() {
             marginBottom: mode === "scenario" ? 12 : 0,
           }}
         >
-          <span style={{ fontSize: 13, color: "#8c8c8c" }}>城市</span>
+          <span style={{ fontSize: 13, color: colors.textSecondary }}>城市</span>
           <Select
             value={city}
             onChange={setCity}
@@ -208,8 +208,8 @@ export default function RecommendPage() {
                   onClick={() => setScenarioDesc(s.desc)}
                   style={{
                     fontSize: 11,
-                    color: scenarioDesc === s.desc ? "#4a5c6c" : "#8c8c8c",
-                    border: `1px solid ${scenarioDesc === s.desc ? "#4a5c6c" : "#e8eaed"}`,
+                    color: scenarioDesc === s.desc ? colors.accent : colors.textSecondary,
+                    border: `1px solid ${scenarioDesc === s.desc ? colors.accent : colors.divider}`,
                     borderRadius: 2,
                     padding: "3px 10px",
                     cursor: "pointer",
@@ -297,20 +297,20 @@ export default function RecommendPage() {
         <div>
           {/* 打包清单 */}
           <div style={{
-            border: "1px solid #e8eaed", borderRadius: 4, background: "#fff",
+            border: `1px solid ${colors.divider}`, borderRadius: radii.lg, background: colors.surface,
             padding: isMobile ? 14 : 20, marginBottom: 16,
           }}>
-            <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a", margin: "0 0 4px" }}>
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary, margin: "0 0 4px" }}>
               打包清单 · {capsuleResult.items.length} 件
             </h3>
-            <div style={{ fontSize: 12, color: "#8c8c8c", marginBottom: 12 }}>
+            <div style={{ fontSize: 12, color: colors.textSecondary, marginBottom: 12 }}>
               {capsuleDest} · {capsuleDays} 天
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {capsuleResult.items.map((item) => (
                 <span key={item.id} style={{
-                  fontSize: 11, color: "#4a5c6c",
-                  border: "1px solid #e8eaed", borderRadius: 2,
+                  fontSize: 11, color: colors.accent,
+                  border: `1px solid ${colors.divider}`, borderRadius: 2,
                   padding: "3px 10px",
                 }}>
                   {item.name || item.sub_category}
@@ -320,8 +320,8 @@ export default function RecommendPage() {
             {capsuleResult.packing_tip && (
               <div style={{
                 marginTop: 12, padding: "8px 12px",
-                background: "#f8f9fa", borderRadius: 4,
-                fontSize: 11, color: "#8c8c8c", lineHeight: 1.6,
+                background: colors.accentSoft, borderRadius: 4,
+                fontSize: 11, color: colors.textSecondary, lineHeight: 1.6,
               }}>
                 {capsuleResult.packing_tip}
               </div>
@@ -332,18 +332,18 @@ export default function RecommendPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {capsuleResult.outfits.map((outfit) => (
               <div key={outfit.day} style={{
-                border: "1px solid #e8eaed", borderRadius: 4, background: "#fff",
+                border: `1px solid ${colors.divider}`, borderRadius: radii.lg, background: colors.surface,
                 padding: isMobile ? 12 : 16,
               }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>
                     第 {outfit.day} 天
                   </span>
                   {outfit.occasion && (
-                    <span style={{ fontSize: 11, color: "#8c8c8c" }}>{outfit.occasion}</span>
+                    <span style={{ fontSize: 11, color: colors.textSecondary }}>{outfit.occasion}</span>
                   )}
                 </div>
-                <div style={{ fontSize: 12, color: "#8c8c8c", lineHeight: 1.8 }}>
+                <div style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 1.8 }}>
                   {outfit.reason}
                 </div>
               </div>

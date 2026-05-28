@@ -81,17 +81,17 @@ export async function exportOutfitCard(
 
   // ── 标题 ──
   let y = CARD_PAD;
-  ctx.fillStyle = "#1a1a1a";
+  ctx.fillStyle = "#2c2c2c";
   ctx.font = "600 16px -apple-system, PingFang SC, Microsoft YaHei, sans-serif";
   ctx.fillText("今日穿搭推荐", CARD_PAD, y + 16);
   y += titleH;
 
   // ── 天气条 ──
   if (weather) {
-    ctx.fillStyle = "#f5f5f7";
+    ctx.fillStyle = "#f8f6f4";
     roundRect(ctx, CARD_PAD, y, CARD_W - CARD_PAD * 2, 28, 6);
     ctx.fill();
-    ctx.fillStyle = "#4a5c6c";
+    ctx.fillStyle = "#c44c3a";
     ctx.font = "12px -apple-system, PingFang SC, Microsoft YaHei, sans-serif";
     const wx = `${weather.city} · ${weather.condition} · ${weather.temperature}°C（体感${weather.feels_like}°C）`;
     ctx.fillText(wx, CARD_PAD + 10, y + 19);
@@ -106,7 +106,7 @@ export async function exportOutfitCard(
     for (let i = 0; i < Math.min(items.length, 6); i++) {
       const x = startX + i * (thumbSize + gap);
       // 占位背景
-      ctx.fillStyle = "#f5f5f5";
+      ctx.fillStyle = "#f8f6f4";
       roundRect(ctx, x, y, thumbSize, thumbSize, 6);
       ctx.fill();
 
@@ -120,7 +120,7 @@ export async function exportOutfitCard(
       }
 
       // 名称
-      ctx.fillStyle = "#8c8c8c";
+      ctx.fillStyle = "#999";
       ctx.font = "10px -apple-system, PingFang SC, Microsoft YaHei, sans-serif";
       const name = items[i].name || items[i].sub_category;
       const nameW = ctx.measureText(name).width;
@@ -130,17 +130,17 @@ export async function exportOutfitCard(
   }
 
   // ── 推荐理由 ──
-  ctx.fillStyle = "#f5f5f7";
+  ctx.fillStyle = "#f8f6f4";
   roundRect(ctx, CARD_PAD, y, CARD_W - CARD_PAD * 2, reasonH - 8, 6);
   ctx.fill();
-  ctx.fillStyle = "#4a5c6c";
+  ctx.fillStyle = "#c44c3a";
   ctx.font = "13px -apple-system, PingFang SC, Microsoft YaHei, sans-serif";
   for (let i = 0; i < reasonLines.length; i++) {
     ctx.fillText(reasonLines[i], CARD_PAD + 12, y + 18 + i * 20);
   }
 
   // ── 水印 ──
-  ctx.fillStyle = "#d9d9d9";
+  ctx.fillStyle = "#bfbfbf";
   ctx.font = "10px -apple-system, PingFang SC, Microsoft YaHei, sans-serif";
   ctx.fillText("AiCloset · 智能电子衣橱", CARD_PAD, cardH - 8);
 

@@ -6,6 +6,11 @@ import type { ClothingItem, Outfit, OutfitItem } from "../types";
 import { CATEGORY_LABELS, POSITION_LABELS } from "../types";
 import { fetchItems, fetchOutfits, createOutfit, updateOutfit, deleteOutfit } from "../api/client";
 import { getImageUrl } from "../utils/imageUrl";
+import { colors, radii, spacing, fontSize, fontWeight } from "../styles/tokens";
+import { Title, SectionTitle, Caption } from "../components/ui/Typography";
+import Tag from "../components/ui/Tag";
+import SearchBar from "../components/ui/SearchBar";
+import EmptyState from "../components/ui/EmptyState";
 import OutfitCard from "../components/OutfitCard";
 
 const POSITION_OPTIONS = [
@@ -171,7 +176,7 @@ export default function OutfitsPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 600, color: "#1a1a1a", margin: 0 }}>搭配</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 600, color: colors.textPrimary, margin: 0 }}>搭配</h2>
         <Button icon={<PlusOutlined />} onClick={openCreate}>创建</Button>
       </div>
 
@@ -185,8 +190,8 @@ export default function OutfitsPage() {
               style={{
                 fontSize: 12, cursor: "pointer",
                 padding: "4px 12px", borderRadius: 4,
-                color: filterTag === tag ? "#fff" : "#8c8c8c",
-                background: filterTag === tag ? "#4a5c6c" : "#f0f0f0",
+                color: filterTag === tag ? colors.surface : colors.textSecondary,
+                background: filterTag === tag ? colors.accent : colors.placeholder,
                 transition: "all 0.15s",
               }}
             >
@@ -195,24 +200,24 @@ export default function OutfitsPage() {
           ))}
           <div style={{ flex: 1, minWidth: 0 }} />
           <Input
-            prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+            prefix={<SearchOutlined style={{ color: colors.textTertiary }} />}
             placeholder="搜索搭配名称或衣物"
             size="small"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             allowClear
-            style={{ width: 220, border: "1px solid #e8eaed", borderRadius: 4 }}
+            style={{ width: 220, border: `1px solid ${colors.divider}`, borderRadius: 4 }}
           />
         </div>
       )}
 
       {outfits.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "80px 0", color: "#bfbfbf" }}>
+        <div style={{ textAlign: "center", padding: "80px 0", color: colors.textTertiary }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>👔</div>
           <div>还没有搭配，点击右上角创建</div>
         </div>
       ) : filteredOutfits.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "60px 0", color: "#bfbfbf" }}>
+        <div style={{ textAlign: "center", padding: "60px 0", color: colors.textTertiary }}>
           <div style={{ fontSize: 13 }}>没有匹配的搭配</div>
         </div>
       ) : (
@@ -262,7 +267,7 @@ export default function OutfitsPage() {
 
         {/* 标签选择 */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 13, color: "#8c8c8c", marginBottom: 6 }}>场景标签</div>
+          <div style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 6 }}>场景标签</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {TAG_OPTIONS.map((tag) => {
               const active = outfitTags.includes(tag);
@@ -277,8 +282,8 @@ export default function OutfitsPage() {
                   style={{
                     fontSize: 12, cursor: "pointer",
                     padding: "4px 12px", borderRadius: 4,
-                    color: active ? "#fff" : "#8c8c8c",
-                    background: active ? "#4a5c6c" : "#f0f0f0",
+                    color: active ? colors.surface : colors.textSecondary,
+                    background: active ? colors.accent : colors.placeholder,
                     transition: "all 0.15s",
                   }}
                 >
@@ -289,7 +294,7 @@ export default function OutfitsPage() {
           </div>
         </div>
 
-        <div style={{ fontSize: 13, color: "#8c8c8c", marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 12 }}>
           选择衣物，位置根据品类自动填充，也可手动调整
         </div>
 
@@ -301,8 +306,8 @@ export default function OutfitsPage() {
                 key={item.id}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "10px 0", borderBottom: "1px solid #f0f0f0",
-                  background: sel ? "#fafbfc" : "transparent",
+                  padding: "10px 0", borderBottom: `1px solid ${colors.divider}`,
+                  background: sel ? colors.bg : "transparent",
                   borderRadius: 4, paddingLeft: 8, paddingRight: 8,
                 }}
               >
@@ -311,7 +316,7 @@ export default function OutfitsPage() {
                   onClick={() => toggleItem(item.id)}
                 >
                   <div style={{
-                    width: 44, height: 56, background: "#f5f5f5", borderRadius: 4,
+                    width: 44, height: 56, background: colors.placeholder, borderRadius: 4,
                     display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
                   }}>
                     {item.images.length > 0 ? (
@@ -322,7 +327,7 @@ export default function OutfitsPage() {
                   </div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 500 }}>{item.name || item.sub_category}</div>
-                    <div style={{ fontSize: 11, color: "#8c8c8c" }}>
+                    <div style={{ fontSize: 11, color: colors.textSecondary }}>
                       {CATEGORY_LABELS[item.category]} · {item.colors.slice(0, 2).join(" · ")}
                     </div>
                   </div>

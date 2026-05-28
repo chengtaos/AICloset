@@ -2,7 +2,10 @@ import { Button } from "antd";
 import { CheckOutlined, LikeOutlined, DislikeOutlined, DownloadOutlined } from "@ant-design/icons";
 import type { RecommendResponse } from "../types";
 import { useResponsive } from "../hooks/useResponsive";
+import { colors, shadows, radii, spacing, fontSize, fontWeight } from "../styles/tokens";
 import { exportOutfitCard } from "../utils/exportImage";
+import Card from "./ui/Card";
+import { Body, Aux } from "./ui/Typography";
 import OutfitComposer from "./OutfitComposer";
 
 interface Props {
@@ -25,15 +28,15 @@ export default function RecommendCard({ loading, data, onAccept, onFeedback, acc
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "80px 0", color: "#8c8c8c" }}>
-        <div style={{ fontSize: 15, marginBottom: 8 }}>AI 正在分析天气与衣橱…</div>
+      <div style={{ textAlign: "center", padding: "80px 0", color: colors.textSecondary }}>
+        <div style={{ fontSize: fontSize.subtitle, marginBottom: spacing.xs }}>AI 正在分析天气与衣橱…</div>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div style={{ textAlign: "center", padding: "80px 0", color: "#bfbfbf" }}>
+      <div style={{ textAlign: "center", padding: "80px 0", color: colors.textTertiary }}>
         <span style={{ fontSize: 48, display: "block", marginBottom: 16 }}>👔</span>
         <span>点击上方按钮获取穿搭推荐</span>
       </div>
@@ -46,38 +49,32 @@ export default function RecommendCard({ loading, data, onAccept, onFeedback, acc
   return (
     <div>
       {/* 天气条 */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: isMobile ? 12 : 16,
-        padding: isMobile ? "12px 14px" : "16px 20px",
-        border: "1px solid #e8eaed", borderRadius: 4,
-        background: "#fff", marginBottom: 24,
-      }}>
-        <span style={{ fontSize: isMobile ? 28 : 36 }}>{icon}</span>
-        <div>
-          <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 600, color: "#1a1a1a", lineHeight: 1 }}>
-            {weather.temperature}°<span style={{ fontSize: isMobile ? 12 : 14, color: "#8c8c8c", fontWeight: 400 }}>C</span>
-          </div>
-          <div style={{ fontSize: isMobile ? 11 : 12, color: "#8c8c8c", marginTop: 2 }}>
-            体感 {weather.feels_like}°C · {weather.city} · {weather.condition} · 湿度{weather.humidity}% · 风{weather.wind_level}级
+      <Card padding={isMobile ? spacing.sm : spacing.lg} style={{ marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 12 : 16 }}>
+          <span style={{ fontSize: isMobile ? 28 : 36 }}>{icon}</span>
+          <div>
+            <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: fontWeight.semibold, color: colors.textPrimary, lineHeight: 1 }}>
+              {weather.temperature}°<span style={{ fontSize: isMobile ? 12 : 14, color: colors.textSecondary, fontWeight: fontWeight.regular }}>C</span>
+            </div>
+            <Aux style={{ marginTop: 2 }}>
+              体感 {weather.feels_like}°C · {weather.city} · {weather.condition} · 湿度{weather.humidity}% · 风{weather.wind_level}级
+            </Aux>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* 搭配卡片 */}
       {suggestions.map((sug, idx) => (
-        <div key={idx} style={{
-          padding: "20px 0", marginBottom: 16,
-        }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#8c8c8c", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        <div key={idx} style={{ padding: "20px 0", marginBottom: 16 }}>
+          <div style={{ fontSize: fontSize.caption, fontWeight: fontWeight.semibold, color: colors.textSecondary, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.05em" }}>
             推荐 {idx + 1}
           </div>
 
-          {/* 矢量组合图：衣物图片叠加在身体轮廓上，支持拖动 */}
           <OutfitComposer items={sug.items} />
 
-          <div style={{ fontSize: 13, color: "#4a5c6c", lineHeight: 1.7, borderTop: "1px solid #f0f0f0", paddingTop: 14, marginTop: 20, marginBottom: 14 }}>
+          <Body style={{ borderTop: `1px solid ${colors.divider}`, paddingTop: 14, marginTop: 20, marginBottom: 14, color: colors.textPrimary }}>
             {sug.reason}
-          </div>
+          </Body>
 
           {onAccept && acceptedIdx == null && feedbackIdx == null && (
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -115,12 +112,12 @@ export default function RecommendCard({ loading, data, onAccept, onFeedback, acc
             </div>
           )}
           {acceptedIdx === idx && (
-            <span style={{ fontSize: 12, color: "#4a5c6c", fontWeight: 500 }}>
+            <span style={{ fontSize: fontSize.body, color: colors.accent, fontWeight: fontWeight.medium }}>
               <CheckOutlined style={{ marginRight: 4 }} />今天这么穿
             </span>
           )}
           {feedbackIdx === idx && (
-            <span style={{ fontSize: 12, color: "#8c8c8c", fontWeight: 500 }}>
+            <span style={{ fontSize: fontSize.body, color: colors.textSecondary, fontWeight: fontWeight.medium }}>
               感谢反馈
             </span>
           )}

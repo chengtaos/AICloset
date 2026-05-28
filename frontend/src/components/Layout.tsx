@@ -1,6 +1,8 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useResponsive } from "../hooks/useResponsive";
+import { colors, shadows, spacing, fontSize, fontWeight, transition } from "../styles/tokens";
+import { Caption } from "./ui/Typography";
 
 const NAV = [
   { path: "/recommend", label: "推荐", icon: "✨" },
@@ -22,14 +24,15 @@ export default function Layout() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8f9fa" }}>
-      {/* 顶部栏 */}
+    <div style={{ minHeight: "100vh", background: colors.bg }}>
+      {/* 顶部栏 — 毛玻璃 */}
       <header
         style={{
           height: isMobile ? 44 : 48,
           background: "rgba(255,255,255,0.92)",
-          backdropFilter: "blur(8px)",
-          borderBottom: "1px solid #e8eaed",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          boxShadow: shadows.header,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -39,16 +42,16 @@ export default function Layout() {
           zIndex: 100,
         }}
       >
-        <span style={{ fontSize: 13, color: "#6c7a89", fontWeight: 500 }}>
+        <Caption style={{ color: colors.textSecondary }}>
           {user?.nickname || "AiCloset"}
-        </span>
+        </Caption>
         <button
           onClick={handleLogout}
           style={{
             border: "none",
             background: "none",
-            color: "#9aa5b0",
-            fontSize: 12,
+            color: colors.textTertiary,
+            fontSize: fontSize.caption,
             cursor: "pointer",
           }}
         >
@@ -61,12 +64,12 @@ export default function Layout() {
         paddingBottom: 72,
         maxWidth: 860,
         margin: "0 auto",
-        padding: isMobile ? "20px 12px 80px" : "32px 24px 88px",
+        padding: isMobile ? `${spacing.lg}px ${spacing.sm}px 80px` : `${spacing.xxl}px ${spacing.xl}px 88px`,
       }}>
         <Outlet />
       </main>
 
-      {/* 底部导航 */}
+      {/* 底部导航 — 毛玻璃 */}
       <nav
         style={{
           position: "fixed",
@@ -75,8 +78,9 @@ export default function Layout() {
           right: 0,
           height: isMobile ? 52 : 56,
           background: "rgba(255,255,255,0.92)",
-          backdropFilter: "blur(8px)",
-          borderTop: "1px solid #e8eaed",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          boxShadow: shadows.nav,
           display: "flex",
           justifyContent: "center",
           gap: 0,
@@ -101,15 +105,15 @@ export default function Layout() {
                 border: "none",
                 background: "transparent",
                 cursor: "pointer",
-                color: active ? "#4a5c6c" : "#8c8c8c",
+                color: active ? colors.accent : colors.textSecondary,
                 fontSize: isMobile ? 10 : 11,
-                fontWeight: active ? 600 : 400,
+                fontWeight: active ? fontWeight.semibold : fontWeight.regular,
                 letterSpacing: "0.02em",
-                transition: "color 0.15s",
+                transition: transition.fast,
                 padding: 0,
               }}
             >
-              <span style={{ fontSize: isMobile ? 16 : 18, opacity: active ? 1 : 0.5 }}>{icon}</span>
+              <span style={{ fontSize: isMobile ? 16 : 18, opacity: active ? 1 : 0.45 }}>{icon}</span>
               <span>{label}</span>
             </button>
           );

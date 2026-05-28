@@ -14,6 +14,8 @@ import { fetchItems, createItem, updateItem, deleteItem, uploadImage } from "../
 import { getImageUrl } from "../utils/imageUrl";
 import { exportItemsCsv } from "../utils/export";
 import { useResponsive } from "../hooks/useResponsive";
+import { colors, radii } from "../styles/tokens";
+import { Title, SectionTitle } from "../components/ui/Typography";
 import ItemCard from "../components/ItemCard";
 import ItemForm from "../components/ItemForm";
 
@@ -154,18 +156,8 @@ export default function WardrobePage() {
         }}
       >
         <div>
-          <h2
-            style={{
-              fontSize: 22,
-              fontWeight: 600,
-              color: "#1a1a1a",
-              margin: 0,
-              letterSpacing: "-0.01em",
-            }}
-          >
-            衣橱
-          </h2>
-          <div style={{ fontSize: 13, color: "#999", marginTop: 2 }}>
+          <Title style={{ letterSpacing: "-0.01em" }}>衣橱</Title>
+          <div style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
             {filtered.length} 件
           </div>
         </div>
@@ -218,11 +210,11 @@ export default function WardrobePage() {
                 onClick={() => setActiveCat(key)}
                 style={{
                   border: "none",
-                  background: active ? "#f0f2f5" : "transparent",
+                  background: active ? colors.accentSoft : "transparent",
                   padding: "6px 14px",
                   fontSize: isMobile ? 12 : 13,
                   fontWeight: active ? 600 : 400,
-                  color: active ? "#1a1a1a" : "#999",
+                  color: active ? colors.textPrimary : colors.textSecondary,
                   cursor: "pointer",
                   borderRadius: 4,
                   transition: "all 0.15s",
@@ -293,7 +285,7 @@ export default function WardrobePage() {
         />
 
         <Input
-          prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+          prefix={<SearchOutlined style={{ color: colors.textTertiary }} />}
           placeholder="搜索"
           size="small"
           value={search}
@@ -302,7 +294,7 @@ export default function WardrobePage() {
           style={{
             width: isMobile ? 120 : 140,
             flexShrink: 0,
-            border: "1px solid #e8eaed",
+            border: `1px solid ${colors.divider}`,
             borderRadius: 4,
           }}
         />
@@ -310,7 +302,7 @@ export default function WardrobePage() {
 
       {/* 内容区域：空状态 / 单品类网格 / 全部分组网格 */}
       {filtered.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "100px 0", color: "#bfbfbf" }}>
+        <div style={{ textAlign: "center", padding: "100px 0", color: colors.textTertiary }}>
           <div style={{ fontSize: 56, marginBottom: 12, opacity: 0.4 }}>👔</div>
           <div style={{ fontSize: 13 }}>
             {items.length === 0 ? "衣橱还是空的" : "没有匹配的衣物"}
@@ -348,20 +340,13 @@ export default function WardrobePage() {
                   gap: 8,
                   marginBottom: 14,
                   paddingBottom: 8,
-                  borderBottom: "1px solid #f0f0f0",
+                  borderBottom: `1px solid ${colors.divider}`,
                 }}
               >
-                <h3
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: "#1a1a1a",
-                    margin: 0,
-                  }}
-                >
+                <SectionTitle style={{ margin: 0 }}>
                   {CATEGORY_LABELS[cat] || cat}
-                </h3>
-                <span style={{ fontSize: 11, color: "#bfbfbf" }}>{catItems.length}</span>
+                </SectionTitle>
+                <span style={{ fontSize: 11, color: colors.textTertiary }}>{catItems.length}</span>
               </div>
               <div
                 style={{
@@ -424,7 +409,7 @@ export default function WardrobePage() {
                 width: isMobile ? "100%" : 180,
                 maxHeight: isMobile ? 280 : undefined,
                 aspectRatio: isMobile ? "3/4" : "3/4",
-                background: "#f5f5f5",
+                background: colors.placeholder,
                 flexShrink: 0,
                 overflow: "hidden",
                 display: "flex",
@@ -444,7 +429,7 @@ export default function WardrobePage() {
                   height="40"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#d9d9d9"
+                  stroke={colors.textTertiary}
                   strokeWidth="1"
                 >
                   <rect x="2" y="6" width="20" height="13" rx="2" />
@@ -460,7 +445,7 @@ export default function WardrobePage() {
                 style={{
                   fontSize: 10,
                   fontWeight: 500,
-                  color: "#999",
+                  color: colors.textSecondary,
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                   marginBottom: 4,
@@ -473,18 +458,18 @@ export default function WardrobePage() {
                   fontSize: 18,
                   fontWeight: 600,
                   margin: "0 0 4px",
-                  color: "#1a1a1a",
+                  color: colors.textPrimary,
                 }}
               >
                 {detailItem.name || detailItem.sub_category}
               </h3>
               {detailItem.name && (
-                <div style={{ fontSize: 12, color: "#8c8c8c", marginBottom: 10 }}>
+                <div style={{ fontSize: 12, color: colors.textSecondary, marginBottom: 10 }}>
                   {detailItem.sub_category}
                 </div>
               )}
 
-              <div style={{ fontSize: 12, color: "#666", lineHeight: 2 }}>
+              <div style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 2 }}>
                 {detailItem.brand && <div>品牌：{detailItem.brand}</div>}
                 <div>颜色：{detailItem.colors.join(" · ")}</div>
                 <div>
@@ -541,8 +526,8 @@ export default function WardrobePage() {
               </div>
 
               {/* 状态管理 */}
-              <div style={{ display: "flex", gap: 6, marginTop: 12, paddingTop: 12, borderTop: "1px solid #f0f0f0" }}>
-                <span style={{ fontSize: 11, color: "#bfbfbf", lineHeight: "24px" }}>状态：</span>
+              <div style={{ display: "flex", gap: 6, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${colors.divider}` }}>
+                <span style={{ fontSize: 11, color: colors.textTertiary, lineHeight: "24px" }}>状态：</span>
                 {(["available", "laundry", "archived"] as const).map((s) => {
                   const labels = { available: "可穿", laundry: "待洗", archived: "归档" };
                   const isActive = detailItem.status === s;
@@ -568,7 +553,7 @@ export default function WardrobePage() {
                   gap: 8,
                   marginTop: 12,
                   paddingTop: 14,
-                  borderTop: "1px solid #f0f0f0",
+                  borderTop: `1px solid ${colors.divider}`,
                 }}
               >
                 <Upload

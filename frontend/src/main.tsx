@@ -13,26 +13,28 @@ const queryClient = new QueryClient({
   },
 });
 
+const fontStack =
+  '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif';
+
 const theme = {
   token: {
-    colorPrimary: "#4a5c6c",
-    colorSuccess: "#5b8c5a",
-    colorWarning: "#c9a44b",
-    colorError: "#b85c5c",
-    colorTextBase: "#1a1a1a",
-    colorTextSecondary: "#8c8c8c",
+    colorPrimary: "#c44c3a",
+    colorSuccess: "#52c41a",
+    colorWarning: "#faad14",
+    colorError: "#ff4d4f",
+    colorTextBase: "#2c2c2c",
+    colorTextSecondary: "#999",
     colorTextTertiary: "#bfbfbf",
     colorBgBase: "#ffffff",
     colorBgContainer: "#ffffff",
-    colorBgLayout: "#f8f9fa",
+    colorBgLayout: "#f8f6f4",
     colorBgElevated: "#ffffff",
-    colorBorder: "#e8eaed",
+    colorBorder: "#f0f0f0",
     colorBorderSecondary: "#f0f0f0",
-    borderRadius: 4,
-    borderRadiusLG: 6,
-    borderRadiusSM: 2,
-    fontFamily:
-      "'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif",
+    borderRadius: 8,
+    borderRadiusLG: 12,
+    borderRadiusSM: 6,
+    fontFamily: fontStack,
     fontSize: 14,
     fontSizeLG: 16,
     fontSizeXL: 20,
@@ -40,8 +42,8 @@ const theme = {
     fontSizeHeading2: 22,
     fontSizeHeading3: 18,
     lineHeight: 1.6,
-    controlHeight: 36,
-    controlHeightLG: 44,
+    controlHeight: 40,
+    controlHeightLG: 48,
     paddingLG: 24,
     paddingMD: 16,
     paddingSM: 12,
@@ -58,20 +60,20 @@ const theme = {
   },
   components: {
     Button: {
-      borderRadius: 4,
-      controlHeight: 36,
+      borderRadius: 8,
+      controlHeight: 40,
       paddingInline: 20,
       fontWeight: 500,
     },
     Card: {
-      borderRadius: 4,
+      borderRadius: 12,
       paddingLG: 24,
       padding: 20,
     },
-    Tag: { borderRadius: 2 },
-    Input: { borderRadius: 4, controlHeight: 36 },
-    Select: { borderRadius: 4, controlHeight: 36 },
-    Modal: { borderRadius: 6 },
+    Tag: { borderRadius: 8 },
+    Input: { borderRadius: 8, controlHeight: 40 },
+    Select: { borderRadius: 8, controlHeight: 40 },
+    Modal: { borderRadius: 16 },
   },
 };
 

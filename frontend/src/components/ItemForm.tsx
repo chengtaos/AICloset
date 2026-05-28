@@ -6,6 +6,7 @@ import type { ClothingItem, ClothingItemCreate } from "../types";
 import { CATEGORY_LABELS, SEASONS, STYLE_TAGS, SUB_CATEGORIES, COLORS_PRESET, MATERIALS } from "../types";
 import { autoClassify } from "../api/client";
 import { getImageUrl } from "../utils/imageUrl";
+import { colors, radii, spacing } from "../styles/tokens";
 
 /** 批量识别中的单件衣物卡片：支持展开编辑 */
 function BatchItemCard({
@@ -23,7 +24,7 @@ function BatchItemCard({
   return (
     <div style={{
       border: "1px solid #f0f0f0", borderRadius: 6, marginBottom: 8,
-      background: "#fafafa", overflow: "hidden",
+      background: colors.placeholder, overflow: "hidden",
     }}>
       {/* 折叠头部：缩略图 + 摘要 + 操作按钮 */}
       <div
@@ -35,7 +36,7 @@ function BatchItemCard({
       >
         <div style={{
           width: 44, height: 56, borderRadius: 4,
-          background: "#f0f0f0", overflow: "hidden", flexShrink: 0,
+          background: colors.placeholder, overflow: "hidden", flexShrink: 0,
         }}>
           {item.image_path ? (
             <img src={getImageUrl(item.image_path)} alt=""
@@ -48,13 +49,13 @@ function BatchItemCard({
           <div style={{ fontSize: 13, fontWeight: 500 }}>
             {catLabel} · {item.sub_category}
           </div>
-          <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>
+          <div style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
             {(item.colors || []).join(" · ") || "未设颜色"}
             {(item.style_tags || []).length > 0 && ` · ${(item.style_tags || []).slice(0, 2).join(" · ")}`}
             {` · ${(item.seasons || []).join("·") || "未设季节"}`}
           </div>
         </div>
-        <span style={{ fontSize: 11, color: "#bbb", flexShrink: 0 }}>
+        <span style={{ fontSize: 11, color: colors.textTertiary, flexShrink: 0 }}>
           {expanded ? "收起 ▲" : "编辑 ▼"}
         </span>
         <button
@@ -63,7 +64,7 @@ function BatchItemCard({
           style={{
             width: 22, height: 22, flexShrink: 0,
             border: "none", borderRadius: 4,
-            background: "rgba(0,0,0,0.06)", color: "#999",
+            background: "rgba(0,0,0,0.06)", color: colors.textSecondary,
             cursor: "pointer", display: "flex",
             alignItems: "center", justifyContent: "center",
             fontSize: 12,
@@ -79,7 +80,7 @@ function BatchItemCard({
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {/* 品类 */}
             <div>
-              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>品类</div>
+              <div style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 2 }}>品类</div>
               <Select
                 size="small"
                 value={item.category}
@@ -90,7 +91,7 @@ function BatchItemCard({
             </div>
             {/* 子品类 */}
             <div>
-              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>子品类</div>
+              <div style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 2 }}>子品类</div>
               <Select
                 size="small"
                 value={item.sub_category}
@@ -104,7 +105,7 @@ function BatchItemCard({
 
           {/* 颜色 */}
           <div style={{ marginTop: 8 }}>
-            <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>颜色</div>
+            <div style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 2 }}>颜色</div>
             <Select
               size="small" mode="multiple"
               value={item.colors || []}
@@ -118,7 +119,7 @@ function BatchItemCard({
           {/* 风格 + 季节 */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
             <div>
-              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>风格</div>
+              <div style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 2 }}>风格</div>
               <Select
                 size="small" mode="multiple"
                 value={item.style_tags || []}
@@ -129,7 +130,7 @@ function BatchItemCard({
               />
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>季节</div>
+              <div style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 2 }}>季节</div>
               <Select
                 size="small" mode="multiple"
                 value={item.seasons || []}
@@ -143,7 +144,7 @@ function BatchItemCard({
           {/* 材质 + 温度 */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
             <div>
-              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>材质</div>
+              <div style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 2 }}>材质</div>
               <Select
                 size="small" mode="multiple"
                 value={item.material || []}
@@ -154,7 +155,7 @@ function BatchItemCard({
               />
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>温度范围 °C</div>
+              <div style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 2 }}>温度范围 °C</div>
               <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                 <InputNumber
                   size="small" min={-20} max={45}
@@ -162,7 +163,7 @@ function BatchItemCard({
                   onChange={(v) => onUpdate({ ...item, temp_min: v ?? 5 })}
                   style={{ width: "100%" }}
                 />
-                <span style={{ color: "#ccc" }}>~</span>
+                <span style={{ color: colors.textTertiary }}>~</span>
                 <InputNumber
                   size="small" min={-5} max={50}
                   value={item.temp_max}
@@ -176,7 +177,7 @@ function BatchItemCard({
           {/* 品牌 + 价格 */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
             <div>
-              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>品牌</div>
+              <div style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 2 }}>品牌</div>
               <Input
                 size="small"
                 value={item.brand || ""}
@@ -186,7 +187,7 @@ function BatchItemCard({
               />
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>购入价格</div>
+              <div style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 2 }}>购入价格</div>
               <InputNumber
                 size="small" min={0} prefix="¥"
                 value={item.purchase_price ?? 0}
@@ -333,7 +334,7 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit, onBatch
       {/* 图片预览：单件模式下展示分割后的抠图 */}
       {!isBatch && hasPhoto && (
         <div style={{
-          width: "100%", height: 200, background: "#fafafa",
+          width: "100%", height: 200, background: colors.bg,
           borderRadius: 8, marginBottom: 16,
           display: "flex", alignItems: "center", justifyContent: "center",
           overflow: "hidden", border: "1px solid #eee",
@@ -345,7 +346,7 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit, onBatch
               style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
             />
           ) : (
-            <span style={{ fontSize: 13, color: "#ccc" }}>已选择图片，填写下方字段后录入</span>
+            <span style={{ fontSize: 13, color: colors.textTertiary }}>已选择图片，填写下方字段后录入</span>
           )}
         </div>
       )}
@@ -374,9 +375,9 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit, onBatch
           style={{
             display: "flex", alignItems: "center", gap: 6,
             border: "1px solid #e8eaed", borderRadius: 4,
-            background: "#fff", padding: "8px 16px",
+            background: colors.surface, padding: "8px 16px",
             cursor: recognizing ? "not-allowed" : "pointer",
-            fontSize: 13, color: "#4a5c6c", fontWeight: 500,
+            fontSize: 13, color: colors.accent, fontWeight: 500,
           }}
         >
           {recognizing ? (
@@ -393,15 +394,15 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit, onBatch
           style={{
             display: "flex", alignItems: "center", gap: 6,
             border: "1px solid #e8eaed", borderRadius: 4,
-            background: "#fff", padding: "8px 16px",
+            background: colors.surface, padding: "8px 16px",
             cursor: recognizing ? "not-allowed" : "pointer",
-            fontSize: 13, color: "#8c8c8c", fontWeight: 500,
+            fontSize: 13, color: colors.textSecondary, fontWeight: 500,
           }}
         >
           <PictureOutlined style={{ fontSize: 16 }} />
           相册
         </button>
-        <span style={{ fontSize: 11, color: hasPhoto ? "#4a5c6c" : "#bfbfbf" }}>
+        <span style={{ fontSize: 11, color: hasPhoto ? colors.accent : colors.textTertiary }}>
           {isBatch ? "批量识别模式" : hasPhoto ? "已选择图片" : "拍照自动识别，或从相册选择"}
         </span>
       </div>
@@ -409,7 +410,7 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit, onBatch
       {/* 批量识别结果：支持逐件编辑 */}
       {isBatch ? (
         <div style={{ maxHeight: 460, overflow: "auto" }}>
-          <div style={{ fontSize: 12, color: "#999", marginBottom: 10 }}>
+          <div style={{ fontSize: 12, color: colors.textSecondary, marginBottom: 10 }}>
             识别到 {batchItems.length} 件，点击展开可编辑品类、颜色等信息，不需要的可删除
           </div>
           {batchItems.map((item, idx) => (

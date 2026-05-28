@@ -5,20 +5,20 @@ import { getImageUrl } from "../utils/imageUrl";
 import { useResponsive } from "../hooks/useResponsive";
 import type { ClothingItem } from "../types";
 import { CATEGORY_LABELS } from "../types";
+import { colors, radii, spacing, fontSize, fontWeight } from "../styles/tokens";
+import Card from "../components/ui/Card";
+import { Title, SectionTitle, Caption, Aux } from "../components/ui/Typography";
+import Tag from "../components/ui/Tag";
+import ImageBlock from "../components/ui/ImageBlock";
 import WearCalendar from "../components/WearCalendar";
 
-// 复用的卡片容器样式（概览卡、品类分布、颜色分布、最爱穿、沉睡单品共用）
-const cardStyle = {
-  border: "1px solid #e8eaed",
-  borderRadius: 4,
-  background: "#fff",
-};
+// 卡片容器样式已由 Card 组件替代，保留此常量用于内嵌 grid 场景
 
 // 列表项缩略图样式（高频穿着 / 沉睡单品复用）
 const thumbStyle: React.CSSProperties = {
   width: 40,
   height: 50,
-  background: "#f5f5f5",
+  background: colors.placeholder,
   borderRadius: 4,
   display: "flex",
   alignItems: "center",
@@ -54,9 +54,7 @@ export default function StatsPage() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 600, color: "#1a1a1a", margin: "0 0 24px" }}>
-        统计
-      </h2>
+      <Title style={{ marginBottom: spacing.xl }}>统计</Title>
 
       {/* 概览卡片 */}
       <div
@@ -78,11 +76,11 @@ export default function StatsPage() {
             return { label: "均次穿着成本", value: avgCost > 0 ? `¥${avgCost.toLocaleString()}` : "—" };
           })(),
         ].map(({ label, value }) => (
-          <div key={label} style={{ ...cardStyle, padding: isMobile ? "12px 14px" : "16px 20px" }}>
-            <div style={{ fontSize: isMobile ? 11 : 12, color: "#8c8c8c", marginBottom: 4 }}>
+          <div key={label} style={{ background: colors.surface, borderRadius: radii.lg, boxShadow: "0 1px 3px rgba(0,0,0,0.04)", padding: isMobile ? "12px 14px" : "16px 20px" }}>
+            <div style={{ fontSize: isMobile ? 11 : 12, color: colors.textSecondary, marginBottom: 4 }}>
               {label}
             </div>
-            <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 600, color: "#1a1a1a" }}>
+            <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 600, color: colors.textPrimary }}>
               {value}
             </div>
           </div>
@@ -99,12 +97,12 @@ export default function StatsPage() {
         }}
       >
         {/* 品类分布 */}
-        <div style={{ ...cardStyle, padding: 20 }}>
+        <div style={{ background: colors.surface, borderRadius: radii.lg, boxShadow: `0 1px 3px rgba(0,0,0,0.04)`, padding: 20 }}>
           <h3
             style={{
               fontSize: 13,
               fontWeight: 600,
-              color: "#1a1a1a",
+              color: colors.textPrimary,
               margin: "0 0 12px",
             }}
           >
@@ -125,17 +123,17 @@ export default function StatsPage() {
                     fontSize: 12,
                   }}
                 >
-                  <span style={{ color: "#4a5c6c" }}>
+                  <span style={{ color: colors.accent }}>
                     {CATEGORY_LABELS[c.category] || c.category}
                   </span>
-                  <span style={{ color: "#8c8c8c" }}>
+                  <span style={{ color: colors.textSecondary }}>
                     {c.count} 件 · {pct}%
                   </span>
                 </div>
                 <div
                   style={{
                     height: 3,
-                    background: "#f0f0f0",
+                    background: colors.divider,
                     borderRadius: 1,
                   }}
                 >
@@ -143,7 +141,7 @@ export default function StatsPage() {
                     style={{
                       height: "100%",
                       width: `${pct}%`,
-                      background: "#4a5c6c",
+                      background: colors.accent,
                       borderRadius: 1,
                       minWidth: pct > 0 ? 2 : 0,
                     }}
@@ -155,12 +153,12 @@ export default function StatsPage() {
         </div>
 
         {/* 颜色分布 */}
-        <div style={{ ...cardStyle, padding: 20 }}>
+        <div style={{ background: colors.surface, borderRadius: radii.lg, boxShadow: `0 1px 3px rgba(0,0,0,0.04)`, padding: 20 }}>
           <h3
             style={{
               fontSize: 13,
               fontWeight: 600,
-              color: "#1a1a1a",
+              color: colors.textPrimary,
               margin: "0 0 12px",
             }}
           >
@@ -172,7 +170,7 @@ export default function StatsPage() {
                 key={c.category}
                 style={{
                   fontSize: 11,
-                  color: "#4a5c6c",
+                  color: colors.accent,
                   border: "1px solid #e8eaed",
                   borderRadius: 2,
                   padding: "3px 10px",
@@ -188,12 +186,12 @@ export default function StatsPage() {
       {/* 最爱穿 + 沉睡单品 */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
         {/* 高频穿着 */}
-        <div style={{ ...cardStyle, padding: 20 }}>
+        <div style={{ background: colors.surface, borderRadius: radii.lg, boxShadow: `0 1px 3px rgba(0,0,0,0.04)`, padding: 20 }}>
           <h3
             style={{
               fontSize: 13,
               fontWeight: 600,
-              color: "#1a1a1a",
+              color: colors.textPrimary,
               margin: "0 0 12px",
             }}
           >
@@ -203,7 +201,7 @@ export default function StatsPage() {
             <div
               style={{
                 fontSize: 13,
-                color: "#bfbfbf",
+                color: colors.textTertiary,
                 padding: "20px 0",
                 textAlign: "center",
               }}
@@ -244,7 +242,7 @@ export default function StatsPage() {
                 </div>
                 <div style={{ fontSize: 12, flex: 1 }}>
                   <div style={{ fontWeight: 500 }}>{item.name || item.sub_category}</div>
-                  <div style={{ color: "#8c8c8c" }}>
+                  <div style={{ color: colors.textSecondary }}>
                     {item.colors.join(" · ")} · 穿{wearCount}次
                     {costPerWear > 0 && ` · ¥${costPerWear}/次`}
                   </div>
@@ -255,12 +253,12 @@ export default function StatsPage() {
         </div>
 
         {/* 沉睡单品：超过 30 天未穿着的衣物 */}
-        <div style={{ ...cardStyle, padding: 20 }}>
+        <div style={{ background: colors.surface, borderRadius: radii.lg, boxShadow: `0 1px 3px rgba(0,0,0,0.04)`, padding: 20 }}>
           <h3
             style={{
               fontSize: 13,
               fontWeight: 600,
-              color: "#1a1a1a",
+              color: colors.textPrimary,
               margin: "0 0 12px",
             }}
           >
@@ -270,7 +268,7 @@ export default function StatsPage() {
             <div
               style={{
                 fontSize: 13,
-                color: "#bfbfbf",
+                color: colors.textTertiary,
                 padding: "20px 0",
                 textAlign: "center",
               }}
@@ -306,7 +304,7 @@ export default function StatsPage() {
                 </div>
                 <div style={{ fontSize: 12, flex: 1 }}>
                   <div style={{ fontWeight: 500 }}>{item.sub_category}</div>
-                  <div style={{ color: "#8c8c8c" }}>
+                  <div style={{ color: colors.textSecondary }}>
                     {item.colors.join(" · ")}
                   </div>
                 </div>
@@ -318,20 +316,20 @@ export default function StatsPage() {
 
       {/* 衣橱缺口分析 */}
       {gap && (
-        <div style={{ ...cardStyle, padding: 20, marginBottom: 24 }}>
+        <div style={{ background: colors.surface, borderRadius: radii.lg, boxShadow: "0 1px 3px rgba(0,0,0,0.04)", padding: 20, marginBottom: spacing.xl }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
-            <h3 style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a", margin: 0 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 600, color: colors.textPrimary, margin: 0 }}>
               衣橱缺口分析
             </h3>
             <span style={{
               fontSize: 11, fontWeight: 600,
-              color: gap.coverage_score >= 70 ? "#52c41a" : gap.coverage_score >= 40 ? "#faad14" : "#ff4d4f",
+              color: gap.coverage_score >= 70 ? colors.success : gap.coverage_score >= 40 ? colors.warning : colors.error,
             }}>
               {gap.owned_basics}/{gap.total_basics} · {gap.coverage_score}%
             </span>
           </div>
           {gap.missing_items.length === 0 ? (
-            <div style={{ fontSize: 13, color: "#52c41a", padding: "12px 0" }}>
+            <div style={{ fontSize: 13, color: colors.success, padding: "12px 0" }}>
               基础款已齐全，衣橱配置很完整
             </div>
           ) : (
@@ -341,15 +339,15 @@ export default function StatsPage() {
                   key={`${m.category}-${m.sub_category}`}
                   style={{
                     fontSize: 11,
-                    color: "#8c8c8c",
+                    color: colors.textSecondary,
                     border: "1px solid #f0f0f0",
                     borderRadius: 4,
                     padding: "6px 12px",
-                    background: "#fafafa",
+                    background: colors.bg,
                   }}
                   title={m.reason}
                 >
-                  <span style={{ fontSize: 10, color: "#bfbfbf", marginRight: 4 }}>
+                  <span style={{ fontSize: 10, color: colors.textTertiary, marginRight: 4 }}>
                     {CATEGORY_LABELS[m.category] || m.category}
                   </span>
                   {m.sub_category}
@@ -366,7 +364,7 @@ export default function StatsPage() {
           style={{
             fontSize: 15,
             fontWeight: 600,
-            color: "#1a1a1a",
+            color: colors.textPrimary,
             margin: "0 0 16px",
           }}
         >

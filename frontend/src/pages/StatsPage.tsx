@@ -5,11 +5,12 @@ import { getImageUrl } from "../utils/imageUrl";
 import { useResponsive } from "../hooks/useResponsive";
 import type { ClothingItem } from "../types";
 import { CATEGORY_LABELS } from "../types";
-import { colors, radii, spacing, fontSize, fontWeight } from "../styles/tokens";
+import { colors, radii, spacing, fontSize, fontWeight, shadows } from "../styles/tokens";
 import Card from "../components/ui/Card";
 import { Title, SectionTitle, Caption, Aux } from "../components/ui/Typography";
 import Tag from "../components/ui/Tag";
 import ImageBlock from "../components/ui/ImageBlock";
+import EmptyState from "../components/ui/EmptyState";
 import WearCalendar from "../components/WearCalendar";
 
 // 卡片容器样式已由 Card 组件替代，保留此常量用于内嵌 grid 场景
@@ -76,14 +77,12 @@ export default function StatsPage() {
             return { label: "均次穿着成本", value: avgCost > 0 ? `¥${avgCost.toLocaleString()}` : "—" };
           })(),
         ].map(({ label, value }) => (
-          <div key={label} style={{ background: colors.surface, borderRadius: radii.lg, boxShadow: "0 1px 3px rgba(0,0,0,0.04)", padding: isMobile ? "12px 14px" : "16px 20px" }}>
-            <div style={{ fontSize: isMobile ? 11 : 12, color: colors.textSecondary, marginBottom: 4 }}>
-              {label}
-            </div>
+          <Card key={label} padding={isMobile ? "12px 14px" : "16px 20px"}>
+            <Caption style={{ marginBottom: 4 }}>{label}</Caption>
             <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 600, color: colors.textPrimary }}>
               {value}
             </div>
-          </div>
+          </Card>
         ))}
       </div>
 
@@ -97,17 +96,8 @@ export default function StatsPage() {
         }}
       >
         {/* 品类分布 */}
-        <div style={{ background: colors.surface, borderRadius: radii.lg, boxShadow: `0 1px 3px rgba(0,0,0,0.04)`, padding: 20 }}>
-          <h3
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: colors.textPrimary,
-              margin: "0 0 12px",
-            }}
-          >
-            品类分布
-          </h3>
+        <Card padding={20}>
+          <SectionTitle style={{ marginTop: 0, marginBottom: 12 }}>品类分布</SectionTitle>
           {stats.category_distribution.map((c) => {
             const pct =
               stats.total_items > 0
@@ -150,64 +140,28 @@ export default function StatsPage() {
               </div>
             );
           })}
-        </div>
+        </Card>
 
         {/* 颜色分布 */}
-        <div style={{ background: colors.surface, borderRadius: radii.lg, boxShadow: `0 1px 3px rgba(0,0,0,0.04)`, padding: 20 }}>
-          <h3
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: colors.textPrimary,
-              margin: "0 0 12px",
-            }}
-          >
-            颜色分布
-          </h3>
+        <Card padding={20}>
+          <SectionTitle style={{ marginTop: 0, marginBottom: 12 }}>颜色分布</SectionTitle>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {stats.color_distribution.map((c) => (
-              <span
-                key={c.category}
-                style={{
-                  fontSize: 11,
-                  color: colors.accent,
-                  border: "1px solid #e8eaed",
-                  borderRadius: 2,
-                  padding: "3px 10px",
-                }}
-              >
+              <Tag key={c.category} variant="outline" size="sm">
                 {c.category} · {c.count}
-              </span>
+              </Tag>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* 最爱穿 + 沉睡单品 */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
         {/* 高频穿着 */}
-        <div style={{ background: colors.surface, borderRadius: radii.lg, boxShadow: `0 1px 3px rgba(0,0,0,0.04)`, padding: 20 }}>
-          <h3
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: colors.textPrimary,
-              margin: "0 0 12px",
-            }}
-          >
-            高频穿着
-          </h3>
+        <Card padding={20}>
+          <SectionTitle style={{ marginTop: 0, marginBottom: 12 }}>高频穿着</SectionTitle>
           {stats.most_worn.length === 0 ? (
-            <div
-              style={{
-                fontSize: 13,
-                color: colors.textTertiary,
-                padding: "20px 0",
-                textAlign: "center",
-              }}
-            >
-              还没有穿着记录
-            </div>
+            <EmptyState icon="📊" title="还没有穿着记录" />
           ) : (
             stats.most_worn.map((item) => {
               const full = itemMap.get(item.id);
@@ -222,7 +176,7 @@ export default function StatsPage() {
                   alignItems: "center",
                   gap: 10,
                   padding: "8px 0",
-                  borderBottom: "1px solid #f0f0f0",
+                  borderBottom: `1px solid ${colors.divider}`,
                 }}
               >
                 <div style={thumbStyle}>
@@ -250,31 +204,13 @@ export default function StatsPage() {
               </div>
             )})
           )}
-        </div>
+        </Card>
 
         {/* 沉睡单品：超过 30 天未穿着的衣物 */}
-        <div style={{ background: colors.surface, borderRadius: radii.lg, boxShadow: `0 1px 3px rgba(0,0,0,0.04)`, padding: 20 }}>
-          <h3
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: colors.textPrimary,
-              margin: "0 0 12px",
-            }}
-          >
-            沉睡单品
-          </h3>
+        <Card padding={20}>
+          <SectionTitle style={{ marginTop: 0, marginBottom: 12 }}>沉睡单品</SectionTitle>
           {stats.sleeping_items.length === 0 ? (
-            <div
-              style={{
-                fontSize: 13,
-                color: colors.textTertiary,
-                padding: "20px 0",
-                textAlign: "center",
-              }}
-            >
-              所有衣物都穿过
-            </div>
+            <EmptyState icon="✨" title="所有衣物都穿过" />
           ) : (
             stats.sleeping_items.map((item) => (
               <div
@@ -284,7 +220,7 @@ export default function StatsPage() {
                   alignItems: "center",
                   gap: 10,
                   padding: "8px 0",
-                  borderBottom: "1px solid #f0f0f0",
+                  borderBottom: `1px solid ${colors.divider}`,
                 }}
               >
                 <div style={thumbStyle}>
@@ -311,16 +247,14 @@ export default function StatsPage() {
               </div>
             ))
           )}
-        </div>
+        </Card>
       </div>
 
       {/* 衣橱缺口分析 */}
       {gap && (
-        <div style={{ background: colors.surface, borderRadius: radii.lg, boxShadow: "0 1px 3px rgba(0,0,0,0.04)", padding: 20, marginBottom: spacing.xl }}>
+        <Card padding={20} style={{ marginBottom: spacing.xl }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
-            <h3 style={{ fontSize: 13, fontWeight: 600, color: colors.textPrimary, margin: 0 }}>
-              衣橱缺口分析
-            </h3>
+            <SectionTitle style={{ margin: 0 }}>衣橱缺口分析</SectionTitle>
             <span style={{
               fontSize: 11, fontWeight: 600,
               color: gap.coverage_score >= 70 ? colors.success : gap.coverage_score >= 40 ? colors.warning : colors.error,
@@ -335,41 +269,18 @@ export default function StatsPage() {
           ) : (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {gap.missing_items.map((m) => (
-                <div
-                  key={`${m.category}-${m.sub_category}`}
-                  style={{
-                    fontSize: 11,
-                    color: colors.textSecondary,
-                    border: "1px solid #f0f0f0",
-                    borderRadius: 4,
-                    padding: "6px 12px",
-                    background: colors.bg,
-                  }}
-                  title={m.reason}
-                >
-                  <span style={{ fontSize: 10, color: colors.textTertiary, marginRight: 4 }}>
-                    {CATEGORY_LABELS[m.category] || m.category}
-                  </span>
-                  {m.sub_category}
-                </div>
+                <Tag key={`${m.category}-${m.sub_category}`} variant="outline" size="sm">
+                  <Aux>{CATEGORY_LABELS[m.category] || m.category}</Aux> {m.sub_category}
+                </Tag>
               ))}
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {/* 穿着日历 */}
       <div style={{ marginTop: 32 }}>
-        <h3
-          style={{
-            fontSize: 15,
-            fontWeight: 600,
-            color: colors.textPrimary,
-            margin: "0 0 16px",
-          }}
-        >
-          穿着日历
-        </h3>
+        <SectionTitle style={{ marginBottom: 16 }}>穿着日历</SectionTitle>
         <WearCalendar
           year={calYear}
           month={calMonth}

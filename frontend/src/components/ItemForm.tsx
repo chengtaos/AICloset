@@ -23,7 +23,7 @@ function BatchItemCard({
 
   return (
     <div style={{
-      border: "1px solid #f0f0f0", borderRadius: 6, marginBottom: 8,
+      border: `1px solid ${colors.divider}`, borderRadius: 6, marginBottom: 8,
       background: colors.placeholder, overflow: "hidden",
     }}>
       {/* 折叠头部：缩略图 + 摘要 + 操作按钮 */}
@@ -76,7 +76,7 @@ function BatchItemCard({
 
       {/* 展开编辑区 */}
       {expanded && (
-        <div style={{ padding: "8px 12px 14px", borderTop: "1px solid #f0f0f0" }}>
+        <div style={{ padding: "8px 12px 14px", borderTop: `1px solid ${colors.divider}` }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {/* 品类 */}
             <div>
@@ -337,7 +337,7 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit, onBatch
           width: "100%", height: 200, background: colors.bg,
           borderRadius: 8, marginBottom: 16,
           display: "flex", alignItems: "center", justifyContent: "center",
-          overflow: "hidden", border: "1px solid #eee",
+          overflow: "hidden", border: `1px solid ${colors.divider}`,
         }}>
           {imagePathRef.current ? (
             <img
@@ -374,7 +374,7 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit, onBatch
           disabled={recognizing}
           style={{
             display: "flex", alignItems: "center", gap: 6,
-            border: "1px solid #e8eaed", borderRadius: 4,
+            border: `1px solid ${colors.divider}`, borderRadius: 4,
             background: colors.surface, padding: "8px 16px",
             cursor: recognizing ? "not-allowed" : "pointer",
             fontSize: 13, color: colors.accent, fontWeight: 500,
@@ -393,7 +393,7 @@ export default function ItemForm({ open, editingItem, onClose, onSubmit, onBatch
           disabled={recognizing}
           style={{
             display: "flex", alignItems: "center", gap: 6,
-            border: "1px solid #e8eaed", borderRadius: 4,
+            border: `1px solid ${colors.divider}`, borderRadius: 4,
             background: colors.surface, padding: "8px 16px",
             cursor: recognizing ? "not-allowed" : "pointer",
             fontSize: 13, color: colors.textSecondary, fontWeight: 500,

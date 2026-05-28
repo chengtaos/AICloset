@@ -5,6 +5,8 @@ import { getImageUrl } from "../utils/imageUrl";
 import { useResponsive } from "../hooks/useResponsive";
 import { colors, radii } from "../styles/tokens";
 import { Title } from "../components/ui/Typography";
+import Tag from "../components/ui/Tag";
+import UIButton from "../components/ui/Button";
 import { useAuth } from "../contexts/AuthContext";
 
 const FIELD_LABELS: Record<keyof UserApiKeys, string> = {
@@ -136,29 +138,15 @@ export default function SettingsPage() {
     }
   }, [keys]);
 
-  const sectionBtn = (s: Section, label: string) => (
-    <button
-      onClick={() => setSection(s)}
-      style={{
-        border: "none", background: section === s ? colors.accentSoft : "transparent",
-        padding: "8px 16px", fontSize: 13, fontWeight: section === s ? 600 : 400,
-        color: section === s ? colors.textPrimary : colors.textSecondary,
-        cursor: "pointer", borderRadius: radii.sm, transition: "all 0.15s",
-      }}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <div>
       <Title style={{ marginBottom: 20 }}>设置</Title>
 
       {/* 子导航 */}
       <div style={{ display: "flex", gap: 4, marginBottom: 28 }}>
-        {sectionBtn("profile", "个人资料")}
-        {sectionBtn("password", "修改密码")}
-        {sectionBtn("keys", "API 密钥")}
+        <Tag variant="filled" active={section === "profile"} size="md" onClick={() => setSection("profile")}>个人资料</Tag>
+        <Tag variant="filled" active={section === "password"} size="md" onClick={() => setSection("password")}>修改密码</Tag>
+        <Tag variant="filled" active={section === "keys"} size="md" onClick={() => setSection("keys")}>API 密钥</Tag>
       </div>
 
       {/* ── 个人资料 ── */}
@@ -201,9 +189,9 @@ export default function SettingsPage() {
             <p style={{ color: profileMsg.type === "success" ? colors.accent : colors.error, fontSize: 13 }}>{profileMsg.text}</p>
           )}
 
-          <button onClick={handleSaveProfile} disabled={profileSaving} style={btnStyle}>
-            {profileSaving ? "保存中..." : "保存"}
-          </button>
+          <UIButton variant="primary" size="lg" loading={profileSaving} onClick={handleSaveProfile} style={{ letterSpacing: "0.04em" }}>
+            保存
+          </UIButton>
         </div>
       )}
 
@@ -223,9 +211,9 @@ export default function SettingsPage() {
             <p style={{ color: pwdMsg.type === "success" ? colors.accent : colors.error, fontSize: 13 }}>{pwdMsg.text}</p>
           )}
 
-          <button onClick={handleChangePassword} disabled={pwdSaving || !oldPwd || !newPwd} style={btnStyle}>
-            {pwdSaving ? "修改中..." : "修改密码"}
-          </button>
+          <UIButton variant="primary" size="lg" loading={pwdSaving} disabled={!oldPwd || !newPwd} onClick={handleChangePassword} style={{ letterSpacing: "0.04em" }}>
+            修改密码
+          </UIButton>
         </div>
       )}
 
@@ -254,9 +242,9 @@ export default function SettingsPage() {
               <p style={{ color: keysMsg.type === "success" ? colors.accent : colors.error, fontSize: 13, margin: 0 }}>{keysMsg.text}</p>
             )}
 
-            <button onClick={handleSaveKeys} disabled={keysSaving} style={{ ...btnStyle, width: isMobile ? "100%" : undefined }}>
-              {keysSaving ? "保存中..." : "保存"}
-            </button>
+            <UIButton variant="primary" size="lg" loading={keysSaving} onClick={handleSaveKeys} block={isMobile} style={{ letterSpacing: "0.04em" }}>
+              保存
+            </UIButton>
           </div>
         </div>
       )}
@@ -268,10 +256,4 @@ const inputStyle: React.CSSProperties = {
   width: "100%", height: 44, padding: "0 14px",
   border: `1px solid ${colors.divider}`, borderRadius: radii.md,
   fontSize: 14, outline: "none", background: colors.surface, boxSizing: "border-box",
-};
-
-const btnStyle: React.CSSProperties = {
-  height: 44, border: "none", borderRadius: radii.md,
-  background: colors.accent, color: colors.surface, fontSize: 15,
-  letterSpacing: "0.04em", cursor: "pointer",
 };

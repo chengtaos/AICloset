@@ -176,7 +176,7 @@ export default function OutfitsPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 600, color: colors.textPrimary, margin: 0 }}>搭配</h2>
+        <Title style={{ margin: 0 }}>搭配</Title>
         <Button icon={<PlusOutlined />} onClick={openCreate}>创建</Button>
       </div>
 
@@ -184,42 +184,30 @@ export default function OutfitsPage() {
       {outfits.length > 0 && (
         <div style={{ display: "flex", gap: 8, marginBottom: 20, alignItems: "center", flexWrap: "wrap" }}>
           {TAG_OPTIONS.map((tag) => (
-            <span
+            <Tag
               key={tag}
+              variant="filled"
+              active={filterTag === tag}
+              size="sm"
               onClick={() => setFilterTag((prev) => (prev === tag ? "" : tag))}
-              style={{
-                fontSize: 12, cursor: "pointer",
-                padding: "4px 12px", borderRadius: 4,
-                color: filterTag === tag ? colors.surface : colors.textSecondary,
-                background: filterTag === tag ? colors.accent : colors.placeholder,
-                transition: "all 0.15s",
-              }}
             >
               {tag}
-            </span>
+            </Tag>
           ))}
           <div style={{ flex: 1, minWidth: 0 }} />
-          <Input
-            prefix={<SearchOutlined style={{ color: colors.textTertiary }} />}
-            placeholder="搜索搭配名称或衣物"
-            size="small"
+          <SearchBar
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            allowClear
-            style={{ width: 220, border: `1px solid ${colors.divider}`, borderRadius: 4 }}
+            onChange={setSearchText}
+            placeholder="搜索搭配名称或衣物"
+            width={220}
           />
         </div>
       )}
 
       {outfits.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "80px 0", color: colors.textTertiary }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>👔</div>
-          <div>还没有搭配，点击右上角创建</div>
-        </div>
+        <EmptyState icon="👔" title="还没有搭配" description="点击右上角「创建」开始搭配" />
       ) : filteredOutfits.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "60px 0", color: colors.textTertiary }}>
-          <div style={{ fontSize: 13 }}>没有匹配的搭配</div>
-        </div>
+        <EmptyState icon="🔍" title="没有匹配的搭配" />
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {filteredOutfits.map((outfit) => (

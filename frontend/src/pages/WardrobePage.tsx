@@ -14,8 +14,11 @@ import { fetchItems, createItem, updateItem, deleteItem, uploadImage } from "../
 import { getImageUrl } from "../utils/imageUrl";
 import { exportItemsCsv } from "../utils/export";
 import { useResponsive } from "../hooks/useResponsive";
-import { colors, radii } from "../styles/tokens";
+import { colors, radii, spacing } from "../styles/tokens";
 import { Title, SectionTitle } from "../components/ui/Typography";
+import Tag from "../components/ui/Tag";
+import SearchBar from "../components/ui/SearchBar";
+import EmptyState from "../components/ui/EmptyState";
 import ItemCard from "../components/ItemCard";
 import ItemForm from "../components/ItemForm";
 
@@ -302,12 +305,11 @@ export default function WardrobePage() {
 
       {/* 内容区域：空状态 / 单品类网格 / 全部分组网格 */}
       {filtered.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "100px 0", color: colors.textTertiary }}>
-          <div style={{ fontSize: 56, marginBottom: 12, opacity: 0.4 }}>👔</div>
-          <div style={{ fontSize: 13 }}>
-            {items.length === 0 ? "衣橱还是空的" : "没有匹配的衣物"}
-          </div>
-        </div>
+        <EmptyState
+          icon="👔"
+          title={items.length === 0 ? "衣橱还是空的" : "没有匹配的衣物"}
+          description={items.length === 0 ? "点击右上角「录入」添加第一件衣物" : undefined}
+        />
       ) : activeCat ? (
         // 单品类视图：直接网格排列
         <div

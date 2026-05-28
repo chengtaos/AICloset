@@ -7,6 +7,8 @@ import { recommendDaily, recommendScenario, recordWear, submitFeedback, recommen
 import { useResponsive } from "../hooks/useResponsive";
 import { colors, radii, spacing } from "../styles/tokens";
 import { Title } from "../components/ui/Typography";
+import Card from "../components/ui/Card";
+import Tag from "../components/ui/Tag";
 import RecommendCard from "../components/RecommendCard";
 
 // 和风天气支持的主要城市列表
@@ -203,21 +205,15 @@ export default function RecommendPage() {
               }}
             >
               {QUICK_SCENARIOS.map((s) => (
-                <span
+                <Tag
                   key={s.label}
+                  variant="outline"
+                  active={scenarioDesc === s.desc}
+                  size="sm"
                   onClick={() => setScenarioDesc(s.desc)}
-                  style={{
-                    fontSize: 11,
-                    color: scenarioDesc === s.desc ? colors.accent : colors.textSecondary,
-                    border: `1px solid ${scenarioDesc === s.desc ? colors.accent : colors.divider}`,
-                    borderRadius: 2,
-                    padding: "3px 10px",
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                  }}
                 >
                   {s.label}
-                </span>
+                </Tag>
               ))}
             </div>
           </div>
@@ -296,10 +292,7 @@ export default function RecommendPage() {
       {mode === "capsule" && capsuleResult && (
         <div>
           {/* 打包清单 */}
-          <div style={{
-            border: `1px solid ${colors.divider}`, borderRadius: radii.lg, background: colors.surface,
-            padding: isMobile ? 14 : 20, marginBottom: 16,
-          }}>
+          <Card padding={isMobile ? 14 : 20} style={{ marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary, margin: "0 0 4px" }}>
               打包清单 · {capsuleResult.items.length} 件
             </h3>
@@ -326,15 +319,12 @@ export default function RecommendPage() {
                 {capsuleResult.packing_tip}
               </div>
             )}
-          </div>
+          </Card>
 
           {/* 每日方案 */}
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {capsuleResult.outfits.map((outfit) => (
-              <div key={outfit.day} style={{
-                border: `1px solid ${colors.divider}`, borderRadius: radii.lg, background: colors.surface,
-                padding: isMobile ? 12 : 16,
-              }}>
+              <Card key={outfit.day} padding={isMobile ? 12 : 16}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
                   <span style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>
                     第 {outfit.day} 天
@@ -346,7 +336,7 @@ export default function RecommendPage() {
                 <div style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 1.8 }}>
                   {outfit.reason}
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         </div>

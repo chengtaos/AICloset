@@ -7,15 +7,11 @@ import type { ClothingItem } from "../types";
 import { CATEGORY_LABELS } from "../types";
 import { colors, radii, spacing, fontSize, fontWeight, shadows } from "../styles/tokens";
 import Card from "../components/ui/Card";
-import { Title, SectionTitle, Caption, Aux } from "../components/ui/Typography";
+import { SectionTitle, Caption, Aux } from "../components/ui/Typography";
 import Tag from "../components/ui/Tag";
-import ImageBlock from "../components/ui/ImageBlock";
 import EmptyState from "../components/ui/EmptyState";
 import WearCalendar from "../components/WearCalendar";
 
-// 卡片容器样式已由 Card 组件替代，保留此常量用于内嵌 grid 场景
-
-// 列表项缩略图样式（高频穿着 / 沉睡单品复用）
 const thumbStyle: React.CSSProperties = {
   width: 40,
   height: 50,
@@ -28,7 +24,7 @@ const thumbStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
-export default function StatsPage() {
+export default function StatsView() {
   const { isMobile } = useResponsive();
   const now = new Date();
   const [calYear, setCalYear] = useState(now.getFullYear());
@@ -55,9 +51,6 @@ export default function StatsPage() {
 
   return (
     <div>
-      <Title style={{ marginBottom: spacing.xl }}>统计</Title>
-
-      {/* 概览卡片 */}
       <div
         style={{
           display: "grid",
@@ -86,7 +79,6 @@ export default function StatsPage() {
         ))}
       </div>
 
-      {/* 品类分布 + 颜色分布 */}
       <div
         style={{
           display: "grid",
@@ -95,7 +87,6 @@ export default function StatsPage() {
           marginBottom: 24,
         }}
       >
-        {/* 品类分布 */}
         <Card padding={20}>
           <SectionTitle style={{ marginTop: 0, marginBottom: 12 }}>品类分布</SectionTitle>
           {stats.category_distribution.map((c) => {
@@ -142,7 +133,6 @@ export default function StatsPage() {
           })}
         </Card>
 
-        {/* 颜色分布 */}
         <Card padding={20}>
           <SectionTitle style={{ marginTop: 0, marginBottom: 12 }}>颜色分布</SectionTitle>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -155,9 +145,7 @@ export default function StatsPage() {
         </Card>
       </div>
 
-      {/* 最爱穿 + 沉睡单品 */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
-        {/* 高频穿着 */}
         <Card padding={20}>
           <SectionTitle style={{ marginTop: 0, marginBottom: 12 }}>高频穿着</SectionTitle>
           {stats.most_worn.length === 0 ? (
@@ -206,7 +194,6 @@ export default function StatsPage() {
           )}
         </Card>
 
-        {/* 沉睡单品：超过 30 天未穿着的衣物 */}
         <Card padding={20}>
           <SectionTitle style={{ marginTop: 0, marginBottom: 12 }}>沉睡单品</SectionTitle>
           {stats.sleeping_items.length === 0 ? (
@@ -250,9 +237,8 @@ export default function StatsPage() {
         </Card>
       </div>
 
-      {/* 衣橱缺口分析 */}
       {gap && (
-        <Card padding={20} style={{ marginBottom: spacing.xl }}>
+        <Card padding={20} style={{ marginTop: 24 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
             <SectionTitle style={{ margin: 0 }}>衣橱缺口分析</SectionTitle>
             <span style={{
@@ -278,7 +264,6 @@ export default function StatsPage() {
         </Card>
       )}
 
-      {/* 穿着日历 */}
       <div style={{ marginTop: 32 }}>
         <SectionTitle style={{ marginBottom: 16 }}>穿着日历</SectionTitle>
         <WearCalendar

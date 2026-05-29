@@ -1,40 +1,43 @@
 import { useState, useRef, useCallback } from "react";
 import type { ClothingItemBrief } from "../types";
 import { getImageUrl } from "../utils/imageUrl";
+import { useResponsive } from "../hooks/useResponsive";
 import { colors, radii } from "../styles/tokens";
 
 interface ItemState {
-  x: number;   // 百分比 0-100
-  y: number;   // 百分比 0-100
-  scale: number; // 缩放倍率，默认 1.0
+  x: number;
+  y: number;
+  scale: number;
 }
 
 interface Props {
   items: ClothingItemBrief[];
 }
 
-const BASE_W = 72;
-const BASE_H = 90;
+// Base sizes as fraction of container width — much larger than before
+const BASE_W_FRAC = 0.32; // 32% of container width
+const BASE_H_FRAC = 0.40; // 40% of container width
 
-/** 各类别的默认锚点位置：上身在上、下身在下、鞋子在底、配饰在侧 */
+/** Compact default positions for shorter aspect ratio */
 const DEFAULT_STATE: Record<string, ItemState> = {
-  outer:     { x: 50, y: 15, scale: 1.05 },
-  blouse:    { x: 50, y: 28, scale: 1.0 },
-  tshirt:    { x: 50, y: 28, scale: 1.0 },
-  hoodie:    { x: 50, y: 26, scale: 1.05 },
-  sweater:   { x: 50, y: 27, scale: 1.0 },
-  dress:     { x: 50, y: 38, scale: 1.15 },
-  pants:     { x: 50, y: 55, scale: 1.0 },
-  shorts:    { x: 50, y: 57, scale: 0.85 },
-  skirt:     { x: 50, y: 55, scale: 1.0 },
+  outer:     { x: 50, y: 16, scale: 1.0 },
+  blouse:    { x: 50, y: 32, scale: 1.0 },
+  tshirt:    { x: 50, y: 32, scale: 1.0 },
+  hoodie:    { x: 50, y: 30, scale: 1.0 },
+  sweater:   { x: 50, y: 31, scale: 1.0 },
+  dress:     { x: 50, y: 40, scale: 1.1 },
+  pants:     { x: 50, y: 58, scale: 1.0 },
+  shorts:    { x: 50, y: 60, scale: 0.85 },
+  skirt:     { x: 50, y: 58, scale: 1.0 },
   shoes:     { x: 50, y: 82, scale: 0.85 },
-  accessory: { x: 18, y: 30, scale: 0.7 },
-  bag:       { x: 82, y: 42, scale: 0.75 },
+  accessory: { x: 18, y: 32, scale: 0.65 },
+  bag:       { x: 82, y: 42, scale: 0.7 },
 };
 
 type DragMode = "move" | "resize";
 
 export default function OutfitComposer({ items }: Props) {
+  const { isMobile, isTablet } = useResponsive();
   const containerRef = useRef<HTMLDivElement>(null);
   const [itemStates, setItemStates] = useState<Record<number, ItemState>>({});
   const [dragging, setDragging] = useState<{ id: number; mode: DragMode } | null>(null);
@@ -42,6 +45,10 @@ export default function OutfitComposer({ items }: Props) {
   const dragRef = useRef<{ sx: number; sy: number; scale: number; cx: number; cy: number }>({
     sx: 0, sy: 0, scale: 1, cx: 0, cy: 0,
   });
+
+  const containerW = containerRef.current?.clientWidth || (isMobile ? 340 : isTablet ? 380 : 400);
+  const BASE_W = Math.round(containerW * BASE_W_FRAC);
+  const BASE_H = Math.round(containerW * BASE_H_FRAC);
 
   const getState = (item: ClothingItemBrief): ItemState =>
     itemStates[item.id] || DEFAULT_STATE[item.category] || { x: 50, y: 50, scale: 1.0 };
@@ -70,7 +77,6 @@ export default function OutfitComposer({ items }: Props) {
     const rect = el.getBoundingClientRect();
     const cx = rect.left + (st.x / 100) * rect.width;
     const cy = rect.top + (st.y / 100) * rect.height;
-    const initDist = Math.sqrt((e.clientX - cx) ** 2 + (e.clientY - cy) ** 2);
     dragRef.current = { sx: 0, sy: 0, scale: st.scale, cx: cx / rect.width * 100, cy: cy / rect.height * 100 };
     setDragging({ id: itemId, mode: "resize" });
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -94,11 +100,10 @@ export default function OutfitComposer({ items }: Props) {
         },
       }));
     } else {
-      // resize: 根据指针到画布中心的距离计算缩放
       const cxPx = (dragRef.current.cx / 100) * rect.width;
       const cyPx = (dragRef.current.cy / 100) * rect.height;
       const dist = Math.sqrt((e.clientX - cxPx) ** 2 + (e.clientY - cyPx) ** 2);
-      const refDist = 100; // 基准距离对应的 scale=1
+      const refDist = 100;
       const newScale = Math.max(0.3, Math.min(3.0, (dist / refDist) * dragRef.current.scale * 1.5));
       setItemStates((prev) => ({
         ...prev,
@@ -121,14 +126,13 @@ export default function OutfitComposer({ items }: Props) {
       style={{
         position: "relative",
         width: "100%",
-        aspectRatio: "1 / 2.1",
-        maxWidth: 320,
+        aspectRatio: isMobile ? "2 / 3" : "3 / 4",
+        maxWidth: isMobile ? "100%" : isTablet ? 380 : 400,
         margin: "0 auto",
         userSelect: "none",
         touchAction: "none",
       }}
     >
-      {/* 衣物图层 */}
       {items.map((item) => {
         const st = getState(item);
         const isDragging = dragging?.id === item.id;
@@ -156,7 +160,6 @@ export default function OutfitComposer({ items }: Props) {
                 : "drop-shadow(0 1px 3px rgba(0,0,0,0.06))",
             }}
           >
-            {/* 图片 */}
             {item.images.length > 0 ? (
               <img
                 src={getImageUrl(item.images[0])}
@@ -179,7 +182,6 @@ export default function OutfitComposer({ items }: Props) {
               </div>
             )}
 
-            {/* 类别标签 */}
             <div style={{
               textAlign: "center", marginTop: 2,
               fontSize: 10, color: colors.textSecondary,
@@ -188,7 +190,6 @@ export default function OutfitComposer({ items }: Props) {
               {item.sub_category}
             </div>
 
-            {/* 缩放把手：右下角小三角 */}
             <div
               onPointerDown={(e) => handleResizeStart(e, item.id)}
               style={{
@@ -211,7 +212,6 @@ export default function OutfitComposer({ items }: Props) {
         );
       })}
 
-      {/* 底部提示 */}
       {!dragging && items.length > 0 && (
         <div style={{
           position: "absolute", bottom: 8, left: "50%",

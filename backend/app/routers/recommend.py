@@ -46,7 +46,14 @@ def api_submit_feedback(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    rec = db.query(Recommendation).filter(Recommendation.id == recommendation_id).first()
+    rec = (
+        db.query(Recommendation)
+        .filter(
+            Recommendation.id == recommendation_id,
+            Recommendation.user_id == current_user.id,
+        )
+        .first()
+    )
     if not rec:
         raise HTTPException(status_code=404, detail="推荐记录不存在")
     rec.feedback = fb.feedback
@@ -61,9 +68,9 @@ def api_submit_feedback(
                 item_ids.append(item)
 
     if fb.feedback == "liked" and item_ids:
-        update_preferences_on_wear(db, rec.user_id, item_ids)
+        update_preferences_on_wear(db, current_user.id, item_ids)
     elif fb.feedback == "disliked" and item_ids:
-        suppress_items_in_preferences(db, rec.user_id, item_ids)
+        suppress_items_in_preferences(db, current_user.id, item_ids)
 
     return {"status": "ok"}
 

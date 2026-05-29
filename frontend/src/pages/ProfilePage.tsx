@@ -76,23 +76,24 @@ export default function ProfilePage() {
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
   const [portraitLoading, setPortraitLoading] = useState(false);
 
-  // 风格画像生成（带 localStorage 缓存）
+  // 风格画像生成（带 localStorage 缓存 + 竞态防护）
   useEffect(() => {
     if (!styleProfile) return;
+    let cancelled = false;
     const dims = styleProfile.dimensions;
     const hashRaw = `${dims[0].value}|${dims[1].value}|${dims[2].value}|${dims[3].value}`;
     const hashKey = btoa(hashRaw).replace(/=/g, "");
 
-    const cached = localStorage.getItem("style_portrait");
-    if (cached) {
-      try {
+    try {
+      const cached = localStorage.getItem("style_portrait");
+      if (cached) {
         const parsed = JSON.parse(cached);
         if (parsed.hash === hashKey && parsed.url) {
           setPortraitUrl(parsed.url);
           return;
         }
-      } catch { /* ignore */ }
-    }
+      }
+    } catch { /* ignore */ }
 
     setPortraitLoading(true);
     generateStylePortrait({
@@ -107,14 +108,19 @@ export default function ProfilePage() {
       expression: dims[3].value,
     })
       .then((res) => {
+        if (cancelled) return;
         setPortraitUrl(res.image_url);
-        localStorage.setItem("style_portrait", JSON.stringify({
-          hash: hashKey,
-          url: res.image_url,
-        }));
+        try {
+          localStorage.setItem("style_portrait", JSON.stringify({
+            hash: hashKey,
+            url: res.image_url,
+          }));
+        } catch { /* quota exceeded or private browsing */ }
       })
       .catch(() => {})
-      .finally(() => setPortraitLoading(false));
+      .finally(() => { if (!cancelled) setPortraitLoading(false); });
+
+    return () => { cancelled = true; };
   }, [styleProfile]);
 
   // ── profile form state ──

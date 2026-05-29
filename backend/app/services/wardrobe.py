@@ -79,7 +79,7 @@ def list_items(
     return items
 
 
-def get_item(db: Session, item_id: int, user_id: int = 1) -> Optional[ClothingItem]:
+def get_item(db: Session, item_id: int, user_id: int) -> Optional[ClothingItem]:
     """按 ID 获取单件衣物。"""
     return db.query(ClothingItem).filter(
         ClothingItem.id == item_id,
@@ -87,7 +87,7 @@ def get_item(db: Session, item_id: int, user_id: int = 1) -> Optional[ClothingIt
     ).first()
 
 
-def create_item(db: Session, data: ClothingItemCreate, user_id: int = 1) -> ClothingItem:
+def create_item(db: Session, data: ClothingItemCreate, user_id: int) -> ClothingItem:
     """创建新衣物，image_path 会作为首张图片存入 images 列表。"""
     payload = data.model_dump()
     image_path = payload.pop("image_path", None)
@@ -100,7 +100,7 @@ def create_item(db: Session, data: ClothingItemCreate, user_id: int = 1) -> Clot
     return item
 
 
-def update_item(db: Session, item_id: int, data: ClothingItemUpdate, user_id: int = 1) -> Optional[ClothingItem]:
+def update_item(db: Session, item_id: int, data: ClothingItemUpdate, user_id: int) -> Optional[ClothingItem]:
     """更新衣物字段，仅更新传入的非空字段。"""
     item = get_item(db, item_id, user_id)
     if not item:
@@ -113,7 +113,7 @@ def update_item(db: Session, item_id: int, data: ClothingItemUpdate, user_id: in
     return item
 
 
-def delete_item(db: Session, item_id: int, user_id: int = 1) -> bool:
+def delete_item(db: Session, item_id: int, user_id: int) -> bool:
     """硬删除衣物记录，同时清理本地图片文件。"""
     item = get_item(db, item_id, user_id)
     if not item:
@@ -136,7 +136,7 @@ def delete_item(db: Session, item_id: int, user_id: int = 1) -> bool:
     return True
 
 
-def add_image(db: Session, item_id: int, image_path: str, user_id: int = 1) -> Optional[ClothingItem]:
+def add_image(db: Session, item_id: int, image_path: str, user_id: int) -> Optional[ClothingItem]:
     """向衣物追加一张图片。"""
     item = get_item(db, item_id, user_id)
     if not item:
@@ -162,7 +162,7 @@ def _item_to_brief(item: ClothingItem) -> ClothingItemBrief:
     )
 
 
-def get_stats(db: Session, user_id: int = 1) -> WardrobeStats:
+def get_stats(db: Session, user_id: int) -> WardrobeStats:
     """聚合衣橱统计数据：总价值、品类分布、颜色分布、穿着频次、沉睡单品。"""
     items = db.query(ClothingItem).filter(
         ClothingItem.user_id == user_id,
@@ -298,7 +298,7 @@ ESSENTIAL_BASICS = [
 ]
 
 
-def get_gap_analysis(db: Session, user_id: int = 1):
+def get_gap_analysis(db: Session, user_id: int):
     """分析衣橱缺口：检查基础款覆盖率，返回缺失的建议。"""
     from app.schemas import GapAnalysis, GapItem
 
@@ -312,12 +312,12 @@ def get_gap_analysis(db: Session, user_id: int = 1):
         cat = it.category
         if cat not in owned_by_category:
             owned_by_category[cat] = []
-        owned_by_category[cat].append(it.sub_category)
+        owned_by_category[cat].append(it.sub_category or "")
 
     missing: list[GapItem] = []
     for cat, sub_keyword, reason in ESSENTIAL_BASICS:
         owned_subs = owned_by_category.get(cat, [])
-        found = any(sub_keyword in s for s in owned_subs)
+        found = any(sub_keyword in s for s in owned_subs if s)
         if not found:
             missing.append(GapItem(
                 category=cat,
@@ -337,7 +337,7 @@ def get_gap_analysis(db: Session, user_id: int = 1):
     )
 
 
-def get_wear_history(db: Session, user_id: int = 1, year: int = 0, month: int = 0):
+def get_wear_history(db: Session, user_id: int, year: int = 0, month: int = 0):
     """查询穿着历史，支持按年月筛选。"""
     q = db.query(WearRecord).filter(WearRecord.user_id == user_id)
     if year:

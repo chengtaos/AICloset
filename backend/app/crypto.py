@@ -2,6 +2,7 @@
 
 import base64
 import hashlib
+import logging
 from cryptography.fernet import Fernet
 from app.auth import JWT_SECRET
 
@@ -20,5 +21,6 @@ def decrypt(token: str) -> str:
         return ""
     try:
         return _fernet.decrypt(token.encode()).decode()
-    except Exception:
+    except Exception as e:
+        logging.getLogger(__name__).warning("API Key 解密失败: %s", e)
         return ""

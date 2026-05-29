@@ -57,7 +57,9 @@ export default function OutfitComposer({ items }: Props) {
     e.preventDefault();
     const el = containerRef.current;
     if (!el) return;
-    const st = getState(items.find((it) => it.id === itemId)!);
+    const found = items.find((it) => it.id === itemId);
+    if (!found) return;
+    const st = getState(found);
     const rect = el.getBoundingClientRect();
     dragRef.current = {
       sx: e.clientX - (rect.left + (st.x / 100) * rect.width),
@@ -73,7 +75,9 @@ export default function OutfitComposer({ items }: Props) {
     e.stopPropagation();
     const el = containerRef.current;
     if (!el) return;
-    const st = getState(items.find((it) => it.id === itemId)!);
+    const found = items.find((it) => it.id === itemId);
+    if (!found) return;
+    const st = getState(found);
     const rect = el.getBoundingClientRect();
     const cx = rect.left + (st.x / 100) * rect.width;
     const cy = rect.top + (st.y / 100) * rect.height;
@@ -94,7 +98,7 @@ export default function OutfitComposer({ items }: Props) {
       setItemStates((prev) => ({
         ...prev,
         [dragging.id]: {
-          ...getState(items.find((it) => it.id === dragging.id)!),
+          ...getState(items.find((it) => it.id === dragging.id) || { id: dragging.id } as ClothingItemBrief),
           x: Math.max(0, Math.min(100, x)),
           y: Math.max(0, Math.min(100, y)),
         },
@@ -108,7 +112,7 @@ export default function OutfitComposer({ items }: Props) {
       setItemStates((prev) => ({
         ...prev,
         [dragging.id]: {
-          ...getState(items.find((it) => it.id === dragging.id)!),
+          ...getState(items.find((it) => it.id === dragging.id) || { id: dragging.id } as ClothingItemBrief),
           scale: Math.round(newScale * 100) / 100,
         },
       }));

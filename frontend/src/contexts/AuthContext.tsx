@@ -28,12 +28,18 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
+function safeSetLocal(key: string, value: string) {
+  try { localStorage.setItem(key, value); } catch { /* quota exceeded or private browsing */ }
+}
+function safeRemoveLocal(key: string) {
+  try { localStorage.removeItem(key); } catch { /* quota exceeded or private browsing */ }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true); // 初始为 true，等待 refresh 完成
+  const [loading, setLoading] = useState(true);
 
-  // 启动时尝试用 refresh cookie 恢复登录态
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -47,12 +53,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setAccessToken(data.token);
           setToken(data.token);
           setUser(data.user);
-          localStorage.setItem("user", JSON.stringify(data.user));
+          safeSetLocal("user", JSON.stringify(data.user));
         }
       } catch {
         if (!cancelled) {
           setAccessToken(null);
-          localStorage.removeItem("user");
+          safeRemoveLocal("user");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -68,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAccessToken(data.token);
       setToken(data.token);
       setUser(data.user);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      safeSetLocal("user", JSON.stringify(data.user));
     } finally {
       setLoading(false);
     }
@@ -84,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(data.token);
         setToken(data.token);
         setUser(data.user);
-        localStorage.setItem("user", JSON.stringify(data.user));
+        safeSetLocal("user", JSON.stringify(data.user));
       } finally {
         setLoading(false);
       }
@@ -101,12 +107,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
     setToken(null);
     setUser(null);
-    localStorage.removeItem("user");
+    safeRemoveLocal("user");
   }, []);
 
   const updateUser = useCallback((u: User) => {
     setUser(u);
-    localStorage.setItem("user", JSON.stringify(u));
+    safeSetLocal("user", JSON.stringify(u));
   }, []);
 
   return (

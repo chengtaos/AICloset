@@ -85,40 +85,6 @@ export function cardStyle(overrides?: React.CSSProperties): React.CSSProperties 
   };
 }
 
-/** 激活态分类标签 */
-export function chipActiveStyle(): React.CSSProperties {
-  return {
-    border: "none",
-    background: colors.accentSoft,
-    color: colors.accent,
-    fontWeight: fontWeight.semibold,
-    padding: `${spacing.xs}px ${spacing.sm}px`,
-    fontSize: fontSize.body,
-    cursor: "pointer",
-    borderRadius: radii.sm,
-    transition: transition.fast,
-    whiteSpace: "nowrap",
-    flexShrink: 0,
-  };
-}
-
-/** 非激活态分类标签 */
-export function chipInactiveStyle(): React.CSSProperties {
-  return {
-    border: "none",
-    background: "transparent",
-    color: colors.textSecondary,
-    fontWeight: fontWeight.regular,
-    padding: `${spacing.xs}px ${spacing.sm}px`,
-    fontSize: fontSize.body,
-    cursor: "pointer",
-    borderRadius: radii.sm,
-    transition: transition.fast,
-    whiteSpace: "nowrap",
-    flexShrink: 0,
-  };
-}
-
 /** 分隔线样式 */
 export function dividerStyle(): React.CSSProperties {
   return {

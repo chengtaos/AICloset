@@ -5,7 +5,8 @@ import { useResponsive } from "../hooks/useResponsive";
 import { colors, shadows, radii, spacing, fontSize, fontWeight } from "../styles/tokens";
 import { exportOutfitCard } from "../utils/exportImage";
 import Card from "./ui/Card";
-import { Body, Aux } from "./ui/Typography";
+import { SectionTitle, Body, Aux } from "./ui/Typography";
+import EmptyState from "./ui/EmptyState";
 import OutfitComposer from "./OutfitComposer";
 
 interface Props {
@@ -28,19 +29,25 @@ export default function RecommendCard({ loading, data, onAccept, onFeedback, acc
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "80px 0", color: colors.textSecondary }}>
-        <div style={{ fontSize: fontSize.subtitle, marginBottom: spacing.xs }}>AI 正在分析天气与衣橱…</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <Card padding={spacing.lg}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{ width: 40, height: 40, borderRadius: radii.md, background: colors.divider, animation: "pulse 1.8s ease-in-out infinite" }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ height: 22, width: "40%", borderRadius: 4, background: colors.divider, animation: "pulse 1.8s ease-in-out infinite", animationDelay: "0.15s" }} />
+              <div style={{ height: 12, width: "60%", borderRadius: 3, background: colors.divider, marginTop: 8, animation: "pulse 1.8s ease-in-out infinite", animationDelay: "0.3s" }} />
+            </div>
+          </div>
+        </Card>
+        <Card padding={spacing.lg}>
+          <div style={{ height: 280, borderRadius: radii.md, background: colors.divider, animation: "pulse 1.8s ease-in-out infinite" }} />
+        </Card>
       </div>
     );
   }
 
   if (!data) {
-    return (
-      <div style={{ textAlign: "center", padding: "80px 0", color: colors.textTertiary }}>
-        <span style={{ fontSize: 48, display: "block", marginBottom: 16 }}>👔</span>
-        <span>点击上方按钮获取穿搭推荐</span>
-      </div>
-    );
+    return <EmptyState icon="👔" title="点击上方按钮获取穿搭推荐" />;
   }
 
   const { weather, suggestions } = data;
@@ -66,9 +73,9 @@ export default function RecommendCard({ loading, data, onAccept, onFeedback, acc
       {/* 搭配卡片 */}
       {suggestions.map((sug, idx) => (
         <div key={idx} style={{ padding: "20px 0", marginBottom: 16 }}>
-          <div style={{ fontSize: fontSize.caption, fontWeight: fontWeight.semibold, color: colors.textSecondary, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <SectionTitle style={{ marginBottom: 16, marginTop: 0 }}>
             推荐 {idx + 1}
-          </div>
+          </SectionTitle>
 
           <OutfitComposer items={sug.items} />
 

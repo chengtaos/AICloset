@@ -4,12 +4,20 @@ import { useResponsive } from "../hooks/useResponsive";
 import { colors, shadows, spacing, fontSize, fontWeight, transition } from "../styles/tokens";
 import { Caption } from "./ui/Typography";
 
+const NAV_ICONS: Record<string, React.ReactNode> = {
+  "/recommend": <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>,
+  "/outfits": <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
+  "/wardrobe": <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M12 9v12"/></svg>,
+  "/stats": <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 20h16"/><path d="M6 16v4"/><path d="M10 10v10"/><path d="M14 13v7"/><path d="M18 7v13"/></svg>,
+  "/settings": <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M1 12h2m18 0h2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4m-14.2 0l1.4-1.4m11.4-11.4l1.4-1.4"/></svg>,
+};
+
 const NAV = [
-  { path: "/recommend", label: "推荐", icon: "✨" },
-  { path: "/outfits", label: "搭配", icon: "👔" },
-  { path: "/wardrobe", label: "衣橱", icon: "🗂" },
-  { path: "/stats", label: "统计", icon: "📊" },
-  { path: "/settings", label: "设置", icon: "⚙" },
+  { path: "/recommend", label: "推荐" },
+  { path: "/outfits", label: "搭配" },
+  { path: "/wardrobe", label: "衣橱" },
+  { path: "/stats", label: "统计" },
+  { path: "/settings", label: "设置" },
 ];
 
 export default function Layout() {
@@ -61,7 +69,6 @@ export default function Layout() {
 
       {/* 内容区 */}
       <main style={{
-        paddingBottom: 72,
         maxWidth: 860,
         margin: "0 auto",
         padding: isMobile ? `${spacing.lg}px ${spacing.sm}px 80px` : `${spacing.xxl}px ${spacing.xl}px 88px`,
@@ -88,7 +95,7 @@ export default function Layout() {
           paddingBottom: isMobile ? "env(safe-area-inset-bottom, 0px)" : 0,
         }}
       >
-        {NAV.map(({ path, label, icon }) => {
+        {NAV.map(({ path, label }) => {
           const active = pathname.startsWith(path);
           return (
             <button
@@ -111,9 +118,10 @@ export default function Layout() {
                 letterSpacing: "0.02em",
                 transition: transition.fast,
                 padding: 0,
+                opacity: active ? 1 : 0.5,
               }}
             >
-              <span style={{ fontSize: isMobile ? 16 : 18, opacity: active ? 1 : 0.45 }}>{icon}</span>
+              {NAV_ICONS[path]}
               <span>{label}</span>
             </button>
           );

@@ -122,7 +122,7 @@ export default function OutfitComposer({ items }: Props) {
         position: "relative",
         width: "100%",
         aspectRatio: "1 / 2.1",
-        maxWidth: 280,
+        maxWidth: 320,
         margin: "0 auto",
         userSelect: "none",
         touchAction: "none",

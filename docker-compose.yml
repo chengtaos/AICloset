@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    container_name: aicloset-backend
+    volumes:
+      - aicloset_data:/app/data
+      - aicloset_uploads:/app/uploads
+    env_file:
+      - .env.docker
+    restart: unless-stopped
+    networks:
+      - aicloset
+
+  frontend:
+    build: ./frontend
+    container_name: aicloset-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - aicloset_uploads:/shared/uploads:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - aicloset
+
+volumes:
+  aicloset_data:
+  aicloset_uploads:
+
+networks:
+  aicloset:
+    driver: bridge

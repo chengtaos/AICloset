@@ -70,9 +70,7 @@ def _build_response(
             reason=s.get("reason", ""),
         ))
 
-    response = RecommendResponse(recommendation_id=rec.id, weather=weather, suggestions=result_suggestions)
-
-    # 持久化推荐记录，便于后续反馈闭环
+    # 先持久化推荐记录，获取自增 ID
     rec = Recommendation(
         user_id=user_id,
         type=rec_type,
@@ -81,7 +79,9 @@ def _build_response(
     )
     db.add(rec)
     db.commit()
+    db.refresh(rec)
 
+    response = RecommendResponse(recommendation_id=rec.id, weather=weather, suggestions=result_suggestions)
     return response
 
 

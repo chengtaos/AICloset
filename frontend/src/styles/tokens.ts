@@ -2,17 +2,17 @@
 // 小红书 + iOS 混合审美 · 低饱和暖红 · 阴影替代边框 · 8px spacing
 
 export const colors = {
-  accent: "#c44c3a",
-  accentHover: "#a33a2e",
-  accentSoft: "rgba(196,76,58,0.08)",
-  accentMuted: "rgba(196,76,58,0.15)",
-  bg: "#f8f6f4",
+  accent: "#d94b48",
+  accentHover: "#bd3836",
+  accentSoft: "rgba(217,75,72,0.09)",
+  accentMuted: "rgba(217,75,72,0.16)",
+  bg: "#fffaf7",
   surface: "#ffffff",
-  textPrimary: "#2c2c2c",
-  textSecondary: "#999",
-  textTertiary: "#bfbfbf",
-  divider: "#f0f0f0",
-  placeholder: "#f5f5f5",
+  textPrimary: "#1f1f1f",
+  textSecondary: "#77706d",
+  textTertiary: "#b9aeaa",
+  divider: "rgba(31,31,31,0.07)",
+  placeholder: "#f6efeb",
   success: "#52c41a",
   warning: "#faad14",
   error: "#ff4d4f",
@@ -20,19 +20,19 @@ export const colors = {
 } as const;
 
 export const shadows = {
-  card: "0 1px 3px rgba(0,0,0,0.04)",
-  cardHover: "0 4px 16px rgba(0,0,0,0.06)",
-  elevated: "0 8px 32px rgba(0,0,0,0.08)",
-  nav: "0 -1px 3px rgba(0,0,0,0.04)",
-  header: "0 1px 3px rgba(0,0,0,0.04)",
+  card: "0 8px 28px rgba(86,56,46,0.07)",
+  cardHover: "0 18px 46px rgba(86,56,46,0.12)",
+  elevated: "0 22px 70px rgba(86,56,46,0.13)",
+  nav: "0 -12px 34px rgba(86,56,46,0.10)",
+  header: "0 10px 32px rgba(86,56,46,0.08)",
   none: "none",
 } as const;
 
 export const radii = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
+  sm: 14,
+  md: 18,
+  lg: 24,
+  xl: 30,
   full: 9999,
 } as const;
 
@@ -56,8 +56,8 @@ export const fontSize = {
   bodyLarge: 14,
   subtitle: 15,
   title: 18,
-  titleLarge: 22,
-  display: 28,
+  titleLarge: 24,
+  display: 32,
 } as const;
 
 export const fontWeight = {

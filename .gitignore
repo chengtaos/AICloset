@@ -29,6 +29,7 @@ backend/uploads/*
 # ── Frontend ──
 frontend/node_modules/
 frontend/dist/
+frontend/tsconfig.tsbuildinfo
 
 # ── Tests ──
 .pytest_cache/

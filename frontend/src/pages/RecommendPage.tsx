@@ -1,30 +1,26 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button, Select, Input, message } from "antd";
-import { ThunderboltOutlined, ExperimentOutlined, GlobalOutlined } from "@ant-design/icons";
-import type { RecommendResponse, CapsuleResponse } from "../types";
-import { recommendDaily, recommendScenario, recordWear, submitFeedback, recommendCapsule } from "../api/client";
+import { Button, Input, Select, message } from "antd";
+import { GlobalOutlined, HeartOutlined, ThunderboltOutlined } from "@ant-design/icons";
+import type { CapsuleResponse, RecommendResponse } from "../types";
+import { recommendCapsule, recommendDaily, recommendScenario, recordWear, submitFeedback } from "../api/client";
 import { useResponsive } from "../hooks/useResponsive";
-import { colors, radii, spacing } from "../styles/tokens";
-import { Title } from "../components/ui/Typography";
-import Card from "../components/ui/Card";
-import Tag from "../components/ui/Tag";
+import { colors, radii, shadows, spacing, fontWeight } from "../styles/tokens";
 import RecommendCard from "../components/RecommendCard";
+import Tag from "../components/ui/Tag";
 
-// 和风天气支持的主要城市列表
 const CITIES = [
   "北京", "上海", "广州", "深圳", "成都", "杭州", "武汉", "西安",
   "重庆", "南京", "天津", "苏州", "长沙", "郑州", "济南", "青岛",
 ];
 
-// 快捷场景：点击一键填入描述文案
 const QUICK_SCENARIOS = [
-  { label: "通勤", desc: "日常通勤穿什么？" },
-  { label: "面试", desc: "明天有个重要面试，推荐一套正式得体又不死板的搭配" },
-  { label: "约会", desc: "周末约会穿什么？要好看但不刻意" },
-  { label: "运动", desc: "去健身房，推荐舒适的运动穿搭" },
-  { label: "聚会", desc: "朋友聚会，轻松时髦的搭配" },
-  { label: "度假", desc: "去海边度假，清爽的度假穿搭" },
+  { label: "通勤", desc: "日常通勤，想要利落但不严肃的穿搭" },
+  { label: "面试", desc: "明天有重要面试，推荐一套正式得体又不死板的搭配" },
+  { label: "约会", desc: "周末约会，想要好看、柔和、有一点氛围感" },
+  { label: "运动", desc: "去健身或散步，推荐舒适清爽的运动穿搭" },
+  { label: "聚会", desc: "朋友聚会，想要轻松时髦又有记忆点" },
+  { label: "度假", desc: "去海边度假，推荐清爽放松的旅行穿搭" },
 ];
 
 const RECOMMEND_DAILY_KEY = ["recommend", "daily"] as const;
@@ -43,230 +39,165 @@ export default function RecommendPage() {
   const [feedbackIdx, setFeedbackIdx] = useState<number | null>(null);
   const queryClient = useQueryClient();
 
-  // 从缓存读取推荐结果，切换导航再回来不会丢失
-  const { data: dailyData } = useQuery({
-    queryKey: RECOMMEND_DAILY_KEY,
-    queryFn: () => null,
-    staleTime: Infinity,
-  });
-  const { data: scenarioData } = useQuery({
-    queryKey: RECOMMEND_SCENARIO_KEY,
-    queryFn: () => null,
-    staleTime: Infinity,
-  });
-  const { data: capsuleData } = useQuery({
-    queryKey: RECOMMEND_CAPSULE_KEY,
-    queryFn: () => null,
-    staleTime: Infinity,
-  });
+  const { data: dailyData } = useQuery({ queryKey: RECOMMEND_DAILY_KEY, queryFn: () => null, staleTime: Infinity });
+  const { data: scenarioData } = useQuery({ queryKey: RECOMMEND_SCENARIO_KEY, queryFn: () => null, staleTime: Infinity });
+  const { data: capsuleData } = useQuery({ queryKey: RECOMMEND_CAPSULE_KEY, queryFn: () => null, staleTime: Infinity });
 
   const dailyMutation = useMutation({
     mutationFn: () => recommendDaily(city),
-    onSuccess: (data) => {
-      queryClient.setQueryData(RECOMMEND_DAILY_KEY, data);
-    },
+    onSuccess: (data) => queryClient.setQueryData(RECOMMEND_DAILY_KEY, data),
   });
   const scenarioMutation = useMutation({
     mutationFn: (desc: string) => recommendScenario(desc, city),
-    onSuccess: (data) => {
-      queryClient.setQueryData(RECOMMEND_SCENARIO_KEY, data);
-    },
+    onSuccess: (data) => queryClient.setQueryData(RECOMMEND_SCENARIO_KEY, data),
   });
   const capsuleMutation = useMutation({
     mutationFn: () => recommendCapsule(capsuleDest, capsuleDays, capsuleOccasion),
-    onSuccess: (data) => {
-      queryClient.setQueryData(RECOMMEND_CAPSULE_KEY, data);
-    },
+    onSuccess: (data) => queryClient.setQueryData(RECOMMEND_CAPSULE_KEY, data),
   });
   const wearMutation = useMutation({
-    mutationFn: ({ itemIds, idx }: { itemIds: number[]; idx: number }) =>
-      recordWear({ item_ids: itemIds }),
+    mutationFn: ({ itemIds }: { itemIds: number[]; idx: number }) => recordWear({ item_ids: itemIds }),
     onSuccess: (_, { idx }) => {
       setAcceptedIdx(idx);
-      message.success("已记录穿着，今天就这么穿！");
+      message.success("已记录穿着，今天就这么穿");
     },
   });
 
   const data: RecommendResponse | null =
-    mode === "daily" ? (dailyData as RecommendResponse | null) ?? null : mode === "scenario" ? (scenarioData as RecommendResponse | null) ?? null : null;
+    mode === "daily"
+      ? (dailyData as RecommendResponse | null) ?? null
+      : mode === "scenario"
+        ? (scenarioData as RecommendResponse | null) ?? null
+        : null;
   const capsuleResult: CapsuleResponse | null =
     mode === "capsule" ? (capsuleData as CapsuleResponse | null) ?? null : null;
   const loading =
     mode === "daily" ? dailyMutation.isPending : mode === "scenario" ? scenarioMutation.isPending : capsuleMutation.isPending;
 
-  return (
-    <div>
-      <Title style={{ marginBottom: 24 }}>穿搭推荐</Title>
+  const modeItems = [
+    { key: "daily" as const, label: "今日灵感", icon: <ThunderboltOutlined /> },
+    { key: "scenario" as const, label: "场景推荐", icon: <HeartOutlined /> },
+    { key: "capsule" as const, label: "旅行胶囊", icon: <GlobalOutlined /> },
+  ];
 
-      {/* 推荐输入面板：模式切换 + 城市 + 场景描述 + CTA */}
-      <div
+  return (
+    <div className="xhs-page">
+      <div className="xhs-page-head">
+        <div>
+          <div className="xhs-kicker">AI 穿搭助手</div>
+          <h1 className="xhs-title">像刷灵感一样找到今天穿什么</h1>
+          <div className="xhs-subtitle">结合天气、场景和你的衣橱，生成更像时尚笔记的搭配建议。</div>
+        </div>
+      </div>
+
+      <section
         style={{
+          borderRadius: radii.xl,
+          background: "rgba(255,255,255,0.90)",
           border: `1px solid ${colors.divider}`,
-          borderRadius: radii.lg,
-          background: colors.surface,
-          padding: isMobile ? 14 : isTablet ? 16 : 20,
+          boxShadow: shadows.elevated,
+          padding: isMobile ? 14 : isTablet ? 18 : 22,
           marginBottom: 24,
         }}
       >
-        {/* 模式切换 Tab */}
-        <div style={{ display: "flex", gap: 0, marginBottom: 20 }}>
-          <button
-            onClick={() => setMode("daily")}
-            style={{
-              flex: 1,
-              border: "none",
-              background: mode === "daily" ? colors.accentSoft : "transparent",
-              padding: "8px 0",
-              fontSize: 13,
-              fontWeight: mode === "daily" ? 600 : 400,
-              color: mode === "daily" ? colors.textPrimary : colors.textSecondary,
-              cursor: "pointer",
-              borderRadius: 4,
-              transition: "background 0.15s",
-            }}
-          >
-            <ThunderboltOutlined style={{ marginRight: 6 }} />
-            每日推荐
-          </button>
-          <button
-            onClick={() => setMode("scenario")}
-            style={{
-              flex: 1,
-              border: "none",
-              background: mode === "scenario" ? colors.accentSoft : "transparent",
-              padding: "8px 0",
-              fontSize: 13,
-              fontWeight: mode === "scenario" ? 600 : 400,
-              color: mode === "scenario" ? colors.textPrimary : colors.textSecondary,
-              cursor: "pointer",
-              borderRadius: 4,
-              transition: "background 0.15s",
-            }}
-          >
-            <ExperimentOutlined style={{ marginRight: 6 }} />
-            场景推荐
-          </button>
-          <button
-            onClick={() => setMode("capsule")}
-            style={{
-              flex: 1,
-              border: "none",
-              background: mode === "capsule" ? colors.accentSoft : "transparent",
-              padding: "8px 0",
-              fontSize: 13,
-              fontWeight: mode === "capsule" ? 600 : 400,
-              color: mode === "capsule" ? colors.textPrimary : colors.textSecondary,
-              cursor: "pointer",
-              borderRadius: 4,
-              transition: "background 0.15s",
-            }}
-          >
-            <GlobalOutlined style={{ marginRight: 6 }} />
-            旅行胶囊
-          </button>
-        </div>
-
-        {/* 城市选择 */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginBottom: mode === "scenario" ? 12 : 0,
-          }}
-        >
-          <span style={{ fontSize: 13, color: colors.textSecondary }}>城市</span>
-          <Select
-            value={city}
-            onChange={setCity}
-            style={{ width: 130 }}
-            options={CITIES.map((c) => ({ value: c, label: c }))}
-            showSearch
-            size="middle"
-          />
-        </div>
-
-        {/* 场景描述输入 + 快捷场景标签（仅场景模式） */}
-        {mode === "scenario" && (
-          <div style={{ marginTop: 12 }}>
-            <Input.TextArea
-              value={scenarioDesc}
-              onChange={(e) => setScenarioDesc(e.target.value)}
-              placeholder='描述场景，如："明天有个面试，推荐一套靠谱的"'
-              autoSize={{ minRows: 1, maxRows: 3 }}
-              style={{ marginBottom: 12 }}
-            />
-            <div
-              style={{
-                display: "flex",
-                gap: 6,
-                flexWrap: "wrap",
-                marginBottom: 12,
-              }}
-            >
-              {QUICK_SCENARIOS.map((s) => (
-                <Tag
-                  key={s.label}
-                  variant="outline"
-                  active={scenarioDesc === s.desc}
-                  size="sm"
-                  onClick={() => setScenarioDesc(s.desc)}
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto", gap: 16 }}>
+          <div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+              {modeItems.map((item) => (
+                <button
+                  key={item.key}
+                  onClick={() => setMode(item.key)}
+                  style={{
+                    border: "none",
+                    borderRadius: radii.full,
+                    background: mode === item.key ? colors.accent : colors.placeholder,
+                    color: mode === item.key ? colors.surface : colors.textSecondary,
+                    padding: "9px 14px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 7,
+                    fontWeight: mode === item.key ? fontWeight.semibold : fontWeight.medium,
+                    cursor: "pointer",
+                    boxShadow: mode === item.key ? "0 12px 28px rgba(217,75,72,0.20)" : "none",
+                  }}
                 >
-                  {s.label}
-                </Tag>
+                  {item.icon}
+                  {item.label}
+                </button>
               ))}
             </div>
-          </div>
-        )}
 
-        {/* 旅行胶囊输入 */}
-        {mode === "capsule" && (
-          <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-            <Input
-              placeholder="目的地，如：东京、巴黎"
-              value={capsuleDest}
-              onChange={(e) => setCapsuleDest(e.target.value)}
-            />
-            <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
               <Select
-                value={capsuleDays}
-                onChange={setCapsuleDays}
-                style={{ width: 120 }}
-                options={[1, 2, 3, 4, 5, 7, 10, 14].map((d) => ({ value: d, label: `${d} 天` }))}
+                value={city}
+                onChange={setCity}
+                style={{ width: isMobile ? "100%" : 150 }}
+                options={CITIES.map((c) => ({ value: c, label: c }))}
+                showSearch
               />
-              <Input
-                placeholder="场合（选填），如：通勤,聚会"
-                value={capsuleOccasion}
-                onChange={(e) => setCapsuleOccasion(e.target.value)}
-                style={{ flex: 1 }}
-              />
+              {mode === "capsule" && (
+                <Select
+                  value={capsuleDays}
+                  onChange={setCapsuleDays}
+                  style={{ width: isMobile ? "100%" : 130 }}
+                  options={[1, 2, 3, 4, 5, 7, 10, 14].map((d) => ({ value: d, label: `${d} 天` }))}
+                />
+              )}
             </div>
+
+            {mode === "scenario" && (
+              <>
+                <Input.TextArea
+                  value={scenarioDesc}
+                  onChange={(e) => setScenarioDesc(e.target.value)}
+                  placeholder="描述场景，比如：明天面试，想要可靠但不沉闷"
+                  autoSize={{ minRows: 2, maxRows: 4 }}
+                />
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+                  {QUICK_SCENARIOS.map((s) => (
+                    <Tag key={s.label} variant="outline" active={scenarioDesc === s.desc} size="sm" onClick={() => setScenarioDesc(s.desc)}>
+                      {s.label}
+                    </Tag>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {mode === "capsule" && (
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
+                <Input
+                  placeholder="目的地，比如东京、巴黎"
+                  value={capsuleDest}
+                  onChange={(e) => setCapsuleDest(e.target.value)}
+                />
+                <Input
+                  placeholder="场合，可选，比如通勤,聚会"
+                  value={capsuleOccasion}
+                  onChange={(e) => setCapsuleOccasion(e.target.value)}
+                />
+              </div>
+            )}
           </div>
-        )}
 
-        {/* 推荐触发按钮 */}
-        <Button
-          block
-          size="large"
-          style={{ height: 44, fontWeight: 500, fontSize: 14 }}
-          onClick={() =>
-            mode === "daily"
-              ? dailyMutation.mutate()
-              : mode === "scenario"
-              ? scenarioMutation.mutate(scenarioDesc)
-              : capsuleMutation.mutate()
-          }
-          loading={loading}
-          disabled={
-            (mode === "scenario" && !scenarioDesc.trim()) ||
-            (mode === "capsule" && !capsuleDest.trim())
-          }
-        >
-          {mode === "daily" ? "今日穿什么？" : mode === "scenario" ? "生成推荐" : "生成胶囊衣橱"}
-        </Button>
-      </div>
+          <Button
+            type="primary"
+            size="large"
+            style={{ height: 48, alignSelf: "end", fontWeight: 800, paddingInline: 24 }}
+            onClick={() =>
+              mode === "daily"
+                ? dailyMutation.mutate()
+                : mode === "scenario"
+                  ? scenarioMutation.mutate(scenarioDesc)
+                  : capsuleMutation.mutate()
+            }
+            loading={loading}
+            disabled={(mode === "scenario" && !scenarioDesc.trim()) || (mode === "capsule" && !capsuleDest.trim())}
+          >
+            {mode === "daily" ? "生成今日灵感" : mode === "scenario" ? "生成场景搭配" : "生成胶囊衣橱"}
+          </Button>
+        </div>
+      </section>
 
-      {/* 推荐结果展示 */}
       {mode !== "capsule" && (
         <RecommendCard
           loading={loading}
@@ -281,64 +212,41 @@ export default function RecommendPage() {
           onFeedback={(idx, fb) => {
             setAcceptedIdx(null);
             setFeedbackIdx(idx);
-            if (data) {
-              submitFeedback(data.recommendation_id, fb).catch(() => {});
-            }
+            if (data) submitFeedback(data.recommendation_id, fb).catch(() => {});
           }}
         />
       )}
 
-      {/* 旅行胶囊结果 */}
       {mode === "capsule" && capsuleResult && (
-        <div>
-          {/* 打包清单 */}
-          <Card padding={isMobile ? 14 : isTablet ? 16 : 20} style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary, margin: "0 0 4px" }}>
-              打包清单 · {capsuleResult.items.length} 件
-            </h3>
-            <div style={{ fontSize: 12, color: colors.textSecondary, marginBottom: 12 }}>
+        <div className="xhs-feed">
+          <article className="xhs-feed-item" style={{ background: colors.surface, borderRadius: radii.xl, padding: spacing.lg, boxShadow: shadows.card }}>
+            <div style={{ color: colors.accent, fontSize: 12, fontWeight: 700 }}>旅行清单</div>
+            <h3 style={{ margin: "6px 0 8px", fontSize: 24, lineHeight: 1.15 }}>
               {capsuleDest} · {capsuleDays} 天
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            </h3>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
               {capsuleResult.items.map((item) => (
-                <span key={item.id} style={{
-                  fontSize: 11, color: colors.accent,
-                  border: `1px solid ${colors.divider}`, borderRadius: 2,
-                  padding: "3px 10px",
-                }}>
-                  {item.name || item.sub_category}
-                </span>
+                <Tag key={item.id} variant="outline" size="sm">{item.name || item.sub_category}</Tag>
               ))}
             </div>
             {capsuleResult.packing_tip && (
-              <div style={{
-                marginTop: 12, padding: "8px 12px",
-                background: colors.accentSoft, borderRadius: 4,
-                fontSize: 11, color: colors.textSecondary, lineHeight: 1.6,
-              }}>
+              <p style={{ margin: "14px 0 0", color: colors.textSecondary, lineHeight: 1.8 }}>
                 {capsuleResult.packing_tip}
-              </div>
+              </p>
             )}
-          </Card>
+          </article>
 
-          {/* 每日方案 */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {capsuleResult.outfits.map((outfit) => (
-              <Card key={outfit.day} padding={isMobile ? 12 : isTablet ? 14 : 16}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>
-                    第 {outfit.day} 天
-                  </span>
-                  {outfit.occasion && (
-                    <span style={{ fontSize: 11, color: colors.textSecondary }}>{outfit.occasion}</span>
-                  )}
-                </div>
-                <div style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 1.8 }}>
-                  {outfit.reason}
-                </div>
-              </Card>
-            ))}
-          </div>
+          {capsuleResult.outfits.map((outfit) => (
+            <article
+              className="xhs-feed-item"
+              key={outfit.day}
+              style={{ background: colors.surface, borderRadius: radii.xl, padding: spacing.lg, boxShadow: shadows.card }}
+            >
+              <div style={{ color: colors.accent, fontSize: 12, fontWeight: 700 }}>Day {outfit.day}</div>
+              <h3 style={{ margin: "6px 0 8px", fontSize: 22 }}>{outfit.occasion || "每日搭配"}</h3>
+              <p style={{ margin: 0, color: colors.textSecondary, lineHeight: 1.8 }}>{outfit.reason}</p>
+            </article>
+          ))}
         </div>
       )}
     </div>

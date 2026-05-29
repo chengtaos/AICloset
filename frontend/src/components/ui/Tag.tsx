@@ -24,8 +24,8 @@ export default function Tag({
     alignItems: "center",
     fontSize: size === "sm" ? fontSize.caption : fontSize.body,
     fontWeight: active ? fontWeight.semibold : fontWeight.regular,
-    borderRadius: radii.sm,
-    padding: size === "sm" ? `2px ${spacing.xs}px` : `${spacing.xxs}px ${spacing.sm}px`,
+    borderRadius: radii.full,
+    padding: size === "sm" ? `4px ${spacing.sm}px` : `7px ${spacing.md}px`,
     cursor: isClickable ? "pointer" : undefined,
     transition: transition.fast,
     whiteSpace: "nowrap",
@@ -35,6 +35,7 @@ export default function Tag({
           border: "none",
           background: colors.accentSoft,
           color: colors.accent,
+          boxShadow: active ? "0 8px 22px rgba(217,75,72,0.10)" : undefined,
         }
       : variant === "ghost"
         ? {
@@ -43,10 +44,10 @@ export default function Tag({
             color: colors.textSecondary,
           }
         : {
-            border: `1px solid ${colors.divider}`,
-            background: "transparent",
-            color: colors.textSecondary,
-          }),
+          border: `1px solid ${colors.divider}`,
+          background: "rgba(255,255,255,0.72)",
+          color: colors.textSecondary,
+        }),
     ...(isClickable && !active
       ? {
           // hover state via inline onMouse events would be ideal, but for simplicity

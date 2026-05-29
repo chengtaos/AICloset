@@ -1,9 +1,7 @@
 import type { ClothingItem, ClothingItemBrief } from "../types";
 import { useResponsive } from "../hooks/useResponsive";
-import { spacing } from "../styles/tokens";
-import Card from "./ui/Card";
+import { colors, radii, shadows, spacing, fontWeight, transition } from "../styles/tokens";
 import Tag from "./ui/Tag";
-import { SectionTitle } from "./ui/Typography";
 import OutfitComposer from "./OutfitComposer";
 
 interface Props {
@@ -36,28 +34,57 @@ export default function OutfitCard({ outfit, itemMap, extra }: Props) {
     }));
 
   return (
-    <Card padding={isMobile ? spacing.sm : isTablet ? spacing.md : spacing.lg}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <SectionTitle>{outfit.name || "未命名搭配"}</SectionTitle>
-          {outfit.is_ai_generated && (
-            <Tag variant="outline" size="sm" active>AI</Tag>
-          )}
+    <article
+      style={{
+        background: "rgba(255,255,255,0.94)",
+        borderRadius: radii.xl,
+        padding: isMobile ? spacing.sm : isTablet ? spacing.md : spacing.lg,
+        border: `1px solid ${colors.divider}`,
+        boxShadow: shadows.card,
+        transition: transition.default,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 14, marginBottom: 14 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ color: colors.accent, fontSize: 12, fontWeight: 700, marginBottom: 5 }}>
+            {outfit.is_ai_generated ? "AI 生成穿搭" : "穿搭笔记"}
+          </div>
+          <h3
+            style={{
+              margin: 0,
+              color: colors.textPrimary,
+              fontSize: isMobile ? 18 : 22,
+              lineHeight: 1.2,
+              fontWeight: 800,
+            }}
+          >
+            {outfit.name || "未命名搭配"}
+          </h3>
         </div>
         {extra}
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      <div
+        style={{
+          borderRadius: radii.lg,
+          overflow: "hidden",
+          background: colors.placeholder,
+          marginBottom: 14,
+        }}
+      >
         <OutfitComposer items={briefs} />
       </div>
 
-      {outfit.tags.length > 0 && (
-        <div style={{ marginTop: 14, display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {outfit.tags.map((t) => (
-            <Tag key={t} variant="outline" size="sm">{t}</Tag>
-          ))}
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {outfit.tags.length > 0
+            ? outfit.tags.map((t) => <Tag key={t} variant="outline" size="sm">{t}</Tag>)
+            : <Tag variant="ghost" size="sm">日常灵感</Tag>}
         </div>
-      )}
-    </Card>
+        <span style={{ color: colors.textTertiary, fontSize: 12, flexShrink: 0 }}>
+          {briefs.length} 件单品
+        </span>
+      </div>
+    </article>
   );
 }

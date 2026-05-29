@@ -1,17 +1,15 @@
-import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button, Modal, Select, message, Input } from "antd";
-import { PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined } from "@ant-design/icons";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, Input, Modal, Select, message } from "antd";
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import type { ClothingItem, Outfit, OutfitItem } from "../types";
-import { CATEGORY_LABELS, POSITION_LABELS } from "../types";
-import { fetchItems, fetchOutfits, createOutfit, updateOutfit, deleteOutfit } from "../api/client";
+import { CATEGORY_LABELS } from "../types";
+import { createOutfit, deleteOutfit, fetchItems, fetchOutfits, updateOutfit } from "../api/client";
 import { getImageUrl } from "../utils/imageUrl";
-import { colors, radii, spacing, fontSize, fontWeight } from "../styles/tokens";
-import { Title, SectionTitle, Caption } from "../components/ui/Typography";
-import Tag from "../components/ui/Tag";
-import SearchBar from "../components/ui/SearchBar";
+import { colors, radii, spacing, fontWeight } from "../styles/tokens";
 import EmptyState from "../components/ui/EmptyState";
 import OutfitCard from "../components/OutfitCard";
+import Tag from "../components/ui/Tag";
 
 const POSITION_OPTIONS = [
   { value: "upper", label: "上身" },
@@ -19,20 +17,25 @@ const POSITION_OPTIONS = [
   { value: "outer", label: "外套" },
   { value: "dress", label: "连衣裙" },
   { value: "shoes", label: "鞋子" },
-  { value: "side", label: "配饰/包袋" },
+  { value: "side", label: "配饰/包" },
 ];
 
 const TAG_OPTIONS = ["通勤", "约会", "聚会", "运动", "度假", "居家", "面试", "日常"];
 
-/** 根据衣物品类自动推断穿搭位置 */
 function autoPosition(category: string): string {
   const map: Record<string, string> = {
-    blouse: "upper", tshirt: "upper", hoodie: "upper", sweater: "upper",
+    blouse: "upper",
+    tshirt: "upper",
+    hoodie: "upper",
+    sweater: "upper",
     outer: "outer",
-    pants: "lower", shorts: "lower", skirt: "lower",
+    pants: "lower",
+    shorts: "lower",
+    skirt: "lower",
     dress: "dress",
     shoes: "shoes",
-    bag: "side", accessory: "side",
+    bag: "side",
+    accessory: "side",
   };
   return map[category] || "upper";
 }
@@ -44,21 +47,42 @@ export default function OutfitsPage() {
   const [outfitName, setOutfitName] = useState("");
   const [outfitTags, setOutfitTags] = useState<string[]>([]);
   const [selected, setSelected] = useState<OutfitItem[]>([]);
-
-  // 筛选状态
   const [searchText, setSearchText] = useState("");
   const [filterTag, setFilterTag] = useState("");
 
-  const { data: items = [] } = useQuery({
-    queryKey: ["items"],
-    queryFn: () => fetchItems(),
-  });
-  const { data: outfits = [] } = useQuery({
-    queryKey: ["outfits"],
-    queryFn: fetchOutfits,
-  });
-
+  const { data: items = [] } = useQuery({ queryKey: ["items"], queryFn: () => fetchItems() });
+  const { data: outfits = [] } = useQuery({ queryKey: ["outfits"], queryFn: fetchOutfits });
   const isEditing = editingId != null;
+
+  const itemMap = useMemo(() => {
+    const map = new Map<number, ClothingItem>();
+    items.forEach((it) => map.set(it.id, it));
+    return map;
+  }, [items]);
+
+  const filteredOutfits = useMemo(() => {
+    let list = outfits;
+    if (filterTag) list = list.filter((o) => o.tags.includes(filterTag));
+    if (searchText) {
+      const kw = searchText.toLowerCase();
+      list = list.filter((o) =>
+        o.name.toLowerCase().includes(kw) ||
+        o.items.some((oi) => {
+          const item = itemMap.get(oi.item_id);
+          return item && ((item.name || "").toLowerCase().includes(kw) || item.sub_category.toLowerCase().includes(kw));
+        }),
+      );
+    }
+    return list;
+  }, [outfits, filterTag, searchText, itemMap]);
+
+  const closeModal = () => {
+    setCreateOpen(false);
+    setEditingId(null);
+    setOutfitName("");
+    setOutfitTags([]);
+    setSelected([]);
+  };
 
   const createMutation = useMutation({
     mutationFn: createOutfit,
@@ -87,14 +111,6 @@ export default function OutfitsPage() {
     },
   });
 
-  const closeModal = () => {
-    setCreateOpen(false);
-    setEditingId(null);
-    setOutfitName("");
-    setOutfitTags([]);
-    setSelected([]);
-  };
-
   const openCreate = () => {
     setEditingId(null);
     setOutfitName("");
@@ -111,42 +127,12 @@ export default function OutfitsPage() {
     setCreateOpen(true);
   };
 
-  const itemMap = useMemo(() => {
-    const map = new Map<number, ClothingItem>();
-    items.forEach((it) => map.set(it.id, it));
-    return map;
-  }, [items]);
-
-  // 客户端筛选：标签 + 搜索
-  const filteredOutfits = useMemo(() => {
-    let list = outfits;
-    if (filterTag) {
-      list = list.filter((o) => o.tags.includes(filterTag));
-    }
-    if (searchText) {
-      const kw = searchText.toLowerCase();
-      list = list.filter((o) => {
-        if (o.name.toLowerCase().includes(kw)) return true;
-        // 同时搜索搭配内含的衣物名称
-        return o.items.some((oi) => {
-          const item = itemMap.get(oi.item_id);
-          return item && ((item.name || "").toLowerCase().includes(kw) || item.sub_category.toLowerCase().includes(kw));
-        });
-      });
-    }
-    return list;
-  }, [outfits, filterTag, searchText, itemMap]);
-
-  // 切换选中：自动推断位置
   const toggleItem = (itemId: number) => {
     setSelected((prev) => {
       const exists = prev.find((s) => s.item_id === itemId);
-      if (exists) {
-        return prev.filter((s) => s.item_id !== itemId);
-      }
+      if (exists) return prev.filter((s) => s.item_id !== itemId);
       const item = itemMap.get(itemId);
-      const pos = item ? autoPosition(item.category) : "upper";
-      return [...prev, { item_id: itemId, position: pos }];
+      return [...prev, { item_id: itemId, position: item ? autoPosition(item.category) : "upper" }];
     });
   };
 
@@ -159,184 +145,179 @@ export default function OutfitsPage() {
       message.warning("请至少选择一件衣物");
       return;
     }
-    const payload = {
-      name: outfitName.trim(),
-      items: selected,
-      tags: outfitTags,
-    };
-    if (isEditing) {
-      updateMutation.mutate({ id: editingId!, data: payload });
-    } else {
-      createMutation.mutate(payload);
-    }
+    const payload = { name: outfitName.trim(), items: selected, tags: outfitTags };
+    if (isEditing) updateMutation.mutate({ id: editingId!, data: payload });
+    else createMutation.mutate(payload);
   };
 
   const saving = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <Title style={{ margin: 0 }}>搭配</Title>
-        <Button icon={<PlusOutlined />} onClick={openCreate}>创建</Button>
+    <div className="xhs-page">
+      <div className="xhs-page-head">
+        <div>
+          <div className="xhs-kicker">搭配灵感</div>
+          <h1 className="xhs-title">把衣服搭成好看的日常</h1>
+          <div className="xhs-subtitle">用图片优先的方式收藏通勤、约会、旅行和居家穿搭。</div>
+        </div>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+          创建搭配
+        </Button>
       </div>
 
-      {/* 筛选栏：标签 + 搜索 */}
       {outfits.length > 0 && (
-        <div style={{ display: "flex", gap: 8, marginBottom: 20, alignItems: "center", flexWrap: "wrap" }}>
-          {TAG_OPTIONS.map((tag) => (
-            <Tag
-              key={tag}
-              variant="filled"
-              active={filterTag === tag}
-              size="sm"
-              onClick={() => setFilterTag((prev) => (prev === tag ? "" : tag))}
-            >
-              {tag}
-            </Tag>
-          ))}
-          <div style={{ flex: 1, minWidth: 0 }} />
-          <SearchBar
+        <div className="xhs-toolbar" style={{ marginBottom: 22 }}>
+          <div className="xhs-chip-row">
+            {TAG_OPTIONS.map((tag) => (
+              <Tag
+                key={tag}
+                variant="filled"
+                active={filterTag === tag}
+                size="md"
+                onClick={() => setFilterTag((prev) => (prev === tag ? "" : tag))}
+              >
+                {tag}
+              </Tag>
+            ))}
+          </div>
+          <Input
             value={searchText}
-            onChange={setSearchText}
-            placeholder="搜索搭配名称或衣物"
-            width={220}
+            onChange={(e) => setSearchText(e.target.value)}
+            placeholder="搜索搭配名称或单品"
+            allowClear
           />
         </div>
       )}
 
       {outfits.length === 0 ? (
-        <EmptyState icon="👔" title="还没有搭配" description="点击右上角「创建」开始搭配" />
+        <EmptyState icon="搭" title="还没有搭配" description="创建第一篇穿搭笔记，让衣橱真正变成灵感库。" />
       ) : filteredOutfits.length === 0 ? (
-        <EmptyState icon="🔍" title="没有匹配的搭配" />
+        <EmptyState icon="搜" title="没有匹配的搭配" />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="xhs-feed">
           {filteredOutfits.map((outfit) => (
-            <OutfitCard
-              key={outfit.id}
-              outfit={outfit}
-              itemMap={itemMap}
-              extra={
-                <div style={{ display: "flex", gap: 4 }}>
-                  <Button size="small" type="text" icon={<EditOutlined />} onClick={() => openEdit(outfit)} />
-                  <Button
-                    size="small" type="text" danger icon={<DeleteOutlined />}
-                    onClick={() => {
-                      Modal.confirm({
-                        title: "删除这个搭配？", okText: "删除", okType: "danger", cancelText: "取消",
-                        onOk: () => deleteMutation.mutate(outfit.id),
-                      });
-                    }}
-                  />
-                </div>
-              }
-            />
+            <div className="xhs-feed-item" key={outfit.id}>
+              <OutfitCard
+                outfit={outfit}
+                itemMap={itemMap}
+                extra={
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <Button size="small" type="text" icon={<EditOutlined />} onClick={() => openEdit(outfit)} />
+                    <Button
+                      size="small"
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => {
+                        Modal.confirm({
+                          title: "删除这个搭配？",
+                          okText: "删除",
+                          okType: "danger",
+                          cancelText: "取消",
+                          onOk: () => deleteMutation.mutate(outfit.id),
+                        });
+                      }}
+                    />
+                  </div>
+                }
+              />
+            </div>
           ))}
         </div>
       )}
 
-      {/* 创建/编辑弹窗 */}
       <Modal
         title={isEditing ? "编辑搭配" : "创建搭配"}
         open={createOpen}
         onCancel={closeModal}
         onOk={handleSubmit}
-        width={560}
+        width={680}
         confirmLoading={saving}
         okText={isEditing ? "保存" : "创建"}
+        cancelText="取消"
       >
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <Input
-            placeholder="搭配名称，如：周末约会、通勤第一天"
+            placeholder="搭配名称，比如周末约会、通勤第一天"
             value={outfitName}
             onChange={(e) => setOutfitName(e.target.value)}
             maxLength={30}
           />
-        </div>
 
-        {/* 标签选择 */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 6 }}>场景标签</div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {TAG_OPTIONS.map((tag) => {
-              const active = outfitTags.includes(tag);
+          <div>
+            <div style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 8 }}>场景标签</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {TAG_OPTIONS.map((tag) => {
+                const active = outfitTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => setOutfitTags((prev) => active ? prev.filter((t) => t !== tag) : [...prev, tag])}
+                    style={{
+                      border: "none",
+                      borderRadius: radii.full,
+                      color: active ? colors.surface : colors.textSecondary,
+                      background: active ? colors.accent : colors.placeholder,
+                      padding: "7px 13px",
+                      fontWeight: active ? fontWeight.semibold : fontWeight.medium,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ fontSize: 13, color: colors.textSecondary }}>
+            选择衣物后会自动分配位置，也可以手动调整。
+          </div>
+
+          <div style={{ maxHeight: 420, overflow: "auto", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 10 }}>
+            {items.map((item) => {
+              const sel = selected.find((s) => s.item_id === item.id);
               return (
-                <span
-                  key={tag}
-                  onClick={() => {
-                    setOutfitTags((prev) =>
-                      active ? prev.filter((t) => t !== tag) : [...prev, tag]
-                    );
-                  }}
+                <div
+                  key={item.id}
+                  onClick={() => toggleItem(item.id)}
                   style={{
-                    fontSize: 12, cursor: "pointer",
-                    padding: "4px 12px", borderRadius: 4,
-                    color: active ? colors.surface : colors.textSecondary,
-                    background: active ? colors.accent : colors.placeholder,
-                    transition: "all 0.15s",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: 10,
+                    borderRadius: radii.lg,
+                    background: sel ? colors.accentSoft : colors.placeholder,
+                    cursor: "pointer",
                   }}
                 >
-                  {tag}
-                </span>
+                  <div style={{ width: 52, height: 68, borderRadius: radii.md, overflow: "hidden", background: colors.surface, flexShrink: 0 }}>
+                    {item.images.length > 0 && (
+                      <img src={getImageUrl(item.images[0])} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: colors.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {item.name || item.sub_category}
+                    </div>
+                    <div style={{ fontSize: 11, color: colors.textSecondary }}>
+                      {CATEGORY_LABELS[item.category]} · {item.colors.slice(0, 2).join("、")}
+                    </div>
+                    {sel && (
+                      <Select
+                        size="small"
+                        value={sel.position}
+                        onChange={(pos) => setSelected((prev) => prev.map((s) => (s.item_id === item.id ? { ...s, position: pos } : s)))}
+                        onClick={(e) => e.stopPropagation()}
+                        options={POSITION_OPTIONS}
+                        style={{ width: "100%", marginTop: 7 }}
+                      />
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>
-        </div>
-
-        <div style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 12 }}>
-          选择衣物，位置根据品类自动填充，也可手动调整
-        </div>
-
-        <div style={{ maxHeight: 400, overflow: "auto" }}>
-          {items.map((item) => {
-            const sel = selected.find((s) => s.item_id === item.id);
-            return (
-              <div
-                key={item.id}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "10px 0", borderBottom: `1px solid ${colors.divider}`,
-                  background: sel ? colors.bg : "transparent",
-                  borderRadius: 4, paddingLeft: 8, paddingRight: 8,
-                }}
-              >
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, cursor: "pointer" }}
-                  onClick={() => toggleItem(item.id)}
-                >
-                  <div style={{
-                    width: 44, height: 56, background: colors.placeholder, borderRadius: 4,
-                    display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
-                  }}>
-                    {item.images.length > 0 ? (
-                      <img src={getImageUrl(item.images[0])} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    ) : (
-                      <span style={{ fontSize: 16, opacity: 0.15 }}>👤</span>
-                    )}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 500 }}>{item.name || item.sub_category}</div>
-                    <div style={{ fontSize: 11, color: colors.textSecondary }}>
-                      {CATEGORY_LABELS[item.category]} · {item.colors.slice(0, 2).join(" · ")}
-                    </div>
-                  </div>
-                </div>
-                {sel && (
-                  <Select
-                    size="small"
-                    value={sel.position}
-                    onChange={(pos) => {
-                      setSelected((prev) =>
-                        prev.map((s) => (s.item_id === item.id ? { ...s, position: pos } : s))
-                      );
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    options={POSITION_OPTIONS}
-                    style={{ width: 100, flexShrink: 0 }}
-                  />
-                )}
-              </div>
-            );
-          })}
         </div>
       </Modal>
     </div>

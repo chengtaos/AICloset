@@ -1,26 +1,24 @@
-import { useState, useMemo, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button, Modal, Upload, message, Input, Select } from "antd";
+import { useMemo, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, Input, Modal, Select, Upload, message } from "antd";
 import {
-  PlusOutlined,
-  UploadOutlined,
-  EditOutlined,
   DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
   SearchOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import type { ClothingItem, ClothingItemCreate } from "../types";
-import { CATEGORY_LABELS, SEASONS, STYLE_TAGS, COLORS_PRESET } from "../types";
-import { fetchItems, createItem, updateItem, deleteItem, uploadImage } from "../api/client";
+import { CATEGORY_LABELS, COLORS_PRESET, SEASONS, STYLE_TAGS } from "../types";
+import { createItem, deleteItem, fetchItems, updateItem, uploadImage } from "../api/client";
 import { getImageUrl } from "../utils/imageUrl";
 import { exportItemsCsv } from "../utils/export";
 import { useResponsive } from "../hooks/useResponsive";
-import { colors, radii, spacing } from "../styles/tokens";
-import { Title, SectionTitle } from "../components/ui/Typography";
-import Tag from "../components/ui/Tag";
-import SearchBar from "../components/ui/SearchBar";
-import EmptyState from "../components/ui/EmptyState";
-import ItemCard from "../components/ItemCard";
-import ItemForm from "../components/ItemForm";
+import { colors, radii, shadows, spacing, fontWeight } from "../styles/tokens";
+import EmptyState from "./ui/EmptyState";
+import ItemCard from "./ItemCard";
+import ItemForm from "./ItemForm";
+import Tag from "./ui/Tag";
 
 const CATEGORIES = [
   { key: "", label: "全部" },
@@ -42,21 +40,34 @@ export default function WardrobeView() {
   const { isMobile, isTablet } = useResponsive();
   const [activeCat, setActiveCat] = useState("");
   const [search, setSearch] = useState("");
-  const [seasonFilter, setSeasonFilter] = useState<string>("");
-  const [styleFilter, setStyleFilter] = useState<string>("");
-  const [colorFilter, setColorFilter] = useState<string>("");
-  const [sortBy, setSortBy] = useState<string>("created_at");
-  const [statusFilter, setStatusFilter] = useState<string>("available");
+  const [seasonFilter, setSeasonFilter] = useState("");
+  const [styleFilter, setStyleFilter] = useState("");
+  const [colorFilter, setColorFilter] = useState("");
+  const [sortBy, setSortBy] = useState("created_at");
+  const [statusFilter, setStatusFilter] = useState("available");
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [detailId, setDetailId] = useState<number | null>(null);
+  const pendingImageFile = useRef<File | null>(null);
 
   const { data: items = [] } = useQuery({
     queryKey: ["items", seasonFilter, styleFilter, sortBy, statusFilter],
-    queryFn: () => fetchItems({ season: seasonFilter || undefined, style: styleFilter || undefined, sort: sortBy, status: statusFilter }),
+    queryFn: () =>
+      fetchItems({
+        season: seasonFilter || undefined,
+        style: styleFilter || undefined,
+        sort: sortBy,
+        status: statusFilter,
+      }),
   });
 
-  const pendingImageFile = useRef<File | null>(null);
+  const uploadMutation = useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => uploadImage(id, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      message.success("图片已上传");
+    },
+  });
 
   const createMutation = useMutation({
     mutationFn: createItem,
@@ -71,24 +82,8 @@ export default function WardrobeView() {
     },
   });
 
-  const handleBatchCreate = async (items: ClothingItemCreate[]) => {
-    let count = 0;
-    for (const item of items) {
-      try {
-        await createItem(item);
-        count++;
-      } catch {
-        message.error(`${item.sub_category} 录入失败`);
-      }
-    }
-    queryClient.invalidateQueries({ queryKey: ["items"] });
-    message.success(`已录入 ${count} 件`);
-    setFormOpen(false);
-  };
-
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<ClothingItemCreate> }) =>
-      updateItem(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<ClothingItemCreate> }) => updateItem(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["items"] });
       message.success("已更新");
@@ -106,15 +101,22 @@ export default function WardrobeView() {
     },
   });
 
-  const uploadMutation = useMutation({
-    mutationFn: ({ id, file }: { id: number; file: File }) => uploadImage(id, file),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] });
-      message.success("图片已上传");
-    },
-  });
+  const handleBatchCreate = async (batch: ClothingItemCreate[]) => {
+    let count = 0;
+    for (const item of batch) {
+      try {
+        await createItem(item);
+        count += 1;
+      } catch {
+        message.error(`${item.sub_category} 录入失败`);
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ["items"] });
+    message.success(`已录入 ${count} 件`);
+    setFormOpen(false);
+  };
 
-  const { filtered, grouped } = useMemo(() => {
+  const filtered = useMemo(() => {
     let list = items;
     if (activeCat) list = list.filter((i) => i.category === activeCat);
     if (colorFilter) list = list.filter((i) => i.colors.some((c) => c.includes(colorFilter)));
@@ -128,45 +130,107 @@ export default function WardrobeView() {
           i.style_tags.some((t) => t.includes(kw)),
       );
     }
-    const groups: Record<string, typeof items> = {};
-    for (const item of list) {
-      const cat = item.category;
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(item);
-    }
-    return { filtered: list, grouped: groups };
-  }, [items, activeCat, search, colorFilter]);
+    return list;
+  }, [items, activeCat, colorFilter, search]);
 
-  const editingItem =
-    editingId != null ? items.find((i) => i.id === editingId) ?? null : null;
+  const editingItem = editingId != null ? items.find((i) => i.id === editingId) ?? null : null;
   const detailItem = detailId != null ? items.find((i) => i.id === detailId) : null;
 
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-end",
-          marginBottom: 24,
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
-            {filtered.length} 件
-          </div>
+      <div className="xhs-toolbar" style={{ marginBottom: 22 }}>
+        <div className="xhs-chip-row">
+          {CATEGORIES.map(({ key, label }) => {
+            const active = activeCat === key;
+            const count = key ? items.filter((i) => i.category === key).length : items.length;
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveCat(key)}
+                style={{
+                  border: "none",
+                  borderRadius: radii.full,
+                  background: active ? colors.accent : "rgba(255,255,255,0.72)",
+                  color: active ? colors.surface : colors.textSecondary,
+                  padding: "8px 14px",
+                  fontSize: 13,
+                  fontWeight: active ? 700 : 500,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  boxShadow: active ? "0 10px 24px rgba(217,75,72,0.20)" : "none",
+                }}
+              >
+                {label}
+                <span style={{ marginLeft: 5, opacity: 0.65 }}>{count}</span>
+              </button>
+            );
+          })}
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Button
-            size="small"
-            onClick={() => exportItemsCsv(items)}
-            disabled={items.length === 0}
-            style={{ fontSize: 12 }}
-          >
-            导出 CSV
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr 1fr" : "minmax(180px,1fr) 120px 130px 120px 130px 110px auto auto",
+            gap: 10,
+            alignItems: "center",
+          }}
+        >
+          <Input
+            prefix={<SearchOutlined style={{ color: colors.textTertiary }} />}
+            placeholder="搜索单品、颜色、风格"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            allowClear
+            style={{ gridColumn: isMobile ? "1 / -1" : undefined }}
+          />
+          <Select
+            placeholder="季节"
+            value={seasonFilter || undefined}
+            onChange={(v) => setSeasonFilter(v || "")}
+            allowClear
+            options={SEASONS.map((s) => ({ value: s, label: s }))}
+          />
+          <Select
+            placeholder="风格"
+            value={styleFilter || undefined}
+            onChange={(v) => setStyleFilter(v || "")}
+            allowClear
+            showSearch
+            options={STYLE_TAGS.map((s) => ({ value: s, label: s }))}
+          />
+          <Select
+            placeholder="颜色"
+            value={colorFilter || undefined}
+            onChange={(v) => setColorFilter(v || "")}
+            allowClear
+            showSearch
+            options={COLORS_PRESET.map((c) => ({ value: c, label: c }))}
+          />
+          <Select
+            value={sortBy}
+            onChange={setSortBy}
+            options={[
+              { value: "created_at", label: "最新" },
+              { value: "-created_at", label: "最早" },
+              { value: "wear_count", label: "常穿" },
+              { value: "-wear_count", label: "少穿" },
+            ]}
+          />
+          <Select
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: "available", label: "可穿" },
+              { value: "laundry", label: "待洗" },
+              { value: "archived", label: "归档" },
+            ]}
+          />
+          <Button onClick={() => exportItemsCsv(items)} disabled={items.length === 0}>
+            导出
           </Button>
           <Button
             icon={<PlusOutlined />}
+            type="primary"
             onClick={() => {
               setEditingId(null);
               setFormOpen(true);
@@ -177,190 +241,26 @@ export default function WardrobeView() {
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 2,
-          marginBottom: 20,
-          alignItems: "center",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            gap: 2,
-            flexWrap: isMobile ? "nowrap" : "wrap",
-            overflowX: isMobile ? "auto" : "visible",
-            flex: 1,
-            WebkitOverflowScrolling: "touch",
-          }}
-        >
-          {CATEGORIES.map(({ key, label }) => {
-            const active = activeCat === key;
-            const count = key ? items.filter((i) => i.category === key).length : items.length;
-            return (
-              <button
-                key={key}
-                onClick={() => setActiveCat(key)}
-                style={{
-                  border: "none",
-                  background: active ? colors.accentSoft : "transparent",
-                  padding: "6px 14px",
-                  fontSize: isMobile ? 12 : 13,
-                  fontWeight: active ? 600 : 400,
-                  color: active ? colors.textPrimary : colors.textSecondary,
-                  cursor: "pointer",
-                  borderRadius: 4,
-                  transition: "all 0.15s",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                }}
-              >
-                {label}
-                <span style={{ marginLeft: 4, fontSize: 11, opacity: 0.6 }}>{count}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {!isMobile && <div style={{ flex: 1 }} />}
-
-        <Select
-          placeholder="季节"
-          size="small"
-          value={seasonFilter || undefined}
-          onChange={(v) => setSeasonFilter(v || "")}
-          allowClear
-          options={SEASONS.map((s) => ({ value: s, label: s }))}
-          style={{ width: 80, flexShrink: 0 }}
-        />
-        <Select
-          placeholder="风格"
-          size="small"
-          value={styleFilter || undefined}
-          onChange={(v) => setStyleFilter(v || "")}
-          allowClear
-          showSearch
-          options={STYLE_TAGS.map((s) => ({ value: s, label: s }))}
-          style={{ width: 100, flexShrink: 0 }}
-        />
-        <Select
-          placeholder="颜色"
-          size="small"
-          value={colorFilter || undefined}
-          onChange={(v) => setColorFilter(v || "")}
-          allowClear
-          showSearch
-          options={COLORS_PRESET.map((c) => ({ value: c, label: c }))}
-          style={{ width: 90, flexShrink: 0 }}
-        />
-        <Select
-          size="small"
-          value={sortBy}
-          onChange={setSortBy}
-          options={[
-            { value: "created_at", label: "最新" },
-            { value: "-created_at", label: "最旧" },
-            { value: "wear_count", label: "穿最多" },
-            { value: "-wear_count", label: "穿最少" },
-          ]}
-          style={{ width: 88, flexShrink: 0 }}
-        />
-        <Select
-          size="small"
-          value={statusFilter}
-          onChange={setStatusFilter}
-          options={[
-            { value: "available", label: "可穿" },
-            { value: "laundry", label: "待洗" },
-            { value: "archived", label: "已归档" },
-          ]}
-          style={{ width: 80, flexShrink: 0 }}
-        />
-
-        <Input
-          prefix={<SearchOutlined style={{ color: colors.textTertiary }} />}
-          placeholder="搜索"
-          size="small"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          allowClear
-          style={{
-            width: isMobile ? 120 : isTablet ? 100 : 140,
-            flexShrink: 0,
-            border: `1px solid ${colors.divider}`,
-            borderRadius: 4,
-          }}
-        />
+      <div style={{ marginBottom: 16, color: colors.textSecondary, fontSize: 13 }}>
+        正在展示 {filtered.length} 篇衣物笔记
       </div>
 
       {filtered.length === 0 ? (
         <EmptyState
-          icon="👔"
+          icon="衣"
           title={items.length === 0 ? "衣橱还是空的" : "没有匹配的衣物"}
-          description={items.length === 0 ? "点击右上角「录入」添加第一件衣物" : undefined}
+          description={items.length === 0 ? "点击录入，添加第一件值得被看见的单品。" : undefined}
         />
-      ) : activeCat ? (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: isMobile
-              ? "repeat(2, 1fr)"
-              : isTablet
-              ? "repeat(3, 1fr)"
-              : "repeat(auto-fill, minmax(148px, 1fr))",
-            gap: isMobile ? 10 : isTablet ? 12 : 16,
-          }}
-        >
-          {filtered.map((item) => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              onClick={() => setDetailId(item.id)}
-              onDelete={() => confirmDelete(() => deleteMutation.mutate(item.id))}
-            />
-          ))}
-        </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
-          {Object.entries(grouped).map(([cat, catItems]) => (
-            <section key={cat}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "baseline",
-                  gap: 8,
-                  marginBottom: 14,
-                  paddingBottom: 8,
-                  borderBottom: `1px solid ${colors.divider}`,
-                }}
-              >
-                <SectionTitle style={{ margin: 0 }}>
-                  {CATEGORY_LABELS[cat] || cat}
-                </SectionTitle>
-                <span style={{ fontSize: 11, color: colors.textTertiary }}>{catItems.length}</span>
-              </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: isMobile
-                    ? "repeat(2, 1fr)"
-                    : isTablet
-                    ? "repeat(3, 1fr)"
-                    : "repeat(auto-fill, minmax(148px, 1fr))",
-                  gap: isMobile ? 10 : isTablet ? 12 : 16,
-                }}
-              >
-                {catItems.map((item) => (
-                  <ItemCard
-                    key={item.id}
-                    item={item}
-                    onClick={() => setDetailId(item.id)}
-                    onDelete={() => confirmDelete(() => deleteMutation.mutate(item.id))}
-                  />
-                ))}
-              </div>
-            </section>
+        <div className="xhs-feed">
+          {filtered.map((item) => (
+            <div className="xhs-feed-item" key={item.id}>
+              <ItemCard
+                item={item}
+                onClick={() => setDetailId(item.id)}
+                onDelete={() => confirmDelete(() => deleteMutation.mutate(item.id))}
+              />
+            </div>
           ))}
         </div>
       )}
@@ -376,9 +276,7 @@ export default function WardrobeView() {
           if (editingId != null) {
             updateMutation.mutate({ id: editingId, data: values });
           } else {
-            if (imageFile && !values.image_path) {
-              pendingImageFile.current = imageFile;
-            }
+            if (imageFile && !values.image_path) pendingImageFile.current = imageFile;
             createMutation.mutate(values);
           }
         }}
@@ -389,160 +287,71 @@ export default function WardrobeView() {
         open={detailId != null && detailItem != null}
         onCancel={() => setDetailId(null)}
         footer={null}
-        width={isMobile ? undefined : 480}
+        width={isMobile ? undefined : 760}
         closable={false}
       >
         {detailItem && (
-          <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 16 : 20 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: isMobile ? "1fr" : "minmax(260px, 0.95fr) 1fr",
+              gap: isMobile ? 18 : 24,
+            }}
+          >
             <div
               style={{
-                width: isMobile ? "100%" : 180,
-                maxHeight: isMobile ? 280 : undefined,
                 aspectRatio: "3/4",
+                borderRadius: radii.xl,
                 background: colors.placeholder,
-                flexShrink: 0,
                 overflow: "hidden",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                boxShadow: shadows.card,
               }}
             >
-              {detailItem.images.length > 0 ? (
+              {detailItem.images.length > 0 && (
                 <img
                   src={getImageUrl(detailItem.images[0])}
-                  alt=""
+                  alt={detailItem.name || detailItem.sub_category}
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
-              ) : (
-                <svg
-                  width="40"
-                  height="40"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke={colors.textTertiary}
-                  strokeWidth="1"
-                >
-                  <rect x="2" y="6" width="20" height="13" rx="2" />
-                  <circle cx="8.5" cy="10.5" r="1.5" />
-                  <path d="M2 15l5-4 4 3 3-5 8 8" />
-                </svg>
               )}
             </div>
 
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 500,
-                  color: colors.textSecondary,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  marginBottom: 4,
-                }}
-              >
+            <div>
+              <div style={{ color: colors.accent, fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
                 {CATEGORY_LABELS[detailItem.category]}
               </div>
-              <h3
-                style={{
-                  fontSize: 18,
-                  fontWeight: 600,
-                  margin: "0 0 4px",
-                  color: colors.textPrimary,
-                }}
-              >
+              <h3 style={{ margin: 0, color: colors.textPrimary, fontSize: 28, lineHeight: 1.15 }}>
                 {detailItem.name || detailItem.sub_category}
               </h3>
               {detailItem.name && (
-                <div style={{ fontSize: 12, color: colors.textSecondary, marginBottom: 10 }}>
-                  {detailItem.sub_category}
-                </div>
+                <div style={{ marginTop: 6, color: colors.textSecondary }}>{detailItem.sub_category}</div>
               )}
 
-              <div style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 2 }}>
-                {detailItem.brand && <div>品牌：{detailItem.brand}</div>}
-                <div>颜色：{detailItem.colors.join(" · ")}</div>
-                <div>
-                  风格：
-                  {detailItem.style_tags.length > 0
-                    ? detailItem.style_tags.join(" · ")
-                    : "—"}
-                </div>
-                <div>
-                  季节：
-                  {detailItem.seasons.length > 0
-                    ? detailItem.seasons.join(" · ")
-                    : "—"}
-                </div>
-                <div>
-                  温度：{detailItem.temp_min}°C – {detailItem.temp_max}°C
-                </div>
-                <div>
-                  材质：
-                  {detailItem.material.length > 0
-                    ? detailItem.material.join(" · ")
-                    : "—"}
-                </div>
-                {detailItem.purchase_price > 0 && (
-                  <div>价格：¥{detailItem.purchase_price}</div>
-                )}
-                <div>穿过 {detailItem.wear_count} 次</div>
-                {detailItem.purchase_price > 0 && detailItem.wear_count > 0 && (
-                  <div>
-                    次穿着成本：¥
-                    {Math.round(detailItem.purchase_price / detailItem.wear_count)}
-                  </div>
-                )}
-                <div>录入：{new Date(detailItem.created_at).toLocaleDateString("zh-CN")}</div>
-                <div>
-                  上次穿着：
-                  {detailItem.last_worn_date
-                    ? (() => {
-                        const d = new Date(detailItem.last_worn_date);
-                        const now = new Date();
-                        const diff = Math.floor(
-                          (now.getTime() - d.getTime()) / 86400000,
-                        );
-                        const rel =
-                          diff === 0
-                            ? "今天"
-                            : diff === 1
-                              ? "昨天"
-                              : `${diff}天前`;
-                        return `${rel}（${d.toLocaleDateString("zh-CN")}）`;
-                      })()
-                    : "从未"}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: 6, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${colors.divider}` }}>
-                <span style={{ fontSize: 11, color: colors.textTertiary, lineHeight: "24px" }}>状态：</span>
-                {(["available", "laundry", "archived"] as const).map((s) => {
-                  const labels = { available: "可穿", laundry: "待洗", archived: "归档" };
-                  const isActive = detailItem.status === s;
-                  return (
-                    <Button
-                      key={s}
-                      size="small"
-                      type={isActive ? "primary" : "default"}
-                      ghost={!isActive}
-                      style={{ fontSize: 10 }}
-                      onClick={() => updateMutation.mutate({ id: detailItem.id, data: { status: s } })}
-                    >
-                      {labels[s]}
-                    </Button>
-                  );
-                })}
+              <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 18 }}>
+                {detailItem.colors.map((c) => <Tag key={c} variant="filled" size="sm">{c}</Tag>)}
+                {detailItem.style_tags.map((t) => <Tag key={t} variant="outline" size="sm">{t}</Tag>)}
               </div>
 
               <div
                 style={{
-                  display: "flex",
-                  gap: 8,
-                  marginTop: 12,
-                  paddingTop: 14,
-                  borderTop: `1px solid ${colors.divider}`,
+                  marginTop: 20,
+                  padding: 16,
+                  borderRadius: radii.lg,
+                  background: colors.placeholder,
+                  color: colors.textSecondary,
+                  fontSize: 13,
+                  lineHeight: 2,
                 }}
               >
+                {detailItem.brand && <div>品牌：{detailItem.brand}</div>}
+                <div>季节：{detailItem.seasons.length ? detailItem.seasons.join("、") : "未设置"}</div>
+                <div>温度：{detailItem.temp_min}°C 到 {detailItem.temp_max}°C</div>
+                <div>材质：{detailItem.material.length ? detailItem.material.join("、") : "未设置"}</div>
+                <div>穿过：{detailItem.wear_count} 次</div>
+                <div>录入：{new Date(detailItem.created_at).toLocaleDateString("zh-CN")}</div>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 18 }}>
                 <Upload
                   showUploadList={false}
                   beforeUpload={(file) => {
@@ -550,14 +359,10 @@ export default function WardrobeView() {
                     return false;
                   }}
                 >
-                  <Button size="small" icon={<UploadOutlined />} style={{ fontSize: 11 }}>
-                    图片
-                  </Button>
+                  <Button icon={<UploadOutlined />}>图片</Button>
                 </Upload>
                 <Button
-                  size="small"
                   icon={<EditOutlined />}
-                  style={{ fontSize: 11 }}
                   onClick={() => {
                     setDetailId(null);
                     setEditingId(detailItem.id);
@@ -566,15 +371,33 @@ export default function WardrobeView() {
                 >
                   编辑
                 </Button>
-                <Button
-                  size="small"
-                  danger
-                  icon={<DeleteOutlined />}
-                  style={{ fontSize: 11 }}
-                  onClick={() => confirmDelete(() => deleteMutation.mutate(detailItem.id))}
-                >
+                <Button danger icon={<DeleteOutlined />} onClick={() => confirmDelete(() => deleteMutation.mutate(detailItem.id))}>
                   删除
                 </Button>
+              </div>
+
+              <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 16 }}>
+                {(["available", "laundry", "archived"] as const).map((s) => {
+                  const labels = { available: "可穿", laundry: "待洗", archived: "归档" };
+                  const active = detailItem.status === s;
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => updateMutation.mutate({ id: detailItem.id, data: { status: s } })}
+                      style={{
+                        border: "none",
+                        borderRadius: radii.full,
+                        background: active ? colors.accent : colors.placeholder,
+                        color: active ? colors.surface : colors.textSecondary,
+                        padding: "7px 13px",
+                        fontWeight: active ? fontWeight.semibold : fontWeight.medium,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {labels[s]}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

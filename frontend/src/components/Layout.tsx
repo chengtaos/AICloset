@@ -1,93 +1,21 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import {
+  AppstoreOutlined,
+  BgColorsOutlined,
+  HeartOutlined,
+  UserOutlined,
+  LogoutOutlined,
+} from "@ant-design/icons";
 import { useAuth } from "../contexts/AuthContext";
 import { useResponsive } from "../hooks/useResponsive";
 import { colors, shadows, spacing, fontSize, fontWeight, transition, radii } from "../styles/tokens";
-import { Caption } from "./ui/Typography";
-
-const SIDEBAR_FULL = 220;
-const SIDEBAR_COMPACT = 64;
-
-const NAV_ICONS: Record<string, React.ReactNode> = {
-  "/recommend": <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>,
-  "/outfits": <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
-  "/wardrobe": <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M12 9v12"/></svg>,
-  "/profile": <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-};
 
 const NAV = [
-  { path: "/recommend", label: "推荐" },
-  { path: "/outfits", label: "搭配" },
-  { path: "/wardrobe", label: "衣橱" },
-  { path: "/profile", label: "我的" },
+  { path: "/recommend", label: "灵感", icon: <HeartOutlined /> },
+  { path: "/outfits", label: "搭配", icon: <BgColorsOutlined /> },
+  { path: "/wardrobe", label: "衣橱", icon: <AppstoreOutlined /> },
+  { path: "/profile", label: "我的", icon: <UserOutlined /> },
 ];
-
-const ease = "cubic-bezier(0.4, 0, 0.2, 1)";
-
-function SidebarNavItem({
-  path,
-  label,
-  active,
-  compact,
-  onClick,
-}: {
-  path: string;
-  label: string;
-  active: boolean;
-  compact: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      title={compact ? label : undefined}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: compact ? "center" : "flex-start",
-        gap: compact ? 0 : 12,
-        width: "100%",
-        height: 42,
-        padding: compact ? "0" : "0 12px",
-        marginBottom: 1,
-        border: "none",
-        borderLeft: `3px solid ${active ? colors.accent : "transparent"}`,
-        borderRadius: compact ? radii.sm : `0 ${radii.sm}px ${radii.sm}px 0`,
-        background: active ? colors.accentSoft : "transparent",
-        cursor: "pointer",
-        color: active ? colors.accent : colors.textSecondary,
-        fontSize: 14,
-        fontWeight: active ? fontWeight.semibold : fontWeight.regular,
-        textAlign: "left",
-        transition: `background 0.2s ${ease}, color 0.2s ${ease}, border-color 0.2s ${ease}`,
-        margin: compact ? "0 auto 1px" : undefined,
-      }}
-      onMouseEnter={(e) => {
-        if (!active) {
-          e.currentTarget.style.background = colors.accentSoft;
-          e.currentTarget.style.color = colors.textPrimary;
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!active) {
-          e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.color = colors.textSecondary;
-        }
-      }}
-    >
-      <span
-        style={{
-          display: "flex",
-          alignItems: "center",
-          transform: active ? "scale(1.05)" : "scale(1)",
-          transition: `transform 0.2s ${ease}`,
-        }}
-      >
-        {NAV_ICONS[path]}
-      </span>
-      {!compact && label}
-    </button>
-  );
-}
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -100,140 +28,139 @@ export default function Layout() {
     navigate("/login");
   };
 
-  const sidebarW = isDesktop ? SIDEBAR_FULL : isTablet ? SIDEBAR_COMPACT : 0;
-
-  // ── 桌面 / 平板：左侧固定侧边栏 ──
   if (isTablet || isDesktop) {
+    const sidebarW = isDesktop ? 236 : 78;
     const compact = isTablet;
+
     return (
-      <div style={{ minHeight: "100vh", background: colors.bg, display: "flex" }}>
+      <div style={{ minHeight: "100dvh", background: colors.bg, display: "flex" }}>
         <aside
           style={{
             position: "fixed",
-            top: 0,
-            left: 0,
-            bottom: 0,
+            inset: "18px auto 18px 18px",
             width: sidebarW,
-            background: colors.surface,
-            borderRight: `1px solid ${colors.divider}`,
+            background: "rgba(255,255,255,0.86)",
+            border: `1px solid ${colors.divider}`,
+            borderRadius: radii.xl,
             display: "flex",
             flexDirection: "column",
             zIndex: 100,
-            animation: "slide-in 0.35s ease-out",
+            boxShadow: shadows.header,
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
           }}
         >
-          {/* 品牌 */}
-          <div
-            style={{
-              padding: compact ? "20px 0" : "28px 24px 24px",
-              textAlign: compact ? "center" : "left",
-            }}
-          >
-            {compact ? (
-              <span style={{ fontSize: 18, fontWeight: 700, color: colors.accent, letterSpacing: "-0.03em" }}>
-                A
-              </span>
-            ) : (
-              <h1 style={{ fontSize: 20, fontWeight: 700, color: colors.textPrimary, letterSpacing: "-0.03em", margin: 0 }}>
-                AiCloset
-              </h1>
-            )}
-          </div>
-
-          {/* 导航 */}
-          <nav
-            style={{
-              flex: 1,
-              padding: compact ? "0 6px" : "0 12px",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            {NAV.map(({ path, label }) => (
-              <SidebarNavItem
-                key={path}
-                path={path}
-                label={label}
-                compact={compact}
-                active={pathname.startsWith(path)}
-                onClick={() => navigate(path)}
-              />
-            ))}
-          </nav>
-
-          {/* 用户区 */}
-          <div
-            style={{
-              padding: compact ? "12px 0 16px" : "16px 20px 20px",
-              borderTop: `1px solid ${colors.divider}`,
-              textAlign: compact ? "center" : "left",
-            }}
-          >
-            {compact ? (
-              <div
+          <div style={{ padding: compact ? "22px 0 18px" : "26px 22px 20px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: compact ? "center" : "flex-start",
+                gap: 10,
+              }}
+            >
+              <span
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  background: colors.accentSoft,
-                  color: colors.accent,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  display: "flex",
+                  width: 36,
+                  height: 36,
+                  borderRadius: radii.full,
+                  background: colors.accent,
+                  color: colors.surface,
+                  display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  margin: "0 auto 6px",
+                  fontWeight: 800,
+                  boxShadow: "0 12px 28px rgba(217,75,72,0.22)",
                 }}
               >
-                {(user?.nickname || "A")[0]}
-              </div>
-            ) : (
-              <>
-                <div style={{ fontSize: 13, fontWeight: 500, color: colors.textPrimary, marginBottom: 6 }}>
-                  {user?.nickname || "用户"}
+                A
+              </span>
+              {!compact && (
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: colors.textPrimary, lineHeight: 1 }}>
+                    AiCloset
+                  </div>
+                  <div style={{ fontSize: 11, color: colors.textSecondary, marginTop: 5 }}>
+                    今日穿搭灵感
+                  </div>
                 </div>
+              )}
+            </div>
+          </div>
+
+          <nav style={{ flex: 1, padding: compact ? "0 10px" : "0 14px" }}>
+            {NAV.map(({ path, label, icon }) => {
+              const active = pathname.startsWith(path);
+              return (
                 <button
-                  onClick={handleLogout}
+                  key={path}
+                  onClick={() => navigate(path)}
+                  title={compact ? label : undefined}
                   style={{
-                    border: "none", background: "none",
-                    color: colors.textTertiary, fontSize: 12,
-                    cursor: "pointer", padding: 0,
-                    transition: `color 0.15s ${ease}`,
+                    width: "100%",
+                    height: 46,
+                    border: "none",
+                    borderRadius: radii.full,
+                    background: active ? colors.accent : "transparent",
+                    color: active ? colors.surface : colors.textSecondary,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: compact ? "center" : "flex-start",
+                    gap: compact ? 0 : 12,
+                    padding: compact ? 0 : "0 16px",
+                    marginBottom: 8,
+                    fontSize: 14,
+                    fontWeight: active ? fontWeight.semibold : fontWeight.medium,
+                    boxShadow: active ? "0 12px 28px rgba(217,75,72,0.20)" : "none",
+                    transition: transition.default,
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = colors.accent; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = colors.textTertiary; }}
                 >
-                  退出登录
+                  <span style={{ fontSize: 18, display: "inline-flex" }}>{icon}</span>
+                  {!compact && label}
                 </button>
-              </>
+              );
+            })}
+          </nav>
+
+          <div style={{ padding: compact ? "12px 10px 16px" : "16px 18px 20px" }}>
+            {!compact && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: colors.textPrimary }}>
+                  {user?.nickname || "穿搭用户"}
+                </div>
+                <div style={{ fontSize: 11, color: colors.textTertiary, marginTop: 3 }}>
+                  记录衣橱里的好品味
+                </div>
+              </div>
             )}
-            {compact && (
-              <button
-                onClick={handleLogout}
-                title="退出登录"
-                style={{
-                  border: "none", background: "none",
-                  color: colors.textTertiary, cursor: "pointer",
-                  padding: 0, display: "block", margin: "0 auto",
-                  transition: `color 0.15s ${ease}`,
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = colors.accent; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = colors.textTertiary; }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-                  <polyline points="16,17 21,12 16,7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-              </button>
-            )}
+            <button
+              onClick={handleLogout}
+              title="退出登录"
+              style={{
+                width: compact ? 44 : "100%",
+                height: 40,
+                border: "none",
+                borderRadius: radii.full,
+                background: colors.placeholder,
+                color: colors.textSecondary,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
+              <LogoutOutlined />
+              {!compact && "退出"}
+            </button>
           </div>
         </aside>
 
         <main
           style={{
             flex: 1,
-            marginLeft: sidebarW,
+            marginLeft: sidebarW + 18,
             padding: `${spacing.xxxl}px ${spacing.xxl}px`,
             minWidth: 0,
           }}
@@ -244,16 +171,14 @@ export default function Layout() {
     );
   }
 
-  // ── 移动端：顶部 Header + 内容 + 底部导航 ──
   return (
-    <div style={{ minHeight: "100vh", background: colors.bg }}>
+    <div style={{ minHeight: "100dvh", background: colors.bg }}>
       <header
         style={{
-          height: 44,
-          background: "rgba(255,255,255,0.92)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          boxShadow: shadows.header,
+          height: 58,
+          background: "rgba(255,250,247,0.86)",
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -263,64 +188,74 @@ export default function Layout() {
           zIndex: 100,
         }}
       >
-        <Caption style={{ color: colors.textSecondary }}>
-          {user?.nickname || "AiCloset"}
-        </Caption>
+        <div>
+          <div style={{ color: colors.textPrimary, fontSize: 17, fontWeight: 800 }}>AiCloset</div>
+          <div style={{ color: colors.textTertiary, fontSize: fontSize.caption }}>
+            {user?.nickname || "今天也要好看"}
+          </div>
+        </div>
         <button
           onClick={handleLogout}
           style={{
-            border: "none", background: "none",
-            color: colors.textTertiary, fontSize: fontSize.caption,
-            cursor: "pointer",
+            width: 36,
+            height: 36,
+            border: "none",
+            borderRadius: radii.full,
+            background: colors.surface,
+            color: colors.textSecondary,
+            boxShadow: shadows.card,
           }}
         >
-          退出
+          <LogoutOutlined />
         </button>
       </header>
 
-      <main
-        style={{
-          padding: `${spacing.lg}px ${spacing.sm}px 80px`,
-        }}
-      >
+      <main style={{ padding: `${spacing.lg}px ${spacing.sm}px 92px` }}>
         <Outlet />
       </main>
 
       <nav
         style={{
-          position: "fixed", bottom: 0, left: 0, right: 0,
-          height: 52,
-          background: "rgba(255,255,255,0.92)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
+          position: "fixed",
+          bottom: 12,
+          left: 14,
+          right: 14,
+          minHeight: 64,
+          background: "rgba(255,255,255,0.90)",
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
           boxShadow: shadows.nav,
-          display: "flex", justifyContent: "center",
+          border: `1px solid ${colors.divider}`,
+          borderRadius: radii.xl,
+          display: "grid",
+          gridTemplateColumns: `repeat(${NAV.length}, 1fr)`,
           zIndex: 100,
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          padding: "7px",
         }}
       >
-        {NAV.map(({ path, label }) => {
+        {NAV.map(({ path, label, icon }) => {
           const active = pathname.startsWith(path);
           return (
             <button
               key={path}
               onClick={() => navigate(path)}
               style={{
-                flex: 1, maxWidth: 72,
-                display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center",
-                border: "none", background: "transparent",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                borderRadius: radii.lg,
+                background: active ? colors.accentSoft : "transparent",
                 cursor: "pointer",
                 color: active ? colors.accent : colors.textSecondary,
-                fontSize: 10,
-                fontWeight: active ? fontWeight.semibold : fontWeight.regular,
-                letterSpacing: "0.02em",
+                fontSize: 11,
+                fontWeight: active ? fontWeight.semibold : fontWeight.medium,
                 transition: transition.fast,
-                padding: 0,
-                opacity: active ? 1 : 0.5,
+                gap: 2,
               }}
             >
-              {NAV_ICONS[path]}
+              <span style={{ fontSize: 19, display: "inline-flex" }}>{icon}</span>
               <span>{label}</span>
             </button>
           );

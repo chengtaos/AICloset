@@ -34,6 +34,7 @@ export default function Card({
       : variant === "flat"
         ? { boxShadow: shadows.none }
         : { boxShadow: hover ? shadows.cardHover : shadows.card }),
+    border: variant === "flat" ? "none" : `1px solid ${colors.divider}`,
     ...style,
   };
 

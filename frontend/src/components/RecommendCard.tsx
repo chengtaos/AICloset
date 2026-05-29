@@ -1,13 +1,12 @@
 import { Button } from "antd";
-import { CheckOutlined, LikeOutlined, DislikeOutlined, DownloadOutlined } from "@ant-design/icons";
+import { CheckOutlined, DislikeOutlined, DownloadOutlined, LikeOutlined } from "@ant-design/icons";
 import type { RecommendResponse } from "../types";
 import { useResponsive } from "../hooks/useResponsive";
-import { colors, shadows, radii, spacing, fontSize, fontWeight } from "../styles/tokens";
+import { colors, radii, shadows, spacing, fontSize, fontWeight } from "../styles/tokens";
 import { exportOutfitCard } from "../utils/exportImage";
-import Card from "./ui/Card";
-import { Body, Aux } from "./ui/Typography";
 import EmptyState from "./ui/EmptyState";
 import OutfitComposer from "./OutfitComposer";
+import Tag from "./ui/Tag";
 
 interface Props {
   loading: boolean;
@@ -20,151 +19,173 @@ interface Props {
 }
 
 const WEATHER_ICON: Record<string, string> = {
-  "晴": "☀️", "多云": "⛅", "阴": "☁️",
-  "雨": "🌧", "雷阵雨": "⛈", "雪": "❄", "小雪": "🌨",
+  晴: "晴",
+  多云: "云",
+  阴: "阴",
+  雨: "雨",
+  雪: "雪",
 };
 
-export default function RecommendCard({ loading, data, onAccept, onFeedback, accepting, acceptedIdx, feedbackIdx }: Props) {
+export default function RecommendCard({
+  loading,
+  data,
+  onAccept,
+  onFeedback,
+  accepting,
+  acceptedIdx,
+  feedbackIdx,
+}: Props) {
   const { isMobile, isTablet } = useResponsive();
 
   if (loading) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        <Card padding={spacing.lg}>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{ width: 40, height: 40, borderRadius: radii.md, background: colors.divider, animation: "pulse 1.8s ease-in-out infinite" }} />
-            <div style={{ flex: 1 }}>
-              <div style={{ height: 22, width: "40%", borderRadius: 4, background: colors.divider, animation: "pulse 1.8s ease-in-out infinite", animationDelay: "0.15s" }} />
-              <div style={{ height: 12, width: "60%", borderRadius: 3, background: colors.divider, marginTop: 8, animation: "pulse 1.8s ease-in-out infinite", animationDelay: "0.3s" }} />
-            </div>
+      <div className="xhs-feed">
+        {[0, 1, 2].map((i) => (
+          <div className="xhs-feed-item" key={i}>
+            <div
+              style={{
+                height: i === 1 ? 420 : 360,
+                borderRadius: radii.xl,
+                background: "linear-gradient(90deg, #f6efeb 0%, #fff 45%, #f6efeb 100%)",
+                backgroundSize: "200% 100%",
+                animation: "shimmer 1.7s ease-in-out infinite",
+                boxShadow: shadows.card,
+              }}
+            />
           </div>
-        </Card>
-        <Card padding={spacing.lg}>
-          <div style={{ height: 280, borderRadius: radii.md, background: colors.divider, animation: "pulse 1.8s ease-in-out infinite" }} />
-        </Card>
+        ))}
       </div>
     );
   }
 
   if (!data) {
-    return <EmptyState icon="👔" title="点击上方按钮获取穿搭推荐" />;
+    return <EmptyState icon="灵" title="点击上方按钮，生成今天的穿搭灵感" />;
   }
 
   const { weather, suggestions } = data;
-  const icon = WEATHER_ICON[weather.condition] || "🌤";
+  const icon = WEATHER_ICON[weather.condition] || weather.condition.slice(0, 1) || "天";
 
   return (
     <div>
-      {/* 天气条 */}
-      <Card padding={isMobile ? spacing.sm : isTablet ? spacing.md : spacing.lg} style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 12 : 16 }}>
-          <span style={{ fontSize: isMobile ? 28 : isTablet ? 32 : 36 }}>{icon}</span>
-          <div>
-            <div style={{ fontSize: isMobile ? 22 : isTablet ? 24 : 28, fontWeight: fontWeight.semibold, color: colors.textPrimary, lineHeight: 1 }}>
-              {weather.temperature}°<span style={{ fontSize: isMobile ? 12 : isTablet ? 13 : 14, color: colors.textSecondary, fontWeight: fontWeight.regular }}>C</span>
-            </div>
-            <Aux style={{ marginTop: 2 }}>
-              体感 {weather.feels_like}°C · {weather.city} · {weather.condition} · 湿度{weather.humidity}% · 风{weather.wind_level}级
-            </Aux>
+      <section
+        style={{
+          marginBottom: 20,
+          borderRadius: radii.xl,
+          padding: isMobile ? 16 : 20,
+          background: "rgba(255,255,255,0.88)",
+          border: `1px solid ${colors.divider}`,
+          boxShadow: shadows.card,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 14,
+        }}
+      >
+        <div>
+          <div style={{ color: colors.accent, fontSize: 12, fontWeight: 700, marginBottom: 5 }}>
+            {weather.city} 今日穿搭天气
+          </div>
+          <div style={{ color: colors.textPrimary, fontSize: isMobile ? 28 : 34, fontWeight: 800, lineHeight: 1 }}>
+            {weather.temperature}°C
+          </div>
+          <div style={{ color: colors.textSecondary, fontSize: 12, marginTop: 8 }}>
+            体感 {weather.feels_like}°C · 湿度 {weather.humidity}% · 风力 {weather.wind_level} 级
           </div>
         </div>
-      </Card>
+        <div
+          style={{
+            width: isMobile ? 62 : 76,
+            height: isMobile ? 62 : 76,
+            borderRadius: radii.full,
+            background: colors.accentSoft,
+            color: colors.accent,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 24,
+            fontWeight: 800,
+          }}
+        >
+          {icon}
+        </div>
+      </section>
 
-      {/* 推荐卡片列表 */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div className="xhs-feed">
         {suggestions.map((sug, idx) => (
-          <Card key={idx} variant="elevated" padding={isMobile ? 16 : isTablet ? 20 : 24}>
-            {/* 卡片头部 */}
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              marginBottom: 18,
-            }}>
-              <span style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 28,
-                height: 28,
-                borderRadius: "50%",
-                background: colors.accentSoft,
-                color: colors.accent,
-                fontSize: 13,
-                fontWeight: fontWeight.semibold,
-              }}>
-                {idx + 1}
-              </span>
-              <span style={{
-                fontSize: 15,
-                fontWeight: fontWeight.semibold,
-                color: colors.textPrimary,
-              }}>
-                推荐搭配
-              </span>
-            </div>
-
-            {/* 衣物展示 */}
-            <OutfitComposer items={sug.items} />
-
-            {/* 推荐理由 */}
-            <Body style={{
-              marginTop: 18,
-              paddingTop: 14,
-              borderTop: `1px solid ${colors.divider}`,
-              color: colors.textPrimary,
-              lineHeight: 1.7,
-            }}>
-              {sug.reason}
-            </Body>
-
-            {/* 操作按钮 */}
-            {onAccept && acceptedIdx == null && feedbackIdx == null && (
-              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 14 }}>
-                <Button
-                  icon={<CheckOutlined />}
-                  size="middle"
-                  loading={accepting}
-                  onClick={() => onAccept(sug.items.map((it) => it.id), idx)}
-                  style={{ fontSize: 12, fontWeight: 500 }}
-                >
-                  就它了
-                </Button>
-                {onFeedback && (
-                  <>
-                    <Button
-                      size="middle" icon={<LikeOutlined />}
-                      onClick={() => onFeedback(idx, "liked")}
-                      style={{ fontSize: 12 }}
-                    />
-                    <Button
-                      size="middle" icon={<DislikeOutlined />}
-                      onClick={() => onFeedback(idx, "disliked")}
-                      style={{ fontSize: 12 }}
-                    />
-                  </>
-                )}
-                <Button
-                  size="middle"
-                  icon={<DownloadOutlined />}
-                  onClick={() => exportOutfitCard(sug.items, sug.reason, weather)}
-                  style={{ fontSize: 12 }}
-                >
-                  导出卡片
-                </Button>
+          <article
+            className="xhs-feed-item"
+            key={idx}
+            style={{
+              background: "rgba(255,255,255,0.94)",
+              borderRadius: radii.xl,
+              border: `1px solid ${colors.divider}`,
+              boxShadow: shadows.card,
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ padding: isMobile ? 14 : isTablet ? 16 : 18 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
+                <div>
+                  <div style={{ color: colors.accent, fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
+                    AI 穿搭灵感 {idx + 1}
+                  </div>
+                  <h3 style={{ margin: 0, color: colors.textPrimary, fontSize: 21, lineHeight: 1.2 }}>
+                    今天可以这样穿
+                  </h3>
+                </div>
+                <Tag variant="filled" size="sm">{sug.items.length} 件</Tag>
               </div>
-            )}
-            {acceptedIdx === idx && (
-              <span style={{ display: "block", marginTop: 14, fontSize: fontSize.body, color: colors.accent, fontWeight: fontWeight.medium }}>
-                <CheckOutlined style={{ marginRight: 4 }} />今天这么穿
-              </span>
-            )}
-            {feedbackIdx === idx && (
-              <span style={{ display: "block", marginTop: 14, fontSize: fontSize.body, color: colors.textSecondary, fontWeight: fontWeight.medium }}>
-                感谢反馈
-              </span>
-            )}
-          </Card>
+
+              <div style={{ borderRadius: radii.lg, overflow: "hidden", background: colors.placeholder }}>
+                <OutfitComposer items={sug.items} />
+              </div>
+
+              <p
+                style={{
+                  margin: "16px 0 0",
+                  color: colors.textPrimary,
+                  fontSize: fontSize.bodyLarge,
+                  lineHeight: 1.8,
+                }}
+              >
+                {sug.reason}
+              </p>
+
+              {onAccept && acceptedIdx == null && feedbackIdx == null && (
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 16 }}>
+                  <Button
+                    icon={<CheckOutlined />}
+                    type="primary"
+                    loading={accepting}
+                    onClick={() => onAccept(sug.items.map((it) => it.id), idx)}
+                    style={{ fontWeight: 700 }}
+                  >
+                    今天就穿这套
+                  </Button>
+                  {onFeedback && (
+                    <>
+                      <Button icon={<LikeOutlined />} onClick={() => onFeedback(idx, "liked")} />
+                      <Button icon={<DislikeOutlined />} onClick={() => onFeedback(idx, "disliked")} />
+                    </>
+                  )}
+                  <Button icon={<DownloadOutlined />} onClick={() => exportOutfitCard(sug.items, sug.reason, weather)}>
+                    导出
+                  </Button>
+                </div>
+              )}
+
+              {acceptedIdx === idx && (
+                <span style={{ display: "block", marginTop: 14, fontSize: fontSize.body, color: colors.accent, fontWeight: fontWeight.semibold }}>
+                  <CheckOutlined style={{ marginRight: 4 }} />已记录今天穿着
+                </span>
+              )}
+              {feedbackIdx === idx && (
+                <span style={{ display: "block", marginTop: 14, fontSize: fontSize.body, color: colors.textSecondary, fontWeight: fontWeight.medium }}>
+                  已收到反馈
+                </span>
+              )}
+            </div>
+          </article>
         ))}
       </div>
     </div>

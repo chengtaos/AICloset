@@ -272,3 +272,28 @@ export async function uploadAvatar(file: File) {
   });
   return data;
 }
+
+// ── 风格画像生成 ──
+
+export interface StylePortraitRequest {
+  profile_hash: string;
+  archetype_name: string;
+  archetype_desc: string;
+  top_colors: string[];
+  top_tags: string[];
+  style_trend: number;
+  color_bold: number;
+  complexity: number;
+  expression: number;
+}
+
+export interface StylePortraitResponse {
+  image_url: string;
+  profile_hash: string;
+  generated: boolean;
+}
+
+export async function generateStylePortrait(req: StylePortraitRequest) {
+  const { data } = await api.post<StylePortraitResponse>("/user/style-portrait", req);
+  return data;
+}

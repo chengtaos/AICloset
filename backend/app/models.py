@@ -122,6 +122,10 @@ class UserProfile(Base):
     # ── 用户自备 API Key（加密存储）──
     user_api_keys = Column(JSON, default=dict)  # {"deepseek": "enc_xxx", "amap": "enc_xxx", ...}
 
+    # ── 风格画像缓存 ──
+    style_portrait_hash = Column(String(64), nullable=True)
+    style_portrait_image = Column(String(255), nullable=True)
+
     # ── 元信息 ──
     disliked_items = Column(JSON, default=list)
     total_wear_events = Column(Integer, default=0)

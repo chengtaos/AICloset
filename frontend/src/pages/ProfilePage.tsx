@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  fetchStats, fetchProfile, updateProfile, changePassword,
+  fetchStats, fetchItems, fetchProfile, updateProfile, changePassword,
   uploadAvatar, fetchApiKeys, updateApiKeys, type UserApiKeys,
+  generateStylePortrait,
 } from "../api/client";
+import { computeStyleProfile, COLOR_SWATCH } from "../utils/styleProfile";
+import StyleRadar from "../components/StyleRadar";
 import { getImageUrl } from "../utils/imageUrl";
 import { useResponsive } from "../hooks/useResponsive";
 import { colors, radii, spacing, fontSize, fontWeight, shadows } from "../styles/tokens";
@@ -64,6 +67,55 @@ export default function ProfilePage() {
 
   // 画像数据
   const { data: stats } = useQuery({ queryKey: ["stats"], queryFn: fetchStats });
+  const { data: items = [] } = useQuery({ queryKey: ["items"], queryFn: () => fetchItems() });
+
+  // 风格人格计算
+  const styleProfile = useMemo(() => computeStyleProfile(items, stats), [items, stats]);
+
+  // ── 动漫画像 ──
+  const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
+  const [portraitLoading, setPortraitLoading] = useState(false);
+
+  // 风格画像生成（带 localStorage 缓存）
+  useEffect(() => {
+    if (!styleProfile) return;
+    const dims = styleProfile.dimensions;
+    const hashRaw = `${dims[0].value}|${dims[1].value}|${dims[2].value}|${dims[3].value}`;
+    const hashKey = btoa(hashRaw).replace(/=/g, "");
+
+    const cached = localStorage.getItem("style_portrait");
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed.hash === hashKey && parsed.url) {
+          setPortraitUrl(parsed.url);
+          return;
+        }
+      } catch { /* ignore */ }
+    }
+
+    setPortraitLoading(true);
+    generateStylePortrait({
+      profile_hash: hashKey,
+      archetype_name: styleProfile.archetype.name,
+      archetype_desc: styleProfile.archetype.description,
+      top_colors: styleProfile.topColors,
+      top_tags: styleProfile.topTags,
+      style_trend: dims[0].value,
+      color_bold: dims[1].value,
+      complexity: dims[2].value,
+      expression: dims[3].value,
+    })
+      .then((res) => {
+        setPortraitUrl(res.image_url);
+        localStorage.setItem("style_portrait", JSON.stringify({
+          hash: hashKey,
+          url: res.image_url,
+        }));
+      })
+      .catch(() => {})
+      .finally(() => setPortraitLoading(false));
+  }, [styleProfile]);
 
   // ── profile form state ──
   const [nickname, setNickname] = useState(user?.nickname || "");
@@ -253,6 +305,108 @@ export default function ProfilePage() {
               ))}
             </div>
           </Card>
+
+          {/* 风格人格卡片 */}
+          {styleProfile && (
+            <Card variant="elevated" padding={isMobile ? 20 : 28} style={{ marginBottom: 24 }}>
+              <Caption style={{ marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                你的穿衣人格
+              </Caption>
+
+              {/* 原型名 */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                <span style={{ fontSize: 36, lineHeight: 1 }}>{styleProfile.archetype.emoji}</span>
+                <div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: colors.textPrimary, letterSpacing: "-0.02em" }}>
+                    {styleProfile.archetype.name}
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 500, color: colors.textTertiary, letterSpacing: "0.12em" }}>
+                    {styleProfile.archetype.enName}
+                  </div>
+                </div>
+              </div>
+
+              {/* 描述 */}
+              <div style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.8, marginBottom: 20 }}>
+                {styleProfile.archetype.description}
+              </div>
+
+              {/* 动漫画像 */}
+              {(portraitUrl || portraitLoading) && (
+                <div style={{ marginBottom: 20 }}>
+                  <Caption style={{ marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    你的风格画像
+                  </Caption>
+                  <div
+                    style={{
+                      width: "100%",
+                      aspectRatio: "1 / 1",
+                      maxWidth: 280,
+                      margin: "0 auto",
+                      borderRadius: radii.lg,
+                      overflow: "hidden",
+                      background: colors.placeholder,
+                      border: `1px solid ${colors.divider}`,
+                    }}
+                  >
+                    {portraitUrl ? (
+                      <img
+                        src={portraitUrl}
+                        alt="风格画像"
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: "100%", height: "100%",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: colors.textTertiary, fontSize: 13,
+                      }}>
+                        生成中...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 人格维度雷达图 */}
+              <div style={{ marginBottom: 20 }}>
+                <StyleRadar
+                  dimensions={styleProfile.dimensions}
+                  archetypeName={styleProfile.archetype.name}
+                  archetypeEmoji={styleProfile.archetype.emoji}
+                />
+              </div>
+
+              {/* 代表色 + 风格标签 */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 20, paddingTop: 16, borderTop: `1px solid ${colors.divider}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 10, color: colors.textTertiary }}>代表色</span>
+                  {styleProfile.topColors.map((c) => (
+                    <div
+                      key={c}
+                      title={c}
+                      style={{
+                        width: 16, height: 16, borderRadius: "50%",
+                        background: COLOR_SWATCH[c] || colors.divider,
+                        border: `1px solid ${colors.divider}`,
+                      }}
+                    />
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  {styleProfile.topTags.map((tag) => (
+                    <span key={tag} style={{
+                      fontSize: 10, color: colors.textSecondary,
+                      background: colors.accentSoft, borderRadius: 4,
+                      padding: "2px 8px",
+                    }}>
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          )}
 
           {/* 菜单列表 */}
           <Card padding="0 20px" style={{ marginBottom: 24 }}>

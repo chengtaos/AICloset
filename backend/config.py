@@ -26,10 +26,11 @@ DEEPSEEK_MODEL = "deepseek-chat"
 AMAP_API_KEY = os.getenv("AMAP_API_KEY", "")
 AMAP_WEATHER_URL = "https://restapi.amap.com/v3/weather/weatherInfo"
 
-# 阿里云 DashScope（视觉识别）
+# 阿里云 DashScope（视觉识别 + 图像生成）
 DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY", "")
 DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 DASHSCOPE_VISION_MODEL = "qwen-vl-max"
+DASHSCOPE_IMAGE_MODEL = "qwen-image-2.0-pro"
 
 # 阿里云 服饰分割（SegmentCloth）
 ALIBABA_CLOUD_ACCESS_KEY_ID = os.getenv("ALIBABA_CLOUD_ACCESS_KEY_ID", "")

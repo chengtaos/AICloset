@@ -92,7 +92,15 @@
       "Bash(python -c \"from main import app; print\\('limiter:', type\\(app.state.LIMITER\\).__name__\\); print\\('routes:', len\\(app.routes\\)\\)\")",
       "Bash(sqlite3 data/aicloset.db \"ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 0;\")",
       "Bash(python -c \"from cryptography.fernet import Fernet; print\\('OK'\\)\")",
-      "Bash(sqlite3 data/aicloset.db \"ALTER TABLE user_profiles ADD COLUMN user_api_keys JSON DEFAULT '{}';\")"
+      "Bash(sqlite3 data/aicloset.db \"ALTER TABLE user_profiles ADD COLUMN user_api_keys JSON DEFAULT '{}';\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'c:\\\\Users\\\\chengtao\\\\Desktop\\\\AiCloset\\\\backend\\\\app\\\\routers\\\\style_portrait.py'\\).read\\(\\)\\); print\\('style_portrait.py OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'c:\\\\Users\\\\chengtao\\\\Desktop\\\\AiCloset\\\\backend\\\\app\\\\agent\\\\image_gen.py', encoding='utf-8'\\).read\\(\\)\\); print\\('image_gen.py OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'c:\\\\Users\\\\chengtao\\\\Desktop\\\\AiCloset\\\\backend\\\\app\\\\routers\\\\style_portrait.py', encoding='utf-8'\\).read\\(\\)\\); print\\('style_portrait.py OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'c:\\\\Users\\\\chengtao\\\\Desktop\\\\AiCloset\\\\backend\\\\app\\\\models.py', encoding='utf-8'\\).read\\(\\)\\); print\\('models.py OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'c:\\\\Users\\\\chengtao\\\\Desktop\\\\AiCloset\\\\backend\\\\config.py', encoding='utf-8'\\).read\\(\\)\\); print\\('config.py OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'c:\\\\Users\\\\chengtao\\\\Desktop\\\\AiCloset\\\\backend\\\\main.py', encoding='utf-8'\\).read\\(\\)\\); print\\('main.py OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'c:\\\\Users\\\\chengtao\\\\Desktop\\\\AiCloset\\\\backend\\\\app\\\\database.py', encoding='utf-8'\\).read\\(\\)\\); print\\('database.py OK'\\)\")",
+      "Bash(npx --prefix /c/Users/chengtao/Desktop/AiCloset/frontend tsc --noEmit)"
     ],
     "additionalDirectories": [
       "c:\\Users\\chengtao\\Desktop\\AiCloset\\backend\\uploads"

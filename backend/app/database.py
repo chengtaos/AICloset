@@ -30,6 +30,7 @@ def init_db():
     _migrate_users_token_version()
     _migrate_user_api_keys()
     _migrate_clothing_name()
+    _migrate_style_portrait()
 
 
 def _migrate_user_profiles():
@@ -90,6 +91,22 @@ def _migrate_user_api_keys():
             conn.commit()
         except Exception:
             pass
+
+
+def _migrate_style_portrait():
+    """为 user_profiles 添加风格画像缓存列。"""
+    new_columns = [
+        ("style_portrait_hash", "VARCHAR(64)"),
+        ("style_portrait_image", "VARCHAR(255)"),
+    ]
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        for col_name, col_type in new_columns:
+            try:
+                conn.execute(text(f"ALTER TABLE user_profiles ADD COLUMN {col_name} {col_type}"))
+                conn.commit()
+            except Exception:
+                pass
 
 
 def get_db():

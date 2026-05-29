@@ -14,7 +14,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.database import init_db
-from app.routers import wardrobe, outfits, recommend, auth, user
+from app.routers import wardrobe, outfits, recommend, auth, user, style_portrait
 from app.limiter import limiter
 
 # ── 日志配置 ──
@@ -67,6 +67,7 @@ app.include_router(wardrobe.router)
 app.include_router(outfits.router)
 app.include_router(recommend.router)
 app.include_router(user.router)
+app.include_router(style_portrait.router)
 
 
 @app.get("/api/health")

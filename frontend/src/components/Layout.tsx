@@ -11,14 +11,14 @@ const NAV_ICONS: Record<string, React.ReactNode> = {
   "/recommend": <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>,
   "/outfits": <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
   "/wardrobe": <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M12 9v12"/></svg>,
-  "/settings": <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M1 12h2m18 0h2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4m-14.2 0l1.4-1.4m11.4-11.4l1.4-1.4"/></svg>,
+  "/profile": <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
 };
 
 const NAV = [
   { path: "/recommend", label: "推荐" },
   { path: "/outfits", label: "搭配" },
   { path: "/wardrobe", label: "衣橱" },
-  { path: "/settings", label: "设置" },
+  { path: "/profile", label: "我的" },
 ];
 
 const ease = "cubic-bezier(0.4, 0, 0.2, 1)";

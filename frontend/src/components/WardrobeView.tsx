@@ -39,7 +39,7 @@ function confirmDelete(onOk: () => void) {
 
 export default function WardrobeView() {
   const queryClient = useQueryClient();
-  const { isMobile } = useResponsive();
+  const { isMobile, isTablet } = useResponsive();
   const [activeCat, setActiveCat] = useState("");
   const [search, setSearch] = useState("");
   const [seasonFilter, setSeasonFilter] = useState<string>("");
@@ -286,7 +286,7 @@ export default function WardrobeView() {
           onChange={(e) => setSearch(e.target.value)}
           allowClear
           style={{
-            width: isMobile ? 120 : 140,
+            width: isMobile ? 120 : isTablet ? 100 : 140,
             flexShrink: 0,
             border: `1px solid ${colors.divider}`,
             borderRadius: 4,
@@ -306,8 +306,10 @@ export default function WardrobeView() {
             display: "grid",
             gridTemplateColumns: isMobile
               ? "repeat(2, 1fr)"
+              : isTablet
+              ? "repeat(3, 1fr)"
               : "repeat(auto-fill, minmax(148px, 1fr))",
-            gap: isMobile ? 10 : 16,
+            gap: isMobile ? 10 : isTablet ? 12 : 16,
           }}
         >
           {filtered.map((item) => (
@@ -343,8 +345,10 @@ export default function WardrobeView() {
                   display: "grid",
                   gridTemplateColumns: isMobile
                     ? "repeat(2, 1fr)"
+                    : isTablet
+                    ? "repeat(3, 1fr)"
                     : "repeat(auto-fill, minmax(148px, 1fr))",
-                  gap: isMobile ? 10 : 16,
+                  gap: isMobile ? 10 : isTablet ? 12 : 16,
                 }}
               >
                 {catItems.map((item) => (
@@ -385,7 +389,7 @@ export default function WardrobeView() {
         open={detailId != null && detailItem != null}
         onCancel={() => setDetailId(null)}
         footer={null}
-        width={440}
+        width={isMobile ? undefined : 480}
         closable={false}
       >
         {detailItem && (
@@ -394,7 +398,7 @@ export default function WardrobeView() {
               style={{
                 width: isMobile ? "100%" : 180,
                 maxHeight: isMobile ? 280 : undefined,
-                aspectRatio: isMobile ? "3/4" : "3/4",
+                aspectRatio: "3/4",
                 background: colors.placeholder,
                 flexShrink: 0,
                 overflow: "hidden",

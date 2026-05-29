@@ -25,7 +25,7 @@ const thumbStyle: React.CSSProperties = {
 };
 
 export default function StatsView() {
-  const { isMobile } = useResponsive();
+  const { isMobile, isTablet } = useResponsive();
   const now = new Date();
   const [calYear, setCalYear] = useState(now.getFullYear());
   const [calMonth, setCalMonth] = useState(now.getMonth() + 1);
@@ -54,8 +54,8 @@ export default function StatsView() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
-          gap: isMobile ? 8 : 12,
+          gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : isTablet ? "repeat(3, 1fr)" : "repeat(4, 1fr)",
+          gap: isMobile ? 8 : isTablet ? 10 : 12,
           marginBottom: 24,
         }}
       >
@@ -70,9 +70,9 @@ export default function StatsView() {
             return { label: "均次穿着成本", value: avgCost > 0 ? `¥${avgCost.toLocaleString()}` : "—" };
           })(),
         ].map(({ label, value }) => (
-          <Card key={label} padding={isMobile ? "12px 14px" : "16px 20px"}>
+          <Card key={label} padding={isMobile ? "12px 14px" : isTablet ? "14px 16px" : "16px 20px"}>
             <Caption style={{ marginBottom: 4 }}>{label}</Caption>
-            <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 600, color: colors.textPrimary }}>
+            <div style={{ fontSize: isMobile ? 18 : isTablet ? 20 : 22, fontWeight: 600, color: colors.textPrimary }}>
               {value}
             </div>
           </Card>
@@ -87,7 +87,7 @@ export default function StatsView() {
           marginBottom: 24,
         }}
       >
-        <Card padding={20}>
+        <Card padding={isTablet ? 16 : 20}>
           <SectionTitle style={{ marginTop: 0, marginBottom: 12 }}>品类分布</SectionTitle>
           {stats.category_distribution.map((c) => {
             const pct =
@@ -133,7 +133,7 @@ export default function StatsView() {
           })}
         </Card>
 
-        <Card padding={20}>
+        <Card padding={isTablet ? 16 : 20}>
           <SectionTitle style={{ marginTop: 0, marginBottom: 12 }}>颜色分布</SectionTitle>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {stats.color_distribution.map((c) => (
@@ -146,7 +146,7 @@ export default function StatsView() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
-        <Card padding={20}>
+        <Card padding={isTablet ? 16 : 20}>
           <SectionTitle style={{ marginTop: 0, marginBottom: 12 }}>高频穿着</SectionTitle>
           {stats.most_worn.length === 0 ? (
             <EmptyState icon="📊" title="还没有穿着记录" />
@@ -194,7 +194,7 @@ export default function StatsView() {
           )}
         </Card>
 
-        <Card padding={20}>
+        <Card padding={isTablet ? 16 : 20}>
           <SectionTitle style={{ marginTop: 0, marginBottom: 12 }}>沉睡单品</SectionTitle>
           {stats.sleeping_items.length === 0 ? (
             <EmptyState icon="✨" title="所有衣物都穿过" />
@@ -238,7 +238,7 @@ export default function StatsView() {
       </div>
 
       {gap && (
-        <Card padding={20} style={{ marginTop: 24 }}>
+        <Card padding={isTablet ? 16 : 20} style={{ marginTop: 24 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
             <SectionTitle style={{ margin: 0 }}>衣橱缺口分析</SectionTitle>
             <span style={{

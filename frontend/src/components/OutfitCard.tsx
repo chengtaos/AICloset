@@ -20,7 +20,7 @@ interface Props {
 }
 
 export default function OutfitCard({ outfit, itemMap, extra }: Props) {
-  const { isMobile } = useResponsive();
+  const { isMobile, isTablet } = useResponsive();
 
   const briefs: ClothingItemBrief[] = outfit.items
     .map((oi) => itemMap.get(oi.item_id))
@@ -36,7 +36,7 @@ export default function OutfitCard({ outfit, itemMap, extra }: Props) {
     }));
 
   return (
-    <Card padding={isMobile ? spacing.sm : spacing.lg}>
+    <Card padding={isMobile ? spacing.sm : isTablet ? spacing.md : spacing.lg}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <SectionTitle>{outfit.name || "未命名搭配"}</SectionTitle>

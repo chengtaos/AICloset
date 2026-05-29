@@ -25,7 +25,7 @@ const WEATHER_ICON: Record<string, string> = {
 };
 
 export default function RecommendCard({ loading, data, onAccept, onFeedback, accepting, acceptedIdx, feedbackIdx }: Props) {
-  const { isMobile } = useResponsive();
+  const { isMobile, isTablet } = useResponsive();
 
   if (loading) {
     return (
@@ -56,12 +56,12 @@ export default function RecommendCard({ loading, data, onAccept, onFeedback, acc
   return (
     <div>
       {/* 天气条 */}
-      <Card padding={isMobile ? spacing.sm : spacing.lg} style={{ marginBottom: 24 }}>
+      <Card padding={isMobile ? spacing.sm : isTablet ? spacing.md : spacing.lg} style={{ marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 12 : 16 }}>
-          <span style={{ fontSize: isMobile ? 28 : 36 }}>{icon}</span>
+          <span style={{ fontSize: isMobile ? 28 : isTablet ? 32 : 36 }}>{icon}</span>
           <div>
-            <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: fontWeight.semibold, color: colors.textPrimary, lineHeight: 1 }}>
-              {weather.temperature}°<span style={{ fontSize: isMobile ? 12 : 14, color: colors.textSecondary, fontWeight: fontWeight.regular }}>C</span>
+            <div style={{ fontSize: isMobile ? 22 : isTablet ? 24 : 28, fontWeight: fontWeight.semibold, color: colors.textPrimary, lineHeight: 1 }}>
+              {weather.temperature}°<span style={{ fontSize: isMobile ? 12 : isTablet ? 13 : 14, color: colors.textSecondary, fontWeight: fontWeight.regular }}>C</span>
             </div>
             <Aux style={{ marginTop: 2 }}>
               体感 {weather.feels_like}°C · {weather.city} · {weather.condition} · 湿度{weather.humidity}% · 风{weather.wind_level}级

@@ -32,7 +32,7 @@ const RECOMMEND_SCENARIO_KEY = ["recommend", "scenario"] as const;
 const RECOMMEND_CAPSULE_KEY = ["recommend", "capsule"] as const;
 
 export default function RecommendPage() {
-  const { isMobile } = useResponsive();
+  const { isMobile, isTablet } = useResponsive();
   const [city, setCity] = useState("北京");
   const [mode, setMode] = useState<"daily" | "scenario" | "capsule">("daily");
   const [scenarioDesc, setScenarioDesc] = useState("");
@@ -104,7 +104,7 @@ export default function RecommendPage() {
           border: `1px solid ${colors.divider}`,
           borderRadius: radii.lg,
           background: colors.surface,
-          padding: isMobile ? 14 : 20,
+          padding: isMobile ? 14 : isTablet ? 16 : 20,
           marginBottom: 24,
         }}
       >
@@ -292,7 +292,7 @@ export default function RecommendPage() {
       {mode === "capsule" && capsuleResult && (
         <div>
           {/* 打包清单 */}
-          <Card padding={isMobile ? 14 : 20} style={{ marginBottom: 16 }}>
+          <Card padding={isMobile ? 14 : isTablet ? 16 : 20} style={{ marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary, margin: "0 0 4px" }}>
               打包清单 · {capsuleResult.items.length} 件
             </h3>
@@ -324,7 +324,7 @@ export default function RecommendPage() {
           {/* 每日方案 */}
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {capsuleResult.outfits.map((outfit) => (
-              <Card key={outfit.day} padding={isMobile ? 12 : 16}>
+              <Card key={outfit.day} padding={isMobile ? 12 : isTablet ? 14 : 16}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
                   <span style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>
                     第 {outfit.day} 天

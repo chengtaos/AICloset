@@ -46,7 +46,8 @@ export default function OutfitComposer({ items }: Props) {
     sx: 0, sy: 0, scale: 1, cx: 0, cy: 0,
   });
 
-  const containerW = containerRef.current?.clientWidth || (isMobile ? 340 : isTablet ? 380 : 400);
+  // 始终用断点估算值，避免 ref 在不同渲染阶段的 null/真实值切换导致图片突变
+  const containerW = isMobile ? 340 : isTablet ? 380 : 400;
   const BASE_W = Math.round(containerW * BASE_W_FRAC);
   const BASE_H = Math.round(containerW * BASE_H_FRAC);
 

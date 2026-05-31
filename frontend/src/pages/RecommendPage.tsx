@@ -7,6 +7,7 @@ import { recommendCapsule, recommendDaily, recommendScenario, recordWear, submit
 import { useResponsive } from "../hooks/useResponsive";
 import { colors, radii, shadows, spacing, fontWeight } from "../styles/tokens";
 import RecommendCard from "../components/RecommendCard";
+import OutfitComposer from "../components/OutfitComposer";
 import Tag from "../components/ui/Tag";
 
 const CITIES = [
@@ -219,6 +220,7 @@ export default function RecommendPage() {
 
       {mode === "capsule" && capsuleResult && (
         <div className="xhs-feed">
+          {/* 旅行清单总览 */}
           <article className="xhs-feed-item" style={{ background: colors.surface, borderRadius: radii.xl, padding: spacing.lg, boxShadow: shadows.card }}>
             <div style={{ color: colors.accent, fontSize: 12, fontWeight: 700 }}>旅行清单</div>
             <h3 style={{ margin: "6px 0 8px", fontSize: 24, lineHeight: 1.15 }}>
@@ -236,17 +238,40 @@ export default function RecommendPage() {
             )}
           </article>
 
-          {capsuleResult.outfits.map((outfit) => (
-            <article
-              className="xhs-feed-item"
-              key={outfit.day}
-              style={{ background: colors.surface, borderRadius: radii.xl, padding: spacing.lg, boxShadow: shadows.card }}
-            >
-              <div style={{ color: colors.accent, fontSize: 12, fontWeight: 700 }}>Day {outfit.day}</div>
-              <h3 style={{ margin: "6px 0 8px", fontSize: 22 }}>{outfit.occasion || "每日搭配"}</h3>
-              <p style={{ margin: 0, color: colors.textSecondary, lineHeight: 1.8 }}>{outfit.reason}</p>
-            </article>
-          ))}
+          {/* 按 ID 建立查找表 */}
+          {(() => {
+            const itemById = new Map(capsuleResult.items.map((it) => [it.id, it]));
+            return capsuleResult.outfits.map((outfit) => {
+              const outfitItems = outfit.item_ids.map((id) => itemById.get(id)).filter(Boolean) as typeof capsuleResult.items;
+              return (
+                <article
+                  className="xhs-feed-item"
+                  key={outfit.day}
+                  style={{ background: colors.surface, borderRadius: radii.xl, border: `1px solid ${colors.divider}`, boxShadow: shadows.card, overflow: "hidden" }}
+                >
+                  <div style={{ padding: spacing.lg }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                      <div>
+                        <div style={{ color: colors.accent, fontSize: 12, fontWeight: 700 }}>Day {outfit.day}</div>
+                        <h3 style={{ margin: "4px 0 0", fontSize: 20 }}>{outfit.occasion || "每日搭配"}</h3>
+                      </div>
+                      <Tag variant="filled" size="sm">{outfitItems.length} 件</Tag>
+                    </div>
+
+                    <div style={{ borderRadius: radii.lg, overflow: "hidden", background: colors.placeholder }}>
+                      <OutfitComposer items={outfitItems} />
+                    </div>
+
+                    {outfit.reason && (
+                      <p style={{ margin: "14px 0 0", color: colors.textSecondary, lineHeight: 1.8, fontSize: 14 }}>
+                        {outfit.reason}
+                      </p>
+                    )}
+                  </div>
+                </article>
+              );
+            });
+          })()}
         </div>
       )}
     </div>

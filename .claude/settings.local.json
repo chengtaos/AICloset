@@ -100,7 +100,13 @@
       "Bash(python -c \"import ast; ast.parse\\(open\\(r'c:\\\\Users\\\\chengtao\\\\Desktop\\\\AiCloset\\\\backend\\\\config.py', encoding='utf-8'\\).read\\(\\)\\); print\\('config.py OK'\\)\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\(r'c:\\\\Users\\\\chengtao\\\\Desktop\\\\AiCloset\\\\backend\\\\main.py', encoding='utf-8'\\).read\\(\\)\\); print\\('main.py OK'\\)\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\(r'c:\\\\Users\\\\chengtao\\\\Desktop\\\\AiCloset\\\\backend\\\\app\\\\database.py', encoding='utf-8'\\).read\\(\\)\\); print\\('database.py OK'\\)\")",
-      "Bash(npx --prefix /c/Users/chengtao/Desktop/AiCloset/frontend tsc --noEmit)"
+      "Bash(npx --prefix /c/Users/chengtao/Desktop/AiCloset/frontend tsc --noEmit)",
+      "WebFetch(domain:www.16personalities-api.com)",
+      "Bash(python -c \"from app.main import app; print\\('OK -', len\\(app.routes\\), 'routes registered'\\)\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0, '.'\\); from app.main import app; print\\(f'OK - {len\\(app.routes\\)} routes'\\)\")",
+      "Bash(python -c \"from main import app; print\\(f'OK - {len\\(app.routes\\)} routes'\\)\")",
+      "Bash(python -c \"from main import app; [print\\(r.path, r.methods\\) for r in app.routes if 'personality' in r.path]\")",
+      "Bash(python -c \"from main import app; r = [p for p in app.routes if 'personality' in p.path]; print\\(f'{len\\(r\\)} personality routes'\\); print\\('GET /questions:', any\\('GET' in rr.methods and 'questions' in rr.path for rr in r\\)\\); print\\('POST /submit:', any\\('POST' in rr.methods and 'submit' in rr.path for rr in r\\)\\); print\\('GET /result:', any\\('GET' in rr.methods and 'result' in rr.path for rr in r\\)\\)\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\chengtao\\Desktop\\AiCloset\\backend\\uploads"

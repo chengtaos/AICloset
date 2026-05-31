@@ -43,10 +43,11 @@ export default function LoginPage() {
     try {
       if (mode === "login") {
         await login(phone, password);
+        navigate("/recommend", { replace: true });
       } else {
         await register(phone, password, nickname);
+        navigate("/personality-test", { replace: true });
       }
-      navigate("/recommend", { replace: true });
     } catch (e: unknown) {
       const msg =
         (e as { response?: { data?: { detail?: string } } })?.response?.data

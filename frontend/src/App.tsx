@@ -5,6 +5,7 @@ import WardrobePage from "./pages/WardrobePage";
 import OutfitsPage from "./pages/OutfitsPage";
 import RecommendPage from "./pages/RecommendPage";
 import ProfilePage from "./pages/ProfilePage";
+import PersonalityTestPage from "./pages/PersonalityTestPage";
 import LoginPage from "./pages/LoginPage";
 
 function ProtectedRoutes() {
@@ -22,6 +23,7 @@ function ProtectedRoutes() {
         <Route path="/recommend" element={<RecommendPage />} />
         <Route path="/stats" element={<Navigate to="/wardrobe" replace />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/personality-test" element={<PersonalityTestPage />} />
         <Route path="/settings" element={<Navigate to="/profile" replace />} />
         <Route path="*" element={<Navigate to="/recommend" replace />} />
       </Route>

@@ -126,6 +126,9 @@ class UserProfile(Base):
     style_portrait_hash = Column(String(64), nullable=True)
     style_portrait_image = Column(String(255), nullable=True)
 
+    # ── 人格测试结果 ──
+    personality_test = Column(JSON, default=dict)
+
     # ── 元信息 ──
     disliked_items = Column(JSON, default=list)
     total_wear_events = Column(Integer, default=0)

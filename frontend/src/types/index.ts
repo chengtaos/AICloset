@@ -285,3 +285,40 @@ export const CONDITION_ICONS: Record<string, string> = {
   "晴": "☀️", "多云": "⛅", "阴": "☁️",
   "雨": "🌧️", "雷阵雨": "⛈️", "雪": "❄️", "小雪": "🌨️",
 };
+
+// ── 人格测试 ──
+export interface PersonalityQuestion {
+  question: string;
+  dimension: string;
+  options: string[];
+  id: string;
+}
+
+export interface PersonalityAnswer {
+  id: string;
+  value: number;
+}
+
+export interface TraitInfo {
+  key: string;
+  label: string;
+  score: number;
+  trait: string;
+  description: string;
+  snippet: string;
+}
+
+export interface StyleGuidance {
+  style_keywords: string[];
+  style_advice: string;
+  color_hint: string;
+}
+
+export interface PersonalityResult {
+  nice_name: string;
+  full_code: string;
+  snippet: string;
+  traits: TraitInfo[];
+  style_guidance: StyleGuidance;
+  completed_at: string;
+}

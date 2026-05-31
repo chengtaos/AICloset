@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchStats, fetchItems, fetchProfile, updateProfile, changePassword,
   uploadAvatar, fetchApiKeys, updateApiKeys, type UserApiKeys,
-  generateStylePortrait,
+  generateStylePortrait, fetchPersonalityResult,
 } from "../api/client";
 import { computeStyleProfile, COLOR_SWATCH } from "../utils/styleProfile";
 import StyleRadar from "../components/StyleRadar";
@@ -36,7 +37,7 @@ const FIELD_KEYS: (keyof UserApiKeys)[] = [
   "alibaba_access_key_id", "alibaba_access_key_secret",
 ];
 
-type View = "menu" | "profile" | "password" | "keys" | "about";
+type View = "menu" | "profile" | "password" | "keys" | "about" | "personality";
 
 const ease = "cubic-bezier(0.4, 0, 0.2, 1)";
 
@@ -63,11 +64,21 @@ const inputStyle: React.CSSProperties = {
 export default function ProfilePage() {
   const { user, setUser, logout } = useAuth();
   const { isMobile, isTablet } = useResponsive();
+  const navigate = useNavigate();
   const [view, setView] = useState<View>("menu");
 
   // 画像数据
   const { data: stats } = useQuery({ queryKey: ["stats"], queryFn: fetchStats });
   const { data: items = [] } = useQuery({ queryKey: ["items"], queryFn: () => fetchItems() });
+
+  // 人格测试结果（用于 badge）
+  const { data: personalityResult } = useQuery({
+    queryKey: ["personality-result"],
+    queryFn: fetchPersonalityResult,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+  const hasPersonality = !!personalityResult?.full_code;
 
   // 风格人格计算
   const styleProfile = useMemo(() => computeStyleProfile(items, stats), [items, stats]);
@@ -426,13 +437,22 @@ export default function ProfilePage() {
               { key: "keys", label: "API 密钥", icon: (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
               )},
+              { key: "personality", label: "风格人格测试", icon: (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"/></svg>
+              ), badge: hasPersonality ? personalityResult?.full_code : undefined },
               { key: "about", label: "关于", icon: (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
               )},
-            ].map((item, i, arr) => (
+            ].map((item: { key: string; label: string; icon: React.ReactNode; badge?: string }, i, arr) => (
               <button
                 key={item.key}
-                onClick={() => setView(item.key as View)}
+                onClick={() => {
+                  if (item.key === "personality") {
+                    navigate("/personality-test");
+                    return;
+                  }
+                  setView(item.key as View);
+                }}
                 style={{
                   ...menuItemStyle,
                   borderBottom: i < arr.length - 1 ? `1px solid ${colors.divider}` : "none",
@@ -448,9 +468,20 @@ export default function ProfilePage() {
                   {item.icon}
                   {item.label}
                 </span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={colors.textTertiary} strokeWidth="2" strokeLinecap="round">
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
+                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {item.badge && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, color: colors.accent,
+                      background: colors.accentSoft, borderRadius: 8,
+                      padding: "1px 8px", lineHeight: "18px",
+                    }}>
+                      {item.badge}
+                    </span>
+                  )}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={colors.textTertiary} strokeWidth="2" strokeLinecap="round">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </span>
               </button>
             ))}
           </Card>

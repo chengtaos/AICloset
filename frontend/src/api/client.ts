@@ -297,3 +297,25 @@ export async function generateStylePortrait(req: StylePortraitRequest) {
   const { data } = await api.post<StylePortraitResponse>("/user/style-portrait", req);
   return data;
 }
+
+// ── 人格测试 ──
+
+export interface SubmitAnswersPayload {
+  answers: { id: string; value: number }[];
+  gender: string;
+}
+
+export async function fetchPersonalityQuestions() {
+  const { data } = await api.get("/personality/questions");
+  return data;
+}
+
+export async function submitPersonalityAnswers(payload: SubmitAnswersPayload) {
+  const { data } = await api.post<import("../types").PersonalityResult>("/personality/submit", payload);
+  return data;
+}
+
+export async function fetchPersonalityResult() {
+  const { data } = await api.get<import("../types").PersonalityResult | null>("/personality/result");
+  return data;
+}

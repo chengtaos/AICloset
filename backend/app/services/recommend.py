@@ -104,9 +104,19 @@ def _run_recommend_pipeline(
     keys = api_keys or {}
     candidates = filter_candidates(db, weather, user_id)
 
-    # 加载用户偏好档案
+    # 加载用户偏好档案 + 穿搭人格
+    from app.services.personality import format_personality_for_llm
+
     profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
-    preferences_text = format_preferences_for_llm(profile)
+    personality_text = format_personality_for_llm(profile)
+    wear_prefs_text = format_preferences_for_llm(profile)
+
+    # 人格信息在前（冷启动即生效），穿着记忆在后（需数据积累）
+    preferences_text = ""
+    if personality_text:
+        preferences_text += personality_text + "\n"
+    if wear_prefs_text:
+        preferences_text += wear_prefs_text
 
     llm_result = generate_recommendations(
         candidates, weather, occasion,

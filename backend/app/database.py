@@ -31,6 +31,7 @@ def init_db():
     _migrate_user_api_keys()
     _migrate_clothing_name()
     _migrate_style_portrait()
+    _migrate_personality_test()
 
 
 def _migrate_user_profiles():
@@ -79,6 +80,17 @@ def _migrate_clothing_name():
     with engine.connect() as conn:
         try:
             conn.execute(text("ALTER TABLE clothing_items ADD COLUMN name VARCHAR(100) DEFAULT ''"))
+            conn.commit()
+        except Exception:
+            pass
+
+
+def _migrate_personality_test():
+    """为 user_profiles 添加人格测试结果列。"""
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE user_profiles ADD COLUMN personality_test JSON DEFAULT '{}'"))
             conn.commit()
         except Exception:
             pass

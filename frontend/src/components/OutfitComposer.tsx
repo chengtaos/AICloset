@@ -187,14 +187,6 @@ export default function OutfitComposer({ items }: Props) {
               </div>
             )}
 
-            <div style={{
-              textAlign: "center", marginTop: 2,
-              fontSize: 10, color: colors.textSecondary,
-              lineHeight: 1.2, pointerEvents: "none",
-            }}>
-              {item.sub_category}
-            </div>
-
             <div
               onPointerDown={(e) => handleResizeStart(e, item.id)}
               style={{
@@ -217,18 +209,6 @@ export default function OutfitComposer({ items }: Props) {
         );
       })}
 
-      {!dragging && items.length > 0 && (
-        <div style={{
-          position: "absolute", bottom: 8, left: "50%",
-          transform: "translateX(-50%)",
-          fontSize: 10, color: colors.textTertiary,
-          pointerEvents: "none",
-          background: "rgba(255,255,255,0.7)",
-          padding: "2px 8px", borderRadius: 4,
-        }}>
-          拖动移动 · 拖拽圆点缩放
-        </div>
-      )}
     </div>
   );
 }

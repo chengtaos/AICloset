@@ -323,6 +323,72 @@ export default function ProfilePage() {
             </div>
           </Card>
 
+          {/* 人格测试档案 */}
+          <Card variant="elevated" padding={isMobile ? 20 : 28} style={{ marginBottom: 24 }}>
+            <div style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: 16,
+              marginBottom: hasPersonality ? 18 : 0,
+            }}>
+              <div>
+                <Caption style={{ marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  推荐人设档案
+                </Caption>
+                <div style={{ fontSize: 20, fontWeight: 700, color: colors.textPrimary, marginBottom: 6 }}>
+                  {hasPersonality ? "已生成穿搭人格" : "还没有穿搭人格"}
+                </div>
+                <Body style={{ color: colors.textSecondary, lineHeight: 1.7 }}>
+                  {hasPersonality
+                    ? "推荐会优先参考你的风格关键词、建议色系和人格倾向。"
+                    : "完成一次测试后，推荐会更懂你的审美、颜色偏好和场合表达。"}
+                </Body>
+              </div>
+              <UIButton
+                variant={hasPersonality ? "ghost" : "primary"}
+                size="sm"
+                onClick={() => navigate("/personality-test")}
+                style={{ flexShrink: 0 }}
+              >
+                {hasPersonality ? "重测" : "去测试"}
+              </UIButton>
+            </div>
+
+            {hasPersonality && personalityResult && (
+              <div style={{
+                borderTop: `1px solid ${colors.divider}`,
+                paddingTop: 16,
+              }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
+                  <span style={{ fontSize: 28, fontWeight: 800, color: colors.accent, letterSpacing: "0.04em" }}>
+                    {personalityResult.full_code}
+                  </span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary }}>
+                    {personalityResult.nice_name}
+                  </span>
+                </div>
+                <Body style={{ color: colors.textSecondary, lineHeight: 1.7, marginBottom: 12 }}>
+                  {personalityResult.snippet}
+                </Body>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {personalityResult.style_guidance.style_keywords.map((kw) => (
+                    <span key={kw} style={{
+                      fontSize: 11,
+                      color: colors.accent,
+                      background: colors.accentSoft,
+                      borderRadius: 999,
+                      padding: "4px 10px",
+                      lineHeight: 1,
+                    }}>
+                      {kw}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Card>
+
           {/* 风格人格卡片 */}
           {styleProfile && (
             <Card variant="elevated" padding={isMobile ? 20 : 28} style={{ marginBottom: 24 }}>

@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchPersonalityQuestions,
   fetchPersonalityResult,
@@ -32,6 +32,7 @@ const SCALE_POINTS = [
 export default function PersonalityTestPage() {
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [stage, setStage] = useState<Stage>("loading");
   const [page, setPage] = useState(0);
   const answersRef = useRef<Map<string, number>>(new Map());
@@ -61,6 +62,7 @@ export default function PersonalityTestPage() {
   const submitMutation = useMutation({
     mutationFn: submitPersonalityAnswers,
     onSuccess: (data) => {
+      queryClient.setQueryData(["personality-result"], data);
       setStage("result");
       setSubmittedResult(data);
     },

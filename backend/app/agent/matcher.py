@@ -211,6 +211,8 @@ def match(
             reason += "建议搭配外套以防降温。"
         if weather.condition in ("雨", "雷阵雨", "雪"):
             reason += "注意防雨/防滑。"
+        if profile and profile.personality_test:
+            reason += "已参考你的穿搭人格偏好。"
 
         suggestions.append({"items": picked, "reason": reason})
 

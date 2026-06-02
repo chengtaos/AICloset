@@ -128,7 +128,10 @@ def _run_recommend_pipeline(
         logger.info("使用 LLM 推荐结果（偏好注入=%s）", bool(preferences_text))
         return [{"item_ids": r["item_ids"], "reason": r["reason"]} for r in llm_result]
 
-    logger.info("LLM 不可用，降级到规则引擎（偏好加权=%s）", bool(profile and (profile.total_wear_events or 0) >= 5))
+    logger.info(
+        "LLM 不可用，降级到规则引擎（偏好加权=%s）",
+        bool(profile and (profile.personality_test or (profile.total_wear_events or 0) >= 2)),
+    )
     raw = match(db, weather, user_id, occasion, limit=3, profile=profile)
     return [{"item_ids": s["items"], "reason": s["reason"]} for s in raw]
 

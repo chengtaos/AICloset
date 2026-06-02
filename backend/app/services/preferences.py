@@ -435,13 +435,77 @@ def format_preferences_for_llm(profile: UserProfile | None) -> str:
 
 # ── 多级评分（Fallback 规则引擎用）──
 
+PERSONALITY_RULE_TARGETS: dict[str, dict[str, list[str]]] = {
+    "INTJ": {"styles": ["极简", "通勤", "正式", "静奢风"], "colors": ["黑色", "白色", "灰色", "藏青"]},
+    "INTP": {"styles": ["休闲", "工装风", "Clean Fit", "极简"], "colors": ["灰色", "卡其色", "藏青", "军绿"]},
+    "ENTJ": {"styles": ["通勤", "正式", "老钱风", "静奢风"], "colors": ["黑色", "白色", "酒红", "藏青"]},
+    "ENTP": {"styles": ["街头", "多巴胺", "Y2K", "机车风"], "colors": ["橙色", "蓝色", "绿色", "紫色"]},
+    "INFJ": {"styles": ["法式", "复古", "文艺", "静奢风"], "colors": ["燕麦色", "雾霾蓝", "裸粉", "绿色"]},
+    "INFP": {"styles": ["复古", "法式", "波西米亚", "甜美"], "colors": ["奶油白", "绿色", "焦糖色", "米色"]},
+    "ENFJ": {"styles": ["通勤", "甜美", "法式", "韩系"], "colors": ["橙色", "奶油白", "米色", "婴儿蓝"]},
+    "ENFP": {"styles": ["多巴胺", "街头", "甜美", "Y2K"], "colors": ["黄色", "玫红", "天蓝", "彩色"]},
+    "ISTJ": {"styles": ["通勤", "极简", "正式", "Clean Fit"], "colors": ["白色", "蓝色", "卡其色", "灰色"]},
+    "ISFJ": {"styles": ["甜美", "韩系", "法式", "通勤"], "colors": ["粉色", "婴儿蓝", "米色", "灰色"]},
+    "ESTJ": {"styles": ["通勤", "正式", "极简", "老钱风"], "colors": ["黑色", "藏青", "白色", "灰色"]},
+    "ESFJ": {"styles": ["甜美", "韩系", "法式", "纯欲风"], "colors": ["粉色", "米色", "淡紫", "红色"]},
+    "ISTP": {"styles": ["工装风", "机车风", "Gorpcore", "街头"], "colors": ["军绿", "黑色", "灰色", "卡其色"]},
+    "ISFP": {"styles": ["艺术", "新中式", "复古", "多巴胺"], "colors": ["宝蓝", "紫色", "绿色", "金色"]},
+    "ESTP": {"styles": ["街头", "运动", "机车风", "Athleisure"], "colors": ["红色", "黑色", "绿色", "迷彩"]},
+    "ESFP": {"styles": ["多巴胺", "辣妹风", "派对", "甜美"], "colors": ["金色", "红色", "玫红", "亮片"]},
+}
+
+
+def _extract_type_code(full_code: str) -> str:
+    code = (full_code or "").strip().upper()
+    return code[:4] if len(code) >= 4 else code
+
+
+def _extract_personality_targets(profile: UserProfile | None) -> tuple[set[str], set[str]]:
+    """从人格测试结果中提取风格关键词和推荐色系，用作冷启动偏好。"""
+    if not profile or not profile.personality_test:
+        return set(), set()
+
+    pt = profile.personality_test or {}
+    full_code = pt.get("full_code", "")
+    if not full_code:
+        return set(), set()
+
+    guidance = pt.get("style_guidance") or {}
+    if not guidance:
+        rule_targets = PERSONALITY_RULE_TARGETS.get(_extract_type_code(full_code), {})
+        return set(rule_targets.get("styles", [])), set(rule_targets.get("colors", []))
+
+    styles = {s for s in guidance.get("style_keywords", []) if s}
+    color_hint = guidance.get("color_hint", "")
+    colors = {
+        c.strip()
+        for c in color_hint.replace("，", "、").replace(",", "、").split("、")
+        if c.strip()
+    }
+    if not styles and not colors:
+        rule_targets = PERSONALITY_RULE_TARGETS.get(_extract_type_code(full_code), {})
+        styles = set(rule_targets.get("styles", []))
+        colors = set(rule_targets.get("colors", []))
+    return styles, colors
+
+
+def _text_contains_any(texts: list[str], targets: set[str]) -> bool:
+    if not texts or not targets:
+        return False
+    joined = " ".join(t for t in texts if t)
+    return any(target and target in joined for target in targets)
+
+
 def score_items_by_preferences(
     candidates: dict[str, list[ClothingItem]],
     profile: UserProfile | None,
     selected_items: list[int] | None = None,
 ) -> dict[int, float]:
-    """多级融合评分：L2 短期 + L3 季节 + L4 共现 + 惩罚项。"""
-    if not profile or (profile.total_wear_events or 0) < 2:
+    """多级融合评分：人格冷启动 + L2 短期 + L3 季节 + L4 共现 + 惩罚项。"""
+    personality_styles, personality_colors = _extract_personality_targets(profile)
+    has_personality = bool(personality_styles or personality_colors)
+
+    if not profile or ((profile.total_wear_events or 0) < 2 and not has_personality):
         return {}
 
     selected = set(selected_items or [])
@@ -497,6 +561,17 @@ def score_items_by_preferences(
     for items in candidates.values():
         for item in items:
             score = 1.0
+
+            if has_personality:
+                searchable_style = [
+                    *(item.style_tags or []),
+                    item.sub_category or "",
+                    item.name or "",
+                ]
+                if _text_contains_any(searchable_style, personality_styles):
+                    score += 0.18
+                if _text_contains_any(item.colors or [], personality_colors):
+                    score += 0.12
 
             if l2_activated:
                 for tag in (item.style_tags or []):
